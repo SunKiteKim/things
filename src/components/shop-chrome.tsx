@@ -104,7 +104,7 @@ export function ShopFooter() {
           <p className="mb-3 text-[0.78rem] font-normal text-ink">회사정보</p>
           <p>things</p>
           <p>서울 강남구 도산대로 123</p>
-          <p>hello@things.store</p>
+          <p>things4demo.site</p>
           <p>사업자등록번호 000-00-00000</p>
         </div>
       </div>

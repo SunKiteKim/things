@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { LIMITS } from "@/lib/utils";
 import { requireAdmin } from "@/lib/auth";
+import { getEmailFormatError, getPasswordError } from "@/lib/signup";
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -20,7 +21,7 @@ export async function createMember(formData: FormData) {
   const name = text(formData, "name");
   const password = text(formData, "password");
   const phone = text(formData, "phone");
-  if (!email || !name || !password) return;
+  if (!name || getEmailFormatError(email) || getPasswordError(password)) return;
   const exists = await prisma.user.findUnique({ where: { email } });
   if (exists) return;
   await prisma.user.create({
@@ -28,7 +29,7 @@ export async function createMember(formData: FormData) {
       email,
       name,
       phone: phone || null,
-      passwordHash: await hash(password, 10),
+      passwordHash: await hash(password, 12),
       role: "MEMBER",
       provider: "credentials",
     },
@@ -54,7 +55,7 @@ export async function updateMember(formData: FormData) {
       zipCode: text(formData, "zipCode") || null,
       address: text(formData, "address") || null,
       addressDetail: text(formData, "addressDetail") || null,
-      ...(password ? { passwordHash: await hash(password, 10) } : {}),
+      ...(password && !getPasswordError(password) ? { passwordHash: await hash(password, 12) } : {}),
     },
   });
   revalidatePath("/admin/members");

@@ -36,9 +36,6 @@ export default function AdminLoginPage() {
           <RememberLoginFields portal="admin" />
           <button className="btn w-full">로그인</button>
         </form>
-        <p className="mt-6 text-xs leading-5 text-muted">
-          데모 계정 · admin@things.store / admin1234
-        </p>
       </div>
     </div>
   );

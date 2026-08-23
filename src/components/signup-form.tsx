@@ -82,7 +82,7 @@ export function SignupForm() {
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          placeholder="8~12자, 대문자·숫자 포함"
+          placeholder="10~72자, 대문자·숫자 포함"
           required
         />
         {passwordHint ? <Hint>{passwordHint}</Hint> : null}

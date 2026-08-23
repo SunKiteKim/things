@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { SITE_URL } from "@/lib/site";
 
 const NAV = [
   { href: "/admin", label: "대시보드" },
@@ -17,7 +18,7 @@ export function AdminNav() {
   return (
     <aside className="border-r border-line bg-surface">
       <div className="px-6 py-6">
-        <Logo href="/" className="text-xl" />
+        <Logo href="/admin" className="text-xl" />
         <p className="mt-2 text-[0.68rem] uppercase tracking-[0.2em] text-muted">Admin</p>
       </div>
       <nav className="flex flex-col px-3 pb-10 text-sm">
@@ -30,7 +31,7 @@ export function AdminNav() {
             {item.label}
           </Link>
         ))}
-        <Link href="/" className="mt-6 px-3 py-2 text-muted">
+        <Link href={SITE_URL} className="mt-6 px-3 py-2 text-muted">
           스토어로 돌아가기
         </Link>
       </nav>

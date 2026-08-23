@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const logo = Montserrat({
@@ -11,11 +12,21 @@ const logo = Montserrat({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "things",
-    template: "%s · things",
+    default: SITE_NAME,
+    template: `%s · ${SITE_NAME}`,
   },
   description: "사물을 고르는 일. 오브제 스토어 things.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: "사물을 고르는 일. 오브제 스토어 things.",
+  },
 };
 
 export default function RootLayout({

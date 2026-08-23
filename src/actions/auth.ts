@@ -9,12 +9,8 @@ import { getEmailFormatError, getPasswordConfirmError, getPasswordError } from "
 export async function checkSignupEmail(email: string) {
   const formatError = getEmailFormatError(email);
   if (formatError) return { ok: false as const, message: formatError };
-  const exists = await prisma.user.findUnique({
-    where: { email: email.trim().toLowerCase() },
-    select: { id: true },
-  });
-  if (exists) return { ok: false as const, message: "이미 가입된 이메일입니다." };
-  return { ok: true as const, message: "사용 가능한 이메일입니다." };
+  // Do not reveal whether an account exists before signup is submitted.
+  return { ok: true as const, message: "이메일 형식을 확인했습니다." };
 }
 
 export async function checkSignupPassword(password: string, confirm: string) {
@@ -46,7 +42,7 @@ export async function registerMember(formData: FormData) {
   }
 
   const exists = await prisma.user.findUnique({ where: { email } });
-  if (exists) redirect("/signup?error=exists");
+  if (exists) redirect("/signup?error=invalid");
 
   await prisma.user.create({
     data: {
@@ -56,7 +52,7 @@ export async function registerMember(formData: FormData) {
       zipCode: zipCode || null,
       address: address || null,
       addressDetail: addressDetail || null,
-      passwordHash: await hash(password, 10),
+      passwordHash: await hash(password, 12),
       provider: "credentials",
       role: "MEMBER",
     },

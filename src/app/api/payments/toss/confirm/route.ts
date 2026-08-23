@@ -9,11 +9,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json()) as {
+  const body = (await request.json().catch(() => null)) as {
     paymentKey?: string;
     orderId?: string;
     amount?: number;
-  };
+  } | null;
+
+  if (!body || typeof body.orderId !== "string" || typeof body.amount !== "number") {
+    return NextResponse.json({ error: "invalid request" }, { status: 400 });
+  }
 
   const order = await prisma.order.findFirst({
     where: {
@@ -45,8 +49,7 @@ export async function POST(request: Request) {
       }),
     });
     if (!confirm.ok) {
-      const fail = await confirm.json().catch(() => ({}));
-      return NextResponse.json({ error: "toss confirm failed", fail }, { status: 400 });
+      return NextResponse.json({ error: "toss confirm failed" }, { status: 400 });
     }
   }
 
@@ -71,6 +74,7 @@ export async function POST(request: Request) {
     path: "/",
     httpOnly: true,
     sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
     maxAge: 60 * 60 * 24 * 30,
   });
   return response;

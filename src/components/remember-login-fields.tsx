@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type SavedLogin = { email: string; password: string };
+type SavedLogin = { email: string };
 
 function storageKey(portal: "shop" | "admin") {
   return `things.remember-login.${portal}`;
@@ -12,9 +12,13 @@ function readSaved(portal: "shop" | "admin"): SavedLogin | null {
   try {
     const raw = localStorage.getItem(storageKey(portal));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as SavedLogin;
-    if (typeof parsed.email !== "string" || typeof parsed.password !== "string") return null;
-    return parsed;
+    const parsed = JSON.parse(raw) as Partial<SavedLogin> & { password?: unknown };
+    if (typeof parsed.email !== "string") return null;
+    // Older versions stored a plaintext password. Re-write the value immediately
+    // so an upgrade removes that sensitive field from the browser.
+    const saved = { email: parsed.email };
+    if ("password" in parsed) localStorage.setItem(storageKey(portal), JSON.stringify(saved));
+    return saved;
   } catch {
     return null;
   }
@@ -31,7 +35,6 @@ export function persistRememberedLogin(portal: "shop" | "admin", formData: FormD
     key,
     JSON.stringify({
       email: String(formData.get("email") ?? ""),
-      password: String(formData.get("password") ?? ""),
     }),
   );
 }
@@ -39,7 +42,7 @@ export function persistRememberedLogin(portal: "shop" | "admin", formData: FormD
 export function RememberLoginFields({ portal }: { portal: "shop" | "admin" }) {
   const [hydrated, setHydrated] = useState(false);
   const [remember, setRemember] = useState(false);
-  const [saved, setSaved] = useState<SavedLogin>({ email: "", password: "" });
+  const [saved, setSaved] = useState<SavedLogin>({ email: "" });
 
   useEffect(() => {
     const next = readSaved(portal);
@@ -66,8 +69,7 @@ export function RememberLoginFields({ portal }: { portal: "shop" | "admin" }) {
         name="password"
         type="password"
         placeholder="비밀번호"
-        defaultValue={saved.password}
-        autoComplete={remember ? "current-password" : "off"}
+        autoComplete="current-password"
         required
       />
       <label className="remember-check">
@@ -84,7 +86,7 @@ export function RememberLoginFields({ portal }: { portal: "shop" | "admin" }) {
             }
           }}
         />
-        ID/비밀번호 기억하기
+        이메일 기억하기
       </label>
     </div>
   );

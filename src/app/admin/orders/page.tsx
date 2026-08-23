@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { formatDate, formatPrice, ORDER_STATUS_LABEL } from "@/lib/utils";
+import { formatDate, formatPrice, maskEmail, ORDER_STATUS_LABEL } from "@/lib/utils";
 
 export default async function OrdersAdminPage() {
   const orders = await prisma.order.findMany({
@@ -28,7 +28,7 @@ export default async function OrdersAdminPage() {
               <td className="py-4">
                 <Link href={`/admin/orders/${order.id}`}>{order.orderNumber}</Link>
               </td>
-              <td>{order.user.email}</td>
+              <td>{maskEmail(order.user.email)}</td>
               <td>{formatPrice(order.totalAmount)}</td>
               <td>{ORDER_STATUS_LABEL[order.status]}</td>
               <td>{formatDate(order.createdAt)}</td>

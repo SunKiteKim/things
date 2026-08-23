@@ -4,6 +4,13 @@ import { hashSync } from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
+  const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  const memberEmail = process.env.SEED_MEMBER_EMAIL?.trim().toLowerCase();
+  const memberPassword = process.env.SEED_MEMBER_PASSWORD;
+  if (!adminEmail || !adminPassword || adminPassword.length < 10) {
+    throw new Error("SEED_ADMIN_EMAIL and a 10+ character SEED_ADMIN_PASSWORD are required.");
+  }
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
   await prisma.exhibitionProduct.deleteMany();
@@ -14,29 +21,23 @@ async function main() {
   await prisma.category.deleteMany();
   await prisma.user.deleteMany();
 
-  await prisma.user.createMany({
-    data: [
+  const seedUsers = [
       {
-        email: "admin@things.store",
+        email: adminEmail,
         name: "tHings Admin",
-        phone: "010-0000-0000",
-        passwordHash: hashSync("admin1234", 10),
+        passwordHash: hashSync(adminPassword, 12),
         provider: "credentials",
         role: "ADMIN",
       },
-      {
-        email: "member@things.store",
-        name: "김사물",
-        phone: "010-1234-5678",
-        passwordHash: hashSync("member1234", 10),
+      ...(memberEmail && memberPassword && memberPassword.length >= 10 ? [{
+        email: memberEmail,
+        name: "데모 회원",
+        passwordHash: hashSync(memberPassword, 12),
         provider: "credentials",
         role: "MEMBER",
-        zipCode: "06035",
-        address: "서울특별시 강남구 도산대로 123",
-        addressDetail: "tHings 하우스 5층",
-      },
-    ],
-  });
+      }] : []),
+    ];
+  await prisma.user.createMany({ data: seedUsers });
 
   const [object, light, table, textile, scent] = await Promise.all([
     prisma.category.create({
@@ -92,7 +93,7 @@ async function main() {
   ]);
 
   const admin = await prisma.user.findUniqueOrThrow({
-    where: { email: "admin@things.store" },
+    where: { email: adminEmail },
   });
   const audit = {
     updatedById: admin.id,

@@ -27,6 +27,7 @@ export async function setCart(lines: CartLine[]) {
     path: "/",
     httpOnly: true,
     sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
     maxAge: 60 * 60 * 24 * 30,
   });
 }

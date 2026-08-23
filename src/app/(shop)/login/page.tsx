@@ -43,9 +43,6 @@ function LoginForm() {
       <p className="mt-8 text-center text-sm text-muted">
         계정이 없다면 <Link href="/signup" className="text-ink">회원가입</Link>
       </p>
-      <p className="mt-6 text-xs leading-5 text-muted">
-        데모 계정 · member@things.store / member1234
-      </p>
     </div>
   );
 }
