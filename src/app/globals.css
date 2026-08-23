@@ -1,26 +1,302 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #ffffff;
+  --ink: #161412;
+  --muted: #6f6a62;
+  --line: #e5e5e5;
+  --accent: #d85a2a;
+  --accent-deep: #9c3416;
+  --surface: #ffffff;
+  --white: #ffffff;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-surface: var(--surface);
+  --color-white: var(--white);
+  --font-sans: "Roboto", "Nanum Gothic", sans-serif;
+  --font-display: "Roboto", "Nanum Gothic", sans-serif;
+  --font-logo: var(--font-logo);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--line);
+}
+
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Roboto", "Nanum Gothic", "Malgun Gothic", sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.display {
+  font-family: "Roboto", "Nanum Gothic", "Malgun Gothic", sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+header {
+  font-weight: 700;
+}
+
+header .logo-type {
+  font-weight: 900;
+}
+
+header .utility-links,
+header .utility-links button {
+  font-weight: 400;
+}
+
+.product-name {
+  font-weight: 700;
+}
+
+.logo-type {
+  font-family: var(--font-logo), sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+}
+
+.hairline {
+  height: 1px;
+  background: var(--line);
+}
+
+.form-row,
+.form-row,
+.admin-row,
+.admin-row {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.75rem 1.25rem;
+}
+
+.form-row > span,
+.form-row > label,
+.form-row > span,
+.form-row > label,
+.admin-row > span,
+.admin-row > label,
+.admin-row > span,
+.admin-row > label {
+  padding-top: 0.95rem;
+  font-size: 0.875rem;
+  color: var(--ink);
+}
+
+.qty-box {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  border: 1px solid var(--line);
+}
+
+.qty-box button {
+  height: 2.75rem;
+  width: 2.75rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.qty-box input {
+  height: 2.75rem;
+  width: 3.25rem;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  background: transparent;
+  text-align: center;
+  outline: none;
+}
+
+.qty-box input[type="number"] {
+  appearance: textfield;
+}
+
+.qty-box input::-webkit-outer-spin-button,
+.qty-box input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.field {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--white);
+  padding: 0.85rem 1rem;
+  color: var(--ink);
+  outline: none;
+}
+
+.field:focus {
+  border-color: var(--ink);
+}
+
+.remember-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.remember-check input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--ink);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0 1.25rem;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+}
+
+.btn-accent {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.gsi-material-button {
+  user-select: none;
+  appearance: none;
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid #747775;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: #1f1f1f;
+  cursor: pointer;
+  font-family: "Roboto", arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  height: 40px;
+  letter-spacing: 0.25px;
+  outline: none;
+  overflow: hidden;
+  padding: 0 12px;
+  position: relative;
+  text-align: center;
+  text-transform: none;
+  transition: background-color 0.218s, border-color 0.218s, box-shadow 0.218s;
+  vertical-align: middle;
+  white-space: nowrap;
+  width: 100%;
+  max-width: 400px;
+  min-width: min-content;
+}
+
+.gsi-material-button .gsi-material-button-icon {
+  height: 20px;
+  margin-right: 12px;
+  min-width: 20px;
+  width: 20px;
+}
+
+.gsi-material-button .gsi-material-button-content-wrapper {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 12px;
+  height: 100%;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.gsi-material-button .gsi-material-button-contents {
+  flex-grow: 0;
+  font-family: "Roboto", arial, sans-serif;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+
+.gsi-material-button .gsi-material-button-state {
+  transition: opacity 0.218s;
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.gsi-material-button:disabled {
+  cursor: default;
+  background-color: #ffffff61;
+  border-color: #1f1f1f1f;
+}
+
+.gsi-material-button:disabled .gsi-material-button-contents,
+.gsi-material-button:disabled .gsi-material-button-icon {
+  opacity: 0.38;
+}
+
+.gsi-material-button:not(:disabled):active .gsi-material-button-state,
+.gsi-material-button:not(:disabled):focus .gsi-material-button-state {
+  background-color: #303030;
+  opacity: 0.12;
+}
+
+.gsi-material-button:not(:disabled):hover {
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.gsi-material-button:not(:disabled):hover .gsi-material-button-state {
+  background-color: #303030;
+  opacity: 0.08;
 }
