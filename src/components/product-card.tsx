@@ -3,7 +3,21 @@ import Image from "next/image";
 import type { Product } from "@prisma/client";
 import { formatPrice } from "@/lib/utils";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({
+  product,
+  showDiscountRate = false,
+  showProductId = false,
+}: {
+  product: Product;
+  showDiscountRate?: boolean;
+  showProductId?: boolean;
+}) {
+  const originalPrice = product.originalPrice;
+  const hasDiscount = product.discountRate > 0 && Boolean(originalPrice);
+  const showOriginalPrice = Boolean(
+    originalPrice && (showDiscountRate ? originalPrice !== product.price : hasDiscount),
+  );
+
   return (
     <Link href={`/product/${product.slug}`} className="group block">
       <div className="relative aspect-square overflow-hidden bg-surface">
@@ -20,11 +34,19 @@ export function ProductCard({ product }: { product: Product }) {
         )}
       </div>
       <div className="mt-3">
-        <p className="product-name text-[0.95rem] leading-snug">{product.name}</p>
-        <p className="mt-1 text-sm font-normal text-muted">
-          {formatPrice(product.price)}
-          {product.discountRate > 0 && product.originalPrice ? (
-            <span className="ml-2 line-through opacity-60">{formatPrice(product.originalPrice)}</span>
+        {showProductId ? (
+          <p className="text-[0.72rem] tracking-wide text-muted">{product.id}</p>
+        ) : null}
+        <p className={`product-name text-[0.95rem] leading-snug ${showProductId ? "mt-1" : ""}`}>
+          {product.name}
+        </p>
+        <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm font-normal text-muted">
+          {showDiscountRate ? (
+            <span className="font-medium text-accent">{product.discountRate}%</span>
+          ) : null}
+          <span>{formatPrice(product.price)}</span>
+          {showOriginalPrice && originalPrice ? (
+            <span className="line-through opacity-60">{formatPrice(originalPrice)}</span>
           ) : null}
         </p>
       </div>

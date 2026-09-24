@@ -66,7 +66,7 @@ export default async function HomePage() {
         <h2 className="mb-8 text-[1.75rem] font-bold tracking-tight md:text-[2rem]">Best Selling</h2>
         <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4 lg:gap-x-8">
           {bestSelling.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product} showDiscountRate showProductId />
           ))}
         </div>
       </section>
@@ -91,7 +91,7 @@ export default async function HomePage() {
         <h2 className="mb-8 text-[1.75rem] font-bold tracking-tight md:text-[2rem]">Promotion product2</h2>
         <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4 lg:gap-x-8">
           {promotion.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product} showDiscountRate showProductId />
           ))}
         </div>
       </section>

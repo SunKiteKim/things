@@ -30,16 +30,15 @@ export default async function ProductPage({
         <p className="text-[0.72rem] uppercase tracking-[0.28em] text-muted">
           {product.category.name}
         </p>
-        <h1 className="display mt-3 text-5xl">{product.name}</h1>
-        <div className="mt-5 flex items-baseline gap-3">
-          <p className="text-xl">{formatPrice(product.price)}</p>
-          {product.discountRate > 0 && product.originalPrice ? (
-            <>
-              <p className="text-sm text-muted line-through">{formatPrice(product.originalPrice)}</p>
-              <p className="text-sm text-accent">{product.discountRate}%</p>
-            </>
+        <p className="mt-3 text-[0.72rem] tracking-wide text-muted">{product.id}</p>
+        <h1 className="product-name mt-1 text-5xl leading-snug">{product.name}</h1>
+        <p className="mt-5 flex flex-wrap items-baseline gap-x-2 text-xl font-normal text-muted">
+          <span className="font-medium text-accent">{product.discountRate}%</span>
+          <span>{formatPrice(product.price)}</span>
+          {product.originalPrice && product.originalPrice !== product.price ? (
+            <span className="line-through opacity-60">{formatPrice(product.originalPrice)}</span>
           ) : null}
-        </div>
+        </p>
         <p className="mt-8 max-w-md text-sm leading-7 text-muted">{product.description}</p>
         <p className="mt-6 text-sm">재고 {product.stock}개</p>
         <AddToCart productId={product.id} stock={product.stock} />

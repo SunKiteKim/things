@@ -55,7 +55,7 @@ export default async function ProductsPage({
       ) : (
         <div className="mt-12 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product} showDiscountRate showProductId />
           ))}
         </div>
       )}

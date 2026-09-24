@@ -30,7 +30,13 @@ function productionHostRedirect(request: NextRequest) {
 
   if (host === SITE_HOST) {
     if (!adminPath) return null;
-    return redirectToHost(request, ADMIN_HOST);
+    const url = new URL(request.url);
+    url.hostname = ADMIN_HOST;
+    url.protocol = "https:";
+    url.port = "";
+    if (pathname === "/admin") url.pathname = "/";
+    if (pathname === "/admin/login") url.pathname = "/login";
+    return NextResponse.redirect(url, 308);
   }
 
   return redirectToHost(request, adminPath ? ADMIN_HOST : SITE_HOST);

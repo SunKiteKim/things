@@ -1,5 +1,8 @@
+import { loadEnvConfig } from "@next/env";
 import { PrismaClient } from "@prisma/client";
 import { hashSync } from "bcryptjs";
+
+loadEnvConfig(process.cwd());
 
 const prisma = new PrismaClient();
 
