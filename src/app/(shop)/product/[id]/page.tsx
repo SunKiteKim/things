@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatPrice, parseGallery } from "@/lib/utils";
 import { AddToCart } from "@/components/add-to-cart";
@@ -7,14 +7,16 @@ import { AddToCart } from "@/components/add-to-cart";
 export default async function ProductPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ id: string }>;
 }) {
-  const { slug } = await params;
-  const product = await prisma.product.findUnique({
-    where: { slug },
+  const { id } = await params;
+  const product = await prisma.product.findFirst({
+    where: { OR: [{ id }, { slug: id }] },
     include: { category: true },
   });
   if (!product || !product.isPublished) notFound();
+  if (id !== product.id) redirect(`/product/${product.id}`);
+
   const gallery = [product.imageUrl, ...parseGallery(product.gallery)].filter(Boolean);
 
   return (

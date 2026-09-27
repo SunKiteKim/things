@@ -43,7 +43,7 @@ export default async function CartPage() {
                   <Image src={row.product.imageUrl} alt={row.product.name} fill className="object-cover" />
                 </div>
                 <div>
-                  <Link href={`/product/${row.product.slug}`} className="product-name">
+                  <Link href={`/product/${row.product.id}`} className="product-name">
                     {row.product.name}
                   </Link>
                   <p className="mt-1 text-sm text-muted">{formatPrice(row.product.price)}</p>
