@@ -1,8 +1,9 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { createMember, deleteMember } from "@/actions/members";
 import { LIMITS, formatDate, maskEmail, maskPersonalInfo, maskPhone } from "@/lib/utils";
 import { AdminCreateModal } from "@/components/admin-create-modal";
+import { AdminMasterDetail } from "@/components/admin-master-detail";
+import { MemberForm } from "@/components/member-form";
 
 export default async function MembersAdminPage() {
   const members = await prisma.user.findMany({ orderBy: { createdAt: "desc" } });
@@ -19,47 +20,16 @@ export default async function MembersAdminPage() {
           <label className="text-sm font-medium">임시 비밀번호<input className="field mt-2" name="password" type="password" required /></label>
         </AdminCreateModal>
       </div>
-      <div className="mt-8 overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-line text-muted">
-              <th className="py-3">이름</th>
-              <th>이메일</th>
-              <th>휴대폰</th>
-              <th>가입</th>
-              <th>역할</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.map((user) => (
-              <tr key={user.id} className="border-b border-line">
-                <td className="py-4">{maskPersonalInfo(user.name)}</td>
-                <td className="py-4">
-                  {maskEmail(user.email)}
-                  <div className="text-xs text-muted">{user.provider}</div>
-                </td>
-                <td className="py-4">{maskPhone(user.phone)}</td>
-                <td className="py-4">{formatDate(user.createdAt)}</td>
-                <td className="py-4">{user.role}</td>
-                <td className="py-4">
-                  <div className="flex gap-2">
-                    <Link href={`/admin/members/${user.id}`} className="btn btn-ghost min-h-8">
-                      수정
-                    </Link>
-                    {user.role !== "ADMIN" ? (
-                      <form action={deleteMember}>
-                        <input type="hidden" name="id" value={user.id} />
-                        <button className="btn btn-ghost min-h-8">삭제</button>
-                      </form>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <AdminMasterDetail
+        listTitle="회원 목록"
+        detailTitle="회원 상세"
+        columns={["회원 ID", "이름", "이메일", "휴대폰", "가입일", "역할"]}
+        rows={members.map((user) => ({
+          id: user.id,
+          cells: [user.id, maskPersonalInfo(user.name), maskEmail(user.email), maskPhone(user.phone), formatDate(user.createdAt), user.role],
+          detail: <div><MemberForm user={{ id: user.id, name: maskPersonalInfo(user.name), email: maskEmail(user.email), phone: maskPhone(user.phone), zipCode: maskPersonalInfo(user.zipCode), address: maskPersonalInfo(user.address), addressDetail: maskPersonalInfo(user.addressDetail), role: user.role, createdAt: user.createdAt, updatedAt: user.updatedAt }} />{user.role !== "ADMIN" ? <form action={deleteMember} className="mt-4 max-w-3xl border-t border-line pt-4"><input type="hidden" name="id" value={user.id} /><button className="btn btn-ghost">회원 삭제</button></form> : null}</div>,
+        }))}
+      />
     </div>
   );
 }

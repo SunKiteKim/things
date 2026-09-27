@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { updateProductDisplay } from "@/actions/products";
+import { AdminPagedList } from "@/components/admin-paged-list";
 
 export default async function ProductDisplayPage() {
   const products = await prisma.product.findMany({
@@ -11,7 +12,7 @@ export default async function ProductDisplayPage() {
     <div>
       <h1 className="display text-4xl">상품전시관리</h1>
       <p className="mt-2 text-sm text-muted">공개 여부, 메인 노출, 정렬만 빠르게 바꿉니다.</p>
-      <div className="mt-8 space-y-4">
+      <AdminPagedList pageSize={10}>
         {products.map((product) => (
           <form
             key={product.id}
@@ -33,7 +34,7 @@ export default async function ProductDisplayPage() {
             <button className="btn btn-ghost">저장</button>
           </form>
         ))}
-      </div>
+      </AdminPagedList>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { createExhibition, deleteExhibition, updateExhibition } from "@/actions/promotions";
 import { AdminCreateModal } from "@/components/admin-create-modal";
+import { AdminMasterDetail } from "@/components/admin-master-detail";
+import { formatDate } from "@/lib/utils";
 
 function localInput(date: Date) {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -29,19 +31,23 @@ export default async function ExhibitionsAdminPage() {
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="isActive" defaultChecked /> 공개</label>
         </AdminCreateModal>
       </div>
-      <div className="mt-10 space-y-8">
-        {exhibitions.map((exhibition) => {
+      <AdminMasterDetail
+        listTitle="기획전 목록"
+        detailTitle="기획전 상세"
+        columns={["기획전명", "기간", "상품 수", "상태"]}
+        rows={exhibitions.map((exhibition) => {
           const selected = new Set(exhibition.products.map((row) => row.productId));
-          return (
-            <form key={exhibition.id} action={updateExhibition} className="grid gap-3 border border-line p-5">
+          return {
+            id: exhibition.id,
+            cells: [exhibition.title, `${formatDate(exhibition.startAt)} ~ ${formatDate(exhibition.endAt)}`, `${exhibition.products.length}개`, exhibition.isActive ? "공개" : "비공개"],
+            detail: <form action={updateExhibition} className="grid max-w-4xl gap-4">
               <input type="hidden" name="id" value={exhibition.id} />
-              <input className="field" name="title" defaultValue={exhibition.title} />
-              <input className="field" name="slug" defaultValue={exhibition.slug} />
-              <textarea className="field min-h-24" name="description" defaultValue={exhibition.description} />
-              <input className="field" name="imageUrl" defaultValue={exhibition.imageUrl} />
-              <input className="field" name="startAt" type="datetime-local" defaultValue={localInput(exhibition.startAt)} />
-              <input className="field" name="endAt" type="datetime-local" defaultValue={localInput(exhibition.endAt)} />
-              <div className="grid gap-2 md:grid-cols-3">
+              <label className="text-sm font-medium">기획전명<input className="field mt-2" name="title" defaultValue={exhibition.title} /></label>
+              <label className="text-sm font-medium">슬러그<input className="field mt-2" name="slug" defaultValue={exhibition.slug} /></label>
+              <label className="text-sm font-medium">설명<textarea className="field mt-2 min-h-24" name="description" defaultValue={exhibition.description} /></label>
+              <label className="text-sm font-medium">이미지 URL<input className="field mt-2" name="imageUrl" defaultValue={exhibition.imageUrl} /></label>
+              <div className="grid gap-4 md:grid-cols-2"><label className="text-sm font-medium">시작일<input className="field mt-2" name="startAt" type="datetime-local" defaultValue={localInput(exhibition.startAt)} /></label><label className="text-sm font-medium">종료일<input className="field mt-2" name="endAt" type="datetime-local" defaultValue={localInput(exhibition.endAt)} /></label></div>
+              <div className="grid max-h-48 gap-2 overflow-y-auto rounded-md border border-line p-4 md:grid-cols-3">
                 {products.map((product) => (
                   <label key={product.id} className="text-sm">
                     <input
@@ -63,10 +69,10 @@ export default async function ExhibitionsAdminPage() {
                   삭제
                 </button>
               </div>
-            </form>
-          );
+            </form>,
+          };
         })}
-      </div>
+      />
     </div>
   );
 }

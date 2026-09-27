@@ -328,7 +328,7 @@ function dateLabel(value: string) {
   return new Intl.DateTimeFormat("ko-KR", { dateStyle: "short" }).format(new Date(value));
 }
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 export function CouponAdmin({ coupons, products, issueTargets }: { coupons: CouponView[]; products: ProductOption[]; issueTargets: { users: IssueTarget[]; categories: IssueTarget[] } }) {
   const [open, setOpen] = useState(false);
@@ -389,13 +389,11 @@ export function CouponAdmin({ coupons, products, issueTargets }: { coupons: Coup
             })}
           </div>
 
-          {pageCount > 1 ? (
-            <nav className="mt-5 flex justify-center gap-2" aria-label="쿠폰 목록 페이지">
+          <nav className="mt-5 flex justify-center gap-2" aria-label="쿠폰 목록 페이지">
               {Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => (
                 <button key={number} type="button" className={`h-9 min-w-9 border px-3 text-sm ${page === number ? "border-ink bg-ink text-white" : "border-line bg-white"}`} aria-current={page === number ? "page" : undefined} onClick={() => movePage(number)}>{number}</button>
               ))}
-            </nav>
-          ) : null}
+          </nav>
 
           {selected ? (
             <section id="coupon-detail-panel" role="tabpanel" className="mt-8 border border-line bg-white p-6 md:p-8">

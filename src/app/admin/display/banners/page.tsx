@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { createBanner, deleteBanner, updateBanner } from "@/actions/display";
 import { AdminCreateModal } from "@/components/admin-create-modal";
+import { AdminMasterDetail } from "@/components/admin-master-detail";
 
 export default async function BannersAdminPage() {
   const banners = await prisma.banner.findMany({ orderBy: { sortOrder: "asc" } });
@@ -18,27 +19,16 @@ export default async function BannersAdminPage() {
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="isActive" defaultChecked /> 노출</label>
         </AdminCreateModal>
       </div>
-      <div className="mt-8 space-y-6">
-        {banners.map((banner) => (
-          <form key={banner.id} action={updateBanner} className="grid gap-3 border border-line p-5">
-            <input type="hidden" name="id" value={banner.id} />
-            <input className="field" name="title" defaultValue={banner.title} />
-            <input className="field" name="subtitle" defaultValue={banner.subtitle} />
-            <input className="field" name="imageUrl" defaultValue={banner.imageUrl} />
-            <input className="field" name="href" defaultValue={banner.href} />
-            <input className="field" name="sortOrder" type="number" defaultValue={banner.sortOrder} />
-            <label className="text-sm">
-              <input type="checkbox" name="isActive" defaultChecked={banner.isActive} /> 노출
-            </label>
-            <div className="flex gap-2">
-              <button className="btn">수정</button>
-              <button className="btn btn-ghost" formAction={deleteBanner}>
-                삭제
-              </button>
-            </div>
-          </form>
-        ))}
-      </div>
+      <AdminMasterDetail
+        listTitle="배너 목록"
+        detailTitle="배너 상세"
+        columns={["제목", "연결 링크", "정렬", "상태"]}
+        rows={banners.map((banner) => ({
+          id: banner.id,
+          cells: [banner.title, banner.href, banner.sortOrder, banner.isActive ? "노출" : "숨김"],
+          detail: <form action={updateBanner} className="grid max-w-3xl gap-4"><input type="hidden" name="id" value={banner.id} /><label className="text-sm font-medium">제목<input className="field mt-2" name="title" defaultValue={banner.title} /></label><label className="text-sm font-medium">부제<input className="field mt-2" name="subtitle" defaultValue={banner.subtitle} /></label><label className="text-sm font-medium">이미지 URL<input className="field mt-2" name="imageUrl" defaultValue={banner.imageUrl} /></label><label className="text-sm font-medium">연결 링크<input className="field mt-2" name="href" defaultValue={banner.href} /></label><label className="text-sm font-medium">정렬 순서<input className="field mt-2" name="sortOrder" type="number" defaultValue={banner.sortOrder} /></label><label className="text-sm"><input type="checkbox" name="isActive" defaultChecked={banner.isActive} /> 노출</label><div className="flex gap-2"><button className="btn">수정</button><button className="btn btn-ghost" formAction={deleteBanner}>삭제</button></div></form>,
+        }))}
+      />
     </div>
   );
 }
