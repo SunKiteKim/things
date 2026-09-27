@@ -1,6 +1,6 @@
 "use server";
 
-import { couponDiscount } from "@/lib/discounts";
+import { couponDiscountForLines } from "@/lib/discounts";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -55,10 +55,12 @@ export async function clearCart() {
 export async function applyCoupon(code: string) {
   const cart = await getCart();
   const products = await prisma.product.findMany({ where: { id: { in: cart.map(line => line.productId) } } });
-  const amount = cart.reduce((sum, line) => sum + (products.find(p => p.id === line.productId && p.isPublished)?.price ?? 0) * line.quantity, 0);
-  const quantity = cart.reduce((sum, line) => sum + (products.some(p => p.id === line.productId && p.isPublished) ? line.quantity : 0), 0);
+  const lines = cart.flatMap((line) => {
+    const product = products.find((item) => item.id === line.productId && item.isPublished);
+    return product ? [{ productId: product.id, amount: product.price * line.quantity, quantity: line.quantity }] : [];
+  });
   const coupon = await prisma.coupon.findUnique({ where: { code: code.trim().toUpperCase() } });
-  const discount = coupon ? couponDiscount(coupon, amount, quantity) : null;
+  const discount = coupon ? couponDiscountForLines(coupon, lines) : null;
   if (discount === null) return { error: "쿠폰의 구매 수량·금액 또는 사용 조건을 확인해 주세요." };
   return { ok: true, discount, code: coupon!.code, name: coupon!.name };
 }
@@ -101,7 +103,11 @@ export async function createPendingOrder(formData: FormData) {
   let discount = 0;
   if (couponCode) {
     const coupon = await prisma.coupon.findUnique({ where: { code: couponCode } });
-    const applied = coupon ? couponDiscount(coupon, subtotal, items.reduce((sum, row) => sum + row.quantity, 0)) : null;
+    const applied = coupon ? couponDiscountForLines(coupon, items.map((row) => ({
+      productId: row.product.id,
+      amount: row.product.price * row.quantity,
+      quantity: row.quantity,
+    }))) : null;
     if (applied === null) return { error: "쿠폰의 구매 수량·금액 또는 사용 조건을 확인해 주세요." };
     discount = applied;
   }

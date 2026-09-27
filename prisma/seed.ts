@@ -383,9 +383,11 @@ async function main() {
       {
         code: "THINGS10",
         name: "첫 구매 10%",
+        scope: "CART",
         discountType: "PERCENT",
         discountValue: 10,
         minOrderAmount: 50000,
+        minQuantity: 2,
         maxUses: 100,
         startAt: now,
         endAt: later,
@@ -394,9 +396,11 @@ async function main() {
       {
         code: "WELCOME5",
         name: "웰컴 5,000원",
+        scope: "CART",
         discountType: "AMOUNT",
         discountValue: 5000,
         minOrderAmount: 30000,
+        minQuantity: 2,
         maxUses: 200,
         startAt: now,
         endAt: later,

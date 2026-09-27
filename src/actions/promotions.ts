@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
@@ -17,31 +18,49 @@ function bool(formData: FormData, key: string) {
   return formData.get(key) === "on" || formData.get(key) === "true";
 }
 
+function productIds(formData: FormData, key: string) {
+  return [...new Set(formData.getAll(key).map(String).filter(Boolean))];
+}
+
+async function uniqueCouponCode() {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const code = `CPN-${randomBytes(6).toString("hex").toUpperCase()}`;
+    if (!(await prisma.coupon.findUnique({ where: { code }, select: { id: true } }))) return code;
+  }
+  throw new Error("고유 쿠폰 코드를 생성하지 못했습니다.");
+}
 
 function validateCoupon(formData: FormData) {
   const type = text(formData, "discountType");
+  const scope = text(formData, "scope");
   const value = num(formData, "discountValue");
   const minimum = num(formData, "minQuantity");
   const amount = num(formData, "minOrderAmount");
   const maxUses = num(formData, "maxUses");
   const start = new Date(text(formData, "startAt"));
   const end = new Date(text(formData, "endAt"));
-  if (!["PERCENT", "AMOUNT"].includes(type) || !Number.isSafeInteger(value) || value <= 0 || (type === "PERCENT" && value > 100) || ![minimum, amount, maxUses].every(n => Number.isSafeInteger(n) && n >= 0) || !Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end < start) throw new Error("쿠폰의 할인값, 최소 수량·금액, 사용 기간을 확인해 주세요.");
+  const included = productIds(formData, "includedProductIds");
+  if (!["CART", "PRODUCT"].includes(scope) || !["PERCENT", "AMOUNT"].includes(type) || !Number.isSafeInteger(value) || value <= 0 || (type === "PERCENT" && value > 100) || ![minimum, amount, maxUses].every(n => Number.isSafeInteger(n) && n >= 0) || (scope === "PRODUCT" && included.length === 0) || !Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end < start) throw new Error("쿠폰 유형, 적용 상품, 할인값, 최소 수량·금액, 사용 기간을 확인해 주세요.");
 }
 
 export async function createCoupon(formData: FormData) {
   if (!(await requireAdmin())) return;
   validateCoupon(formData);
-  const code = text(formData, "code").toUpperCase();
-  if (!code) return;
+  const code = await uniqueCouponCode();
+  const scope = text(formData, "scope");
+  const excluded = productIds(formData, "excludedProductIds");
+  const included = productIds(formData, "includedProductIds").filter((id) => !excluded.includes(id));
   await prisma.coupon.create({
     data: {
       code,
       name: text(formData, "name") || code,
+      scope,
+      includedProductIds: JSON.stringify(included),
+      excludedProductIds: JSON.stringify(excluded),
       discountType: text(formData, "discountType") || "PERCENT",
       discountValue: num(formData, "discountValue"),
       minOrderAmount: num(formData, "minOrderAmount"),
-      minQuantity: num(formData, "minQuantity"),
+      minQuantity: scope === "CART" ? Math.max(2, num(formData, "minQuantity")) : num(formData, "minQuantity"),
       maxUses: num(formData, "maxUses") || null,
       startAt: new Date(text(formData, "startAt") || Date.now()),
       endAt: new Date(text(formData, "endAt") || Date.now()),
@@ -56,15 +75,20 @@ export async function updateCoupon(formData: FormData) {
   if (!(await requireAdmin())) return;
   validateCoupon(formData);
   const id = text(formData, "id");
+  const scope = text(formData, "scope");
+  const excluded = productIds(formData, "excludedProductIds");
+  const included = productIds(formData, "includedProductIds").filter((productId) => !excluded.includes(productId));
   await prisma.coupon.update({
     where: { id },
     data: {
-      code: text(formData, "code").toUpperCase(),
       name: text(formData, "name"),
+      scope,
+      includedProductIds: JSON.stringify(included),
+      excludedProductIds: JSON.stringify(excluded),
       discountType: text(formData, "discountType") || "PERCENT",
       discountValue: num(formData, "discountValue"),
       minOrderAmount: num(formData, "minOrderAmount"),
-      minQuantity: num(formData, "minQuantity"),
+      minQuantity: scope === "CART" ? Math.max(2, num(formData, "minQuantity")) : num(formData, "minQuantity"),
       maxUses: num(formData, "maxUses") || null,
       startAt: new Date(text(formData, "startAt")),
       endAt: new Date(text(formData, "endAt")),

@@ -100,6 +100,9 @@ model Coupon {
   id             String   @id @default(cuid())
   code           String   @unique
   name           String
+  scope          String   @default("CART")
+  includedProductIds String @default("[]")
+  excludedProductIds String @default("[]")
   discountType   String
   discountValue  Int
   minOrderAmount Int      @default(0)

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CartCoupon } from "@/components/cart-coupon";
-import { couponDiscount } from "@/lib/discounts";
+import { couponDiscountForLines } from "@/lib/discounts";
 import { getCart, getSelectedCoupon } from "@/lib/cart";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
@@ -21,12 +21,12 @@ export default async function CartPage() {
     .filter((row): row is NonNullable<typeof row> => !!row);
   const total = rows.reduce((sum, row) => sum + row.product.price * row.quantity, 0);
 
-  const quantity = rows.reduce((sum, row) => sum + row.quantity, 0);
+  const couponLines = rows.map((row) => ({ productId: row.product.id, amount: row.product.price * row.quantity, quantity: row.quantity }));
   const coupons = await prisma.coupon.findMany({ where: { isActive: true, startAt: { lte: new Date() }, endAt: { gte: new Date() } } });
   const code = await getSelectedCoupon();
   const selectedCoupon = coupons.find(coupon => coupon.code === code);
-  const discount = selectedCoupon ? couponDiscount(selectedCoupon, total, quantity) : null;
-  const options = coupons.map(coupon => ({ code: coupon.code, eligible: couponDiscount(coupon, total, quantity) !== null, label: coupon.name + (coupon.minQuantity > 0 ? ' · ' + coupon.minQuantity + '개 이상' : '') + ' · ' + coupon.discountValue + (coupon.discountType === "PERCENT" ? "%" : "원") + ' 할인' }));
+  const discount = selectedCoupon ? couponDiscountForLines(selectedCoupon, couponLines) : null;
+  const options = coupons.map(coupon => ({ code: coupon.code, eligible: couponDiscountForLines(coupon, couponLines) !== null, label: `[${coupon.scope === "PRODUCT" ? "상품" : "장바구니"}] ` + coupon.name + (coupon.minQuantity > 0 ? ' · ' + coupon.minQuantity + '개 이상' : '') + ' · ' + coupon.discountValue + (coupon.discountType === "PERCENT" ? "%" : "원") + ' 할인' }));
   return (
     <div>
       <h1 className="display text-5xl">장바구니</h1>
