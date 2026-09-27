@@ -53,7 +53,7 @@ export async function createCoupon(formData: FormData) {
   await prisma.coupon.create({
     data: {
       code,
-      name: text(formData, "name") || code,
+      name: scope === "MULTI_CART" ? "가지가지할인" : text(formData, "name") || code,
       scope,
       includedProductIds: JSON.stringify(included),
       excludedProductIds: JSON.stringify(excluded),
@@ -81,7 +81,7 @@ export async function updateCoupon(formData: FormData) {
   await prisma.coupon.update({
     where: { id },
     data: {
-      name: text(formData, "name"),
+      name: scope === "MULTI_CART" ? "가지가지할인" : text(formData, "name"),
       scope,
       includedProductIds: JSON.stringify(included),
       excludedProductIds: JSON.stringify(excluded),

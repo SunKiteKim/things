@@ -79,7 +79,11 @@ function CouponFields({ prefix, products, coupon }: { prefix: string; products: 
         <p className="rounded-sm bg-[#f2f2f0] px-4 py-3 text-sm text-muted">쿠폰 코드는 등록 시 자동으로 고유 생성됩니다.</p>
       )}
       <Field label="쿠폰명" htmlFor={`${prefix}-name`}>
-        <input id={`${prefix}-name`} className="field" name="name" defaultValue={coupon?.name} required />
+        {scope === "MULTI_CART" ? (
+          <><input type="hidden" name="name" value="가지가지할인" /><DisabledText>가지가지할인</DisabledText></>
+        ) : (
+          <input id={`${prefix}-name`} className="field" name="name" defaultValue={coupon?.name} required />
+        )}
       </Field>
       <Field label="쿠폰 유형" htmlFor={`${prefix}-scope`}>
         <select id={`${prefix}-scope`} className="field" name="scope" value={scope} onChange={(event) => setScope(event.target.value)}>
