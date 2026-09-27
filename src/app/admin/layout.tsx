@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { AdminNav } from "@/components/admin-nav";
+
+export const metadata: Metadata = {
+  title: { absolute: "things Admin" },
+};
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = (await headers()).get("x-pathname") ?? "";

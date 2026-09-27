@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { addToCart, buyNow } from "@/actions/commerce";
@@ -8,9 +9,9 @@ export function AddToCart({ productId, stock, onePlusOne = false }: { productId:
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [pending, start] = useTransition();
-  const [bundle, setBundle] = useState(false);
   const [error, setError] = useState("");
-  const max = Math.max(Math.floor(stock / (bundle ? 2 : 1)), 0);
+  const [added, setAdded] = useState(false);
+  const max = Math.max(Math.floor(stock / (onePlusOne ? 2 : 1)), 0);
   const soldOut = max <= 0;
 
   function changeQty(next: number) {
@@ -19,11 +20,8 @@ export function AddToCart({ productId, stock, onePlusOne = false }: { productId:
   }
 
   return (
-    <div className="mt-8 max-w-sm space-y-5">
-      {onePlusOne && <label>구매 옵션<select className="field" value={bundle ? "bundle" : "single"} disabled={pending} onChange={event => { setBundle(event.target.value === "bundle"); setQuantity(1); }}><option value="single">일반 구매</option><option value="bundle" disabled={stock < 2}>1+1 할인 · 같은 상품 1개 증정</option></select></label>}
-      {bundle && <p>{quantity}세트 · 총 {quantity * 2}개 수령</p>}
-      {error && <p role="alert">{error}</p>}
-      <div className="form-row">
+    <div className="mt-10 max-w-sm">
+      <div className="form-row items-center">
         <span>수량</span>
         <div className="qty-box">
           <button type="button" disabled={soldOut || pending} onClick={() => changeQty(quantity - 1)}>
@@ -42,15 +40,26 @@ export function AddToCart({ productId, stock, onePlusOne = false }: { productId:
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <p className={`mt-3 text-sm font-medium ${onePlusOne ? "text-accent" : "text-muted"}`}>
+        {onePlusOne
+          ? `1+1 혜택 적용 · 구매 ${quantity}개 + 증정 ${quantity}개 (총 ${quantity * 2}개)`
+          : "현재 적용된 추가 혜택이 없습니다."}
+      </p>
+      {error ? <p className="mt-4 text-sm text-accent" role="alert">{error}</p> : null}
+      <div className="mt-8 grid grid-cols-2 gap-3">
         <button
           type="button"
           className="btn btn-ghost"
           disabled={soldOut || pending}
           onClick={() =>
             start(async () => {
-              const result = await addToCart(productId, quantity, bundle);
-              setError(result.error ?? "");
+              const result = await addToCart(productId, quantity, onePlusOne);
+              if (result.error) {
+                setError(result.error);
+                return;
+              }
+              setError("");
+              setAdded(true);
               router.refresh();
             })
           }
@@ -63,7 +72,7 @@ export function AddToCart({ productId, stock, onePlusOne = false }: { productId:
           disabled={soldOut || pending}
           onClick={() =>
             start(async () => {
-              const result = await buyNow(productId, quantity, bundle);
+              const result = await buyNow(productId, quantity, onePlusOne);
               if (result?.error) setError(result.error);
             })
           }
@@ -71,7 +80,29 @@ export function AddToCart({ productId, stock, onePlusOne = false }: { productId:
           바로구매
         </button>
       </div>
-      {soldOut ? <p className="text-sm text-accent">일시품절입니다.</p> : null}
+      {soldOut ? <p className="mt-4 text-sm text-accent">일시품절입니다.</p> : null}
+
+      {added ? (
+        <div className="fixed inset-0 z-[100] grid place-items-center bg-black/45 px-5" role="presentation">
+          <div
+            className="w-full max-w-sm bg-white p-7 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cart-added-title"
+          >
+            <p id="cart-added-title" className="text-lg font-bold">장바구니 담기에 성공했습니다.</p>
+            <p className="mt-2 text-sm leading-6 text-muted">장바구니에서 상품과 적용된 혜택을 확인할 수 있습니다.</p>
+            <div className="mt-7 grid grid-cols-2 gap-3">
+              <button type="button" className="btn btn-ghost" onClick={() => setAdded(false)}>
+                계속 쇼핑
+              </button>
+              <Link href="/cart" className="btn" onClick={() => setAdded(false)}>
+                장바구니로 이동
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
