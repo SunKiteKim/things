@@ -45,7 +45,7 @@ async function main() {
   const [object, light, table, textile, scent] = await Promise.all([
     prisma.category.create({
       data: {
-        name: "오브제",
+        name: "카테고리1",
         slug: "object",
         description: "손끝에 남는 형태와 무게.",
         imageUrl:
@@ -55,7 +55,7 @@ async function main() {
     }),
     prisma.category.create({
       data: {
-        name: "조명",
+        name: "카테고리2",
         slug: "light",
         description: "공간을 나누는 가장 조용한 방법.",
         imageUrl:
@@ -65,7 +65,7 @@ async function main() {
     }),
     prisma.category.create({
       data: {
-        name: "테이블",
+        name: "카테고리3",
         slug: "table",
         description: "올려두는 일이 일상이 되는 면.",
         imageUrl:
@@ -75,7 +75,7 @@ async function main() {
     }),
     prisma.category.create({
       data: {
-        name: "텍스타일",
+        name: "카테고리4",
         slug: "textile",
         description: "온도와 결을 더하는 직물.",
         imageUrl:
@@ -85,7 +85,7 @@ async function main() {
     }),
     prisma.category.create({
       data: {
-        name: "센트",
+        name: "카테고리5",
         slug: "scent",
         description: "머물고 싶은 공기의 농도.",
         imageUrl:

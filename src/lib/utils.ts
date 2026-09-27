@@ -53,17 +53,19 @@ export function formatDateTime(value: Date | string) {
   }).format(new Date(value));
 }
 
+export function maskPersonalInfo(value?: string | null) {
+  if (!value) return "-";
+  const characters = Array.from(value);
+  if (characters.length <= 2) return value;
+  return `${characters[0]}${"*".repeat(characters.length - 2)}${characters.at(-1)}`;
+}
+
 export function maskEmail(value: string) {
-  const [local, domain] = value.split("@");
-  if (!local || !domain) return "***";
-  return `${local.slice(0, 2)}${"*".repeat(Math.max(1, local.length - 2))}@${domain}`;
+  return maskPersonalInfo(value);
 }
 
 export function maskPhone(value?: string | null) {
-  if (!value) return "-";
-  const digits = value.replace(/\D/g, "");
-  if (digits.length < 7) return "***";
-  return `${digits.slice(0, 3)}-${"*".repeat(digits.length - 7)}-${digits.slice(-4)}`;
+  return maskPersonalInfo(value);
 }
 
 export function formatOrderDateTime(value: Date | string) {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { MemberForm } from "@/components/member-form";
+import { maskPersonalInfo } from "@/lib/utils";
 
 export default async function EditMemberPage({
   params,
@@ -20,7 +21,20 @@ export default async function EditMemberPage({
         </Link>
       </p>
       <h1 className="display mt-3 text-4xl">회원 수정</h1>
-      <MemberForm user={user} />
+      <MemberForm
+        user={{
+          id: user.id,
+          name: maskPersonalInfo(user.name),
+          email: maskPersonalInfo(user.email),
+          phone: maskPersonalInfo(user.phone),
+          zipCode: maskPersonalInfo(user.zipCode),
+          address: maskPersonalInfo(user.address),
+          addressDetail: maskPersonalInfo(user.addressDetail),
+          role: user.role,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        }}
+      />
     </div>
   );
 }

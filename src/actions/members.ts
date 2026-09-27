@@ -43,20 +43,13 @@ export async function createMember(formData: FormData) {
 export async function updateMember(formData: FormData) {
   if (!(await requireAdmin())) return;
   const id = text(formData, "id");
-  const name = text(formData, "name");
-  const phone = normalizePhone(text(formData, "phone"));
   const role = text(formData, "role") || "MEMBER";
   const password = text(formData, "password");
-  if (!id || !name) return;
+  if (!id) return;
   await prisma.user.update({
     where: { id },
     data: {
-      name,
-      phone: phone || null,
       role,
-      zipCode: text(formData, "zipCode") || null,
-      address: text(formData, "address") || null,
-      addressDetail: text(formData, "addressDetail") || null,
       ...(password && !getPasswordError(password) ? { passwordHash: await hash(password, 12) } : {}),
     },
   });

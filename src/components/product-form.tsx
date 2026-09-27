@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ProductImagePicker } from "@/components/product-image-picker";
 import type { Category, Product } from "@prisma/client";
 import { createProduct, updateProduct } from "@/actions/products";
-import { discountedPrice, formatDateTime, formatPrice } from "@/lib/utils";
+import { discountedPrice, formatDateTime, formatPrice, maskPersonalInfo } from "@/lib/utils";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -105,7 +105,7 @@ export function ProductForm({
             <input className="field bg-surface" value={formatDateTime(product.updatedAt)} readOnly />
           </Field>
           <Field label="수정한 사람">
-            <input className="field bg-surface" value={product.updatedByName || "-"} readOnly />
+            <input className="field bg-surface" value={maskPersonalInfo(product.updatedByName)} readOnly />
           </Field>
         </>
       ) : null}

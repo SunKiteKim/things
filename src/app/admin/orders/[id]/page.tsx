@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { formatDate, formatPrice, ORDER_STATUS_LABEL } from "@/lib/utils";
+import { formatDate, formatPrice, maskPersonalInfo, ORDER_STATUS_LABEL } from "@/lib/utils";
 import { cancelOrder, updateOrderStatus } from "@/actions/commerce";
 
 export default async function AdminOrderDetailPage({
@@ -19,7 +19,7 @@ export default async function AdminOrderDetailPage({
     <div>
       <h1 className="display text-4xl">주문 상세</h1>
       <p className="mt-3 text-sm text-muted">
-        {order.orderNumber} · {order.user.role === "WITHDRAWN" ? "탈퇴 회원" : order.user.email} · {formatDate(order.createdAt)}
+        {order.orderNumber} · {order.user.role === "WITHDRAWN" ? "탈퇴 회원" : maskPersonalInfo(order.user.email)} · {formatDate(order.createdAt)}
       </p>
       <ul className="mt-8 space-y-2 text-sm">
         {order.items.map((item) => (
@@ -30,9 +30,9 @@ export default async function AdminOrderDetailPage({
       </ul>
       <p className="mt-6">합계 {formatPrice(order.totalAmount)}</p>
       <p className="text-sm text-muted">
-        {order.receiverName} / {order.receiverPhone}
+        {maskPersonalInfo(order.receiverName)} / {maskPersonalInfo(order.receiverPhone)}
         <br />
-        {order.zipCode} {order.address} {order.addressDetail}
+        {maskPersonalInfo(order.zipCode)} {maskPersonalInfo(order.address)} {maskPersonalInfo(order.addressDetail)}
       </p>
       <form action={updateOrderStatus} className="mt-8 flex gap-3">
         <input type="hidden" name="id" value={order.id} />

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Logo } from "@/components/logo";
 import { submitAdminRecovery } from "@/actions/admin-recovery";
+import { maskPersonalInfo } from "@/lib/utils";
 
 export default function AdminRecoveryPage() {
   const [mode, setMode] = useState("account");
@@ -20,7 +21,7 @@ export default function AdminRecoveryPage() {
         {result ? (
           <div className="mt-8 space-y-4" role="status">
             <p>{result.reset ? "비밀번호가 변경되었습니다. 새 비밀번호로 로그인하세요." : "관리자 계정을 확인했습니다."}</p>
-            <p className="break-all font-medium">{result.email}</p>
+            <p className="break-all font-medium">{maskPersonalInfo(result.email)}</p>
             {!result.reset && <p className="text-sm text-muted">비밀번호도 재설정하려면 새 복구 코드를 발급받으세요.</p>}
           </div>
         ) : (

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { createMember, deleteMember } from "@/actions/members";
-import { LIMITS, formatDate, maskEmail, maskPhone } from "@/lib/utils";
+import { LIMITS, formatDate, maskEmail, maskPersonalInfo, maskPhone } from "@/lib/utils";
 
 export default async function MembersAdminPage() {
   const members = await prisma.user.findMany({ orderBy: { createdAt: "desc" } });
@@ -35,7 +35,7 @@ export default async function MembersAdminPage() {
           <tbody>
             {members.map((user) => (
               <tr key={user.id} className="border-b border-line">
-                <td className="py-4">{user.name}</td>
+                <td className="py-4">{maskPersonalInfo(user.name)}</td>
                 <td className="py-4">
                   {maskEmail(user.email)}
                   <div className="text-xs text-muted">{user.provider}</div>

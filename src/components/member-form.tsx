@@ -1,9 +1,20 @@
 "use client";
 
-import type { User } from "@prisma/client";
 import { updateMember } from "@/actions/members";
 import { formatDateTime } from "@/lib/utils";
-import { PostcodeAddress } from "@/components/postcode-address";
+
+type MaskedMember = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  zipCode: string;
+  address: string;
+  addressDetail: string;
+  role: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -14,18 +25,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-export function MemberForm({ user }: { user: User }) {
+export function MemberForm({ user }: { user: MaskedMember }) {
   return (
     <form action={updateMember} className="mt-8 grid max-w-3xl gap-5">
       <input type="hidden" name="id" value={user.id} />
       <Field label="이름">
-        <input className="field" name="name" defaultValue={user.name} required />
+        <input className="field bg-surface" value={user.name} readOnly />
       </Field>
       <Field label="이메일">
         <input className="field bg-surface" value={user.email} readOnly />
       </Field>
       <Field label="휴대폰">
-        <input className="field" name="phone" defaultValue={user.phone ?? ""} />
+        <input className="field bg-surface" value={user.phone} readOnly />
       </Field>
       <Field label="역할">
         <select className="field" name="role" defaultValue={user.role}>
@@ -33,11 +44,15 @@ export function MemberForm({ user }: { user: User }) {
           <option value="ADMIN">ADMIN</option>
         </select>
       </Field>
-      <PostcodeAddress
-        zipCode={user.zipCode ?? ""}
-        address={user.address ?? ""}
-        addressDetail={user.addressDetail ?? ""}
-      />
+      <Field label="우편번호">
+        <input className="field bg-surface" value={user.zipCode} readOnly />
+      </Field>
+      <Field label="주소">
+        <input className="field bg-surface" value={user.address} readOnly />
+      </Field>
+      <Field label="상세주소">
+        <input className="field bg-surface" value={user.addressDetail} readOnly />
+      </Field>
       <Field label="비밀번호">
         <input className="field" name="password" type="password" placeholder="변경 시에만 입력" />
       </Field>
