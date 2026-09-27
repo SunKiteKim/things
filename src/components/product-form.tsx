@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { DisabledText } from "@/components/disabled-text";
 import { ProductImagePicker } from "@/components/product-image-picker";
 import type { Category, Product } from "@prisma/client";
 import { createProduct, updateProduct } from "@/actions/products";
@@ -31,7 +32,7 @@ export function ProductForm({
     <form onSubmit={event => { if (imageBusy) event.preventDefault(); }} action={product ? updateProduct : createProduct} className="mt-8 grid max-w-3xl gap-5">
       {product ? <input type="hidden" name="id" value={product.id} /> : null}
       <Field label="상품번호">
-        <input className="field bg-surface" name="idDisplay" value={product?.id ?? "저장 시 자동 발급 (prd0001)"} readOnly />
+        <DisabledText>{product?.id ?? "저장 시 자동 발급 (prd0001)"}</DisabledText>
       </Field>
       <Field label="상품명">
         <input className="field" name="name" defaultValue={product?.name} required />
@@ -72,7 +73,7 @@ export function ProductForm({
       </Field>
       <Field label="1+1 할인"><label><input type="checkbox" name="onePlusOne" defaultChecked={product?.onePlusOne ?? false} /> 같은 상품 1개 증정 옵션 허용</label></Field>
       <Field label="할인가">
-        <input className="field bg-surface" value={formatPrice(sale)} readOnly />
+        <DisabledText>{formatPrice(sale)}</DisabledText>
       </Field>
       <Field label="썸네일">
         <ProductImagePicker initialImage={product?.imageUrl} onBusy={setImageBusy} />
@@ -96,16 +97,16 @@ export function ProductForm({
       {product ? (
         <>
           <Field label="등록일">
-            <input className="field bg-surface" value={formatDateTime(product.registeredAt)} readOnly />
+            <DisabledText>{formatDateTime(product.registeredAt)}</DisabledText>
           </Field>
           <Field label="생성일">
-            <input className="field bg-surface" value={formatDateTime(product.createdAt)} readOnly />
+            <DisabledText>{formatDateTime(product.createdAt)}</DisabledText>
           </Field>
           <Field label="수정일">
-            <input className="field bg-surface" value={formatDateTime(product.updatedAt)} readOnly />
+            <DisabledText>{formatDateTime(product.updatedAt)}</DisabledText>
           </Field>
           <Field label="수정한 사람">
-            <input className="field bg-surface" value={maskPersonalInfo(product.updatedByName)} readOnly />
+            <DisabledText>{maskPersonalInfo(product.updatedByName)}</DisabledText>
           </Field>
         </>
       ) : null}

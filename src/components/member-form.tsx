@@ -1,6 +1,7 @@
 "use client";
 
 import { updateMember } from "@/actions/members";
+import { DisabledText } from "@/components/disabled-text";
 import { formatDateTime } from "@/lib/utils";
 
 type MaskedMember = {
@@ -30,13 +31,13 @@ export function MemberForm({ user }: { user: MaskedMember }) {
     <form action={updateMember} className="mt-8 grid max-w-3xl gap-5">
       <input type="hidden" name="id" value={user.id} />
       <Field label="이름">
-        <input className="field bg-surface" value={user.name} readOnly />
+        <DisabledText>{user.name}</DisabledText>
       </Field>
       <Field label="이메일">
-        <input className="field bg-surface" value={user.email} readOnly />
+        <DisabledText>{user.email}</DisabledText>
       </Field>
       <Field label="휴대폰">
-        <input className="field bg-surface" value={user.phone} readOnly />
+        <DisabledText>{user.phone}</DisabledText>
       </Field>
       <Field label="역할">
         <select className="field" name="role" defaultValue={user.role}>
@@ -45,22 +46,22 @@ export function MemberForm({ user }: { user: MaskedMember }) {
         </select>
       </Field>
       <Field label="우편번호">
-        <input className="field bg-surface" value={user.zipCode} readOnly />
+        <DisabledText>{user.zipCode}</DisabledText>
       </Field>
       <Field label="주소">
-        <input className="field bg-surface" value={user.address} readOnly />
+        <DisabledText>{user.address}</DisabledText>
       </Field>
       <Field label="상세주소">
-        <input className="field bg-surface" value={user.addressDetail} readOnly />
+        <DisabledText>{user.addressDetail}</DisabledText>
       </Field>
       <Field label="비밀번호">
         <input className="field" name="password" type="password" placeholder="변경 시에만 입력" />
       </Field>
       <Field label="가입일">
-        <input className="field bg-surface" value={formatDateTime(user.createdAt)} readOnly />
+        <DisabledText>{formatDateTime(user.createdAt)}</DisabledText>
       </Field>
       <Field label="수정일">
-        <input className="field bg-surface" value={formatDateTime(user.updatedAt)} readOnly />
+        <DisabledText>{formatDateTime(user.updatedAt)}</DisabledText>
       </Field>
       <div className="admin-row">
         <span />
