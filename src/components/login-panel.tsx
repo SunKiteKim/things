@@ -10,7 +10,13 @@ import { ADMIN_HOST, SITE_URL } from "@/lib/site";
 
 type Portal = "shop" | "admin";
 
-export function LoginPanel({ initialPortal = "shop" }: { initialPortal?: Portal }) {
+type LoginPanelProps = {
+  initialPortal?: Portal;
+  demoAdminEmail?: string;
+  demoAdminPassword?: string;
+};
+
+export function LoginPanel({ initialPortal = "shop", demoAdminEmail = "", demoAdminPassword = "" }: LoginPanelProps) {
   const params = useSearchParams();
   const [portal, setPortal] = useState<Portal>(initialPortal);
   const [error, setError] = useState("");
@@ -65,6 +71,7 @@ export function LoginPanel({ initialPortal = "shop" }: { initialPortal?: Portal 
             role="tab"
             aria-selected={portal === item}
             className={`rounded-full px-4 py-2.5 text-sm transition ${portal === item ? "bg-white font-bold shadow-sm" : "text-muted"}`}
+            style={{ fontWeight: portal === item ? 700 : 400 }}
             onClick={() => {
               setPortal(item);
               setError("");
@@ -101,7 +108,16 @@ export function LoginPanel({ initialPortal = "shop" }: { initialPortal?: Portal 
           </p>
         </>
       ) : (
-        <p className="mt-7 text-center text-xs leading-5 text-muted">관리자 권한이 확인된 계정만 접속할 수 있습니다.</p>
+        <div className="mt-7 text-center text-xs leading-5 text-muted">
+          <p>관리자 권한이 확인된 계정만 접속할 수 있습니다.</p>
+          {demoAdminEmail && demoAdminPassword ? (
+            <div className="mt-4 border border-line bg-[#f7f7f5] px-4 py-3 text-left text-ink">
+              <p className="font-bold">대표 관리자 계정</p>
+              <p className="mt-2 break-all"><span className="text-muted">ID</span> {demoAdminEmail}</p>
+              <p className="mt-1 break-all"><span className="text-muted">PW</span> {demoAdminPassword}</p>
+            </div>
+          ) : null}
+        </div>
       )}
     </div>
   );
