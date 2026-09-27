@@ -128,7 +128,6 @@ export async function withdrawMember(input: { email: string; phone: string }) {
   }
 
   await prisma.$transaction(async (tx) => {
-    const withdrawnAt = new Date();
     await tx.adminRecoveryCode.deleteMany({ where: { userId: user.id } });
     await tx.memberRecoveryCode.deleteMany({ where: { userId: user.id } });
     await tx.user.update({
@@ -143,7 +142,7 @@ export async function withdrawMember(input: { email: string; phone: string }) {
         role: "WITHDRAWN",
         zipCode: null,
         address: null,
-        addressDetail: `withdrawn:${withdrawnAt.toISOString()}`,
+        addressDetail: null,
       },
     });
   });
