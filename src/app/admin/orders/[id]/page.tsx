@@ -19,7 +19,7 @@ export default async function AdminOrderDetailPage({
     <div>
       <h1 className="display text-4xl">주문 상세</h1>
       <p className="mt-3 text-sm text-muted">
-        {order.orderNumber} · {order.user.email} · {formatDate(order.createdAt)}
+        {order.orderNumber} · {order.user?.email ?? "탈퇴 회원"} · {formatDate(order.createdAt)}
       </p>
       <ul className="mt-8 space-y-2 text-sm">
         {order.items.map((item) => (

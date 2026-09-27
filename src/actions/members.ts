@@ -71,7 +71,6 @@ export async function deleteMember(formData: FormData) {
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) return;
   if (user.role === "ADMIN") return;
-  await prisma.order.deleteMany({ where: { userId: id } });
   await prisma.user.delete({ where: { id } });
   revalidatePath("/admin/members");
   return;
@@ -115,37 +114,29 @@ export async function completeGooglePhone(formData: FormData) {
 }
 
 export async function withdrawMember(input: { email: string; phone: string }) {
-  const session = await (await import("@/lib/auth")).requireUser();
-  if (!session) return { ok: false as const, error: "로그인 상태를 확인해 주세요." };
-  const email = input.email.trim().toLowerCase();
-  const phone = normalizePhone(input.phone);
-  if (!email || phone.length < 9 || phone.length > 15) {
-    return { ok: false as const, error: "ID와 휴대전화 번호를 모두 정확히 입력해 주세요." };
-  }
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-  if (!user || user.role !== "MEMBER" || user.email.toLowerCase() !== email || normalizePhone(user.phone ?? "") !== phone) {
-    return { ok: false as const, error: "입력한 정보가 현재 회원정보와 일치하지 않습니다." };
-  }
+  try {
+    const session = await (await import("@/lib/auth")).requireUser();
+    if (!session) return { ok: false as const, error: "로그인 상태를 확인해 주세요." };
+    const email = input.email.trim().toLowerCase();
+    const phone = normalizePhone(input.phone);
+    if (!email || phone.length < 9 || phone.length > 15) {
+      return { ok: false as const, error: "ID와 휴대전화 번호를 모두 정확히 입력해 주세요." };
+    }
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+    if (!user || user.role !== "MEMBER" || user.email.toLowerCase() !== email || normalizePhone(user.phone ?? "") !== phone) {
+      return { ok: false as const, error: "입력한 정보가 현재 회원정보와 일치하지 않습니다." };
+    }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.adminRecoveryCode.deleteMany({ where: { userId: user.id } });
-    await tx.memberRecoveryCode.deleteMany({ where: { userId: user.id } });
-    await tx.user.update({
-      where: { id: user.id },
-      data: {
-        email: `withdrawn-${user.id}@deleted.invalid`,
-        name: "탈퇴 회원",
-        phone: null,
-        passwordHash: null,
-        provider: "withdrawn",
-        providerId: null,
-        role: "WITHDRAWN",
-        zipCode: null,
-        address: null,
-        addressDetail: null,
-      },
-    });
-  });
-  revalidatePath("/", "layout");
-  return { ok: true as const };
+    await prisma.$transaction([
+      prisma.order.updateMany({ where: { userId: user.id }, data: { userId: null } }),
+      prisma.adminRecoveryCode.deleteMany({ where: { userId: user.id } }),
+      prisma.memberRecoveryCode.deleteMany({ where: { userId: user.id } }),
+      prisma.user.delete({ where: { id: user.id } }),
+    ]);
+    revalidatePath("/", "layout");
+    return { ok: true as const };
+  } catch (error) {
+    console.error("[withdrawMember] Failed to withdraw member", error);
+    return { ok: false as const, error: "탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해 주세요." };
+  }
 }

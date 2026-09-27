@@ -4,6 +4,7 @@ import { getCart } from "@/lib/cart";
 import { prisma } from "@/lib/prisma";
 import { Logo } from "@/components/logo";
 import { LogoutButton } from "@/components/logout-button";
+import { SearchOverlay } from "@/components/search-overlay";
 
 export async function ShopHeader() {
   const [session, cart] = await Promise.all([auth(), getCart()]);
@@ -33,23 +34,13 @@ export async function ShopHeader() {
           </Link>
         </nav>
         <div className="flex items-center gap-5">
-          <div className="hidden min-w-10 items-center justify-end gap-4 sm:flex">
+          <div className="flex min-w-10 items-center justify-end gap-4">
             {member ? (
-              <Link href="/mypage" className="whitespace-nowrap text-sm font-normal hover:opacity-60">
-                &lsquo;{member.name}&rsquo; 님
+              <Link href="/mypage" className="hidden whitespace-nowrap text-sm font-normal hover:opacity-60 sm:block">
+                {member.name} 님
               </Link>
             ) : null}
-            <Link
-              href="/search"
-              aria-label="검색"
-              title="검색"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full transition hover:bg-surface"
-            >
-              <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <circle cx="11" cy="11" r="6.5" />
-                <path d="m16 16 4 4" />
-              </svg>
-            </Link>
+            <SearchOverlay />
           </div>
           <div className="utility-links -mt-1 flex items-center text-[0.78rem] font-normal">
             {shopUser ? (
@@ -79,14 +70,9 @@ export async function ShopHeader() {
 export function ShopFooter() {
   return (
     <footer className="mt-20 border-t border-line bg-surface">
-      <div className="mx-auto grid w-full max-w-[1280px] gap-10 px-5 py-14 md:grid-cols-[1.3fr_1fr_1fr_1fr] md:px-8">
+      <div className="mx-auto grid w-full max-w-[1280px] gap-10 px-5 py-14 md:grid-cols-[1.3fr_1fr_1fr] md:px-8">
         <div>
           <Logo className="text-[1.7rem]" />
-          <p className="mt-5 text-[0.92rem] font-normal leading-7 text-muted">
-            고객지원 1588-0101
-            <br />
-            평일 10:00 – 18:00 (주말·공휴일 휴무)
-          </p>
         </div>
         <div className="text-sm font-normal leading-7">
           <p className="mb-3 text-[0.78rem] font-normal">쇼핑</p>
@@ -118,18 +104,11 @@ export function ShopFooter() {
             회원가입
           </Link>
         </div>
-        <div className="text-sm font-normal leading-7 text-muted">
-          <p className="mb-3 text-[0.78rem] font-normal text-ink">회사정보</p>
-          <p>things</p>
-          <p>서울 강남구 도산대로 123</p>
-          <p>things4demo.site</p>
-          <p>사업자등록번호 000-00-00000</p>
-        </div>
       </div>
       <div className="border-t border-line">
         <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-2 px-5 py-5 text-[0.75rem] font-normal text-muted md:flex-row md:items-center md:justify-between md:px-8">
-          <p>© things. 이 사이트는 개인 포트폴리오용 데모 사이트입니다.</p>
-          <p>SELECT. STAY. BE WITH THINGS.</p>
+          <p>© things.</p>
+          <p>이 사이트는 개인 포트폴리오용 데모 사이트입니다.</p>
         </div>
       </div>
     </footer>
