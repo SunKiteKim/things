@@ -26,6 +26,7 @@ model User {
   orders              Order[]
   updatedProducts     Product[]            @relation("ProductUpdatedBy")
   couponIssues        CouponIssue[]
+  wishlistItems       WishlistItem[]
 }
 
 model Category {
@@ -65,6 +66,7 @@ model Product {
   updatedBy          User?               @relation("ProductUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   orderItems         OrderItem[]
   exhibitionProducts ExhibitionProduct[]
+  wishlistItems      WishlistItem[]
 }
 
 model Banner {
@@ -132,6 +134,17 @@ model CouponIssue {
 
   @@unique([couponId, userId])
   @@unique([couponId, categoryId])
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
 }
 
 model Order {

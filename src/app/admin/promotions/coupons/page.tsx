@@ -15,7 +15,7 @@ export default async function CouponsAdminPage() {
       coupons={coupons.map((coupon) => ({
         ...coupon,
         issues: coupon.issues.map((issue) => ({ ...issue, createdAt: issue.createdAt.toISOString() })),
-        minQuantity: coupon.scope === "CART" ? 0 : coupon.scope === "MULTI_CART" ? Math.max(2, coupon.minQuantity) : coupon.minQuantity,
+        minQuantity: coupon.scope === "CART" ? 0 : ["MULTI_CART", "ONE_PLUS_ONE"].includes(coupon.scope) ? Math.max(2, coupon.minQuantity) : coupon.minQuantity,
         startAt: coupon.startAt.toISOString(),
         endAt: coupon.endAt.toISOString(),
         createdAt: coupon.createdAt.toISOString(),

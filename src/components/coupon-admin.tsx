@@ -144,6 +144,7 @@ function CouponFields({ prefix, products, coupon }: { prefix: string; products: 
   const excluded = parseIds(coupon?.excludedProductIds);
   const start = new Date();
   const end = new Date(start.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const isProductCoupon = scope === "PRODUCT" || scope === "ONE_PLUS_ONE";
 
   return (
     <div className="grid gap-4">
@@ -164,24 +165,30 @@ function CouponFields({ prefix, products, coupon }: { prefix: string; products: 
       <Field label="쿠폰 유형">
         <input type="hidden" name="scope" value={scope} />
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className={`flex min-h-14 cursor-pointer items-center gap-3 border px-4 ${scope === "PRODUCT" ? "border-ink bg-[#f3f4f6]" : "border-line bg-white"}`}>
-            <input type="checkbox" checked={scope === "PRODUCT"} onChange={() => setScope("PRODUCT")} /> 상품 쿠폰
+          <label className={`flex min-h-14 cursor-pointer items-center gap-3 border px-4 ${isProductCoupon ? "border-ink bg-[#f3f4f6]" : "border-line bg-white"}`}>
+            <input type="checkbox" checked={isProductCoupon} onChange={() => setScope("PRODUCT")} /> 상품 쿠폰
           </label>
-          <label className={`flex min-h-14 cursor-pointer items-center gap-3 border px-4 ${scope !== "PRODUCT" ? "border-ink bg-[#f3f4f6]" : "border-line bg-white"}`}>
-            <input type="checkbox" checked={scope !== "PRODUCT"} onChange={() => setScope("CART")} /> 장바구니 쿠폰
+          <label className={`flex min-h-14 cursor-pointer items-center gap-3 border px-4 ${!isProductCoupon ? "border-ink bg-[#f3f4f6]" : "border-line bg-white"}`}>
+            <input type="checkbox" checked={!isProductCoupon} onChange={() => setScope("CART")} /> 장바구니 쿠폰
           </label>
         </div>
-        {scope !== "PRODUCT" ? (
+        {!isProductCoupon ? (
           <label className="mt-3 flex min-h-12 items-center gap-3 border border-line bg-[#f9fafb] px-4 text-sm">
             <input type="checkbox" checked={scope === "MULTI_CART"} onChange={(event) => setScope(event.target.checked ? "MULTI_CART" : "CART")} /> 가지가지할인으로 적용
           </label>
-        ) : null}
+        ) : (
+          <label className="mt-3 flex min-h-12 items-center gap-3 border border-line bg-[#f9fafb] px-4 text-sm">
+            <input type="checkbox" checked={scope === "ONE_PLUS_ONE"} onChange={(event) => setScope(event.target.checked ? "ONE_PLUS_ONE" : "PRODUCT")} /> 1+1 할인으로 적용
+          </label>
+        )}
         <p className="mt-2 text-xs text-muted">
           {scope === "CART"
             ? "장바구니에 상품이 있으면 수량과 관계없이 적용됩니다."
             : scope === "MULTI_CART"
               ? "서로 다른 상품이 2종 이상 담긴 장바구니에 추가 할인이 적용됩니다."
-              : "선택한 상품의 금액에만 할인이 적용됩니다."}
+              : scope === "ONE_PLUS_ONE"
+                ? "선택한 동일 상품을 2개 이상 구매하면 2개마다 1개 가격이 할인됩니다."
+                : "선택한 상품의 금액에만 할인이 적용됩니다."}
         </p>
       </Field>
       <Field label="적용 상품">
@@ -193,13 +200,13 @@ function CouponFields({ prefix, products, coupon }: { prefix: string; products: 
         <p className="mt-2 text-xs text-muted">적용 상품과 제외 상품에 함께 선택된 상품은 제외 상품으로 처리됩니다.</p>
       </Field>
       <Field label="할인 방식" htmlFor={`${prefix}-discountType`}>
-        <select id={`${prefix}-discountType`} className="field" name="discountType" defaultValue={coupon?.discountType ?? "PERCENT"}>
+        {scope === "ONE_PLUS_ONE" ? <><input type="hidden" name="discountType" value="AMOUNT" /><DisabledText>1+1 자동 할인</DisabledText></> : <select id={`${prefix}-discountType`} className="field" name="discountType" defaultValue={coupon?.discountType ?? "PERCENT"}>
           <option value="PERCENT">정률 할인 (%)</option>
           <option value="AMOUNT">정액 할인 (원)</option>
-        </select>
+        </select>}
       </Field>
       <Field label="할인값" htmlFor={`${prefix}-discountValue`}>
-        <input id={`${prefix}-discountValue`} className="field" name="discountValue" type="number" min={1} defaultValue={coupon?.discountValue} required />
+        {scope === "ONE_PLUS_ONE" ? <><input type="hidden" name="discountValue" value="0" /><DisabledText>동일 상품 2개당 1개 가격</DisabledText></> : <input id={`${prefix}-discountValue`} className="field" name="discountValue" type="number" min={1} defaultValue={coupon?.discountValue} required />}
       </Field>
       <Field label="최소 주문금액" htmlFor={`${prefix}-minOrderAmount`}>
         <input id={`${prefix}-minOrderAmount`} className="field" name="minOrderAmount" type="number" min={0} defaultValue={coupon?.minOrderAmount ?? 0} />
@@ -209,6 +216,8 @@ function CouponFields({ prefix, products, coupon }: { prefix: string; products: 
           <><input type="hidden" name="minQuantity" value="0" /><DisabledText>수량 제한 없음</DisabledText></>
         ) : scope === "MULTI_CART" ? (
           <><input type="hidden" name="minQuantity" value="2" /><DisabledText>서로 다른 상품 2종 이상</DisabledText></>
+        ) : scope === "ONE_PLUS_ONE" ? (
+          <><input type="hidden" name="minQuantity" value="2" /><DisabledText>동일 상품 2개 이상</DisabledText></>
         ) : (
           <input id={`${prefix}-minQuantity`} className="field" name="minQuantity" type="number" min={0} step={1} defaultValue={coupon?.minQuantity ?? 0} />
         )}
@@ -311,6 +320,7 @@ function CouponIssueModal({ coupon, targets }: { coupon: CouponView; targets: { 
 }
 
 function discountLabel(coupon: CouponView) {
+  if (coupon.scope === "ONE_PLUS_ONE") return "1+1";
   return coupon.discountType === "PERCENT" ? `${coupon.discountValue}%` : formatPrice(coupon.discountValue);
 }
 
@@ -370,7 +380,7 @@ export function CouponAdmin({ coupons, products, issueTargets }: { coupons: Coup
                 <button key={coupon.id} type="button" role="tab" aria-selected={active} aria-controls="coupon-detail-panel" className={`grid w-full min-w-[820px] grid-cols-[1.2fr_1.5fr_0.8fr_0.7fr_1.2fr_0.7fr] gap-3 border-t border-line px-3 py-2.5 text-left text-[0.72rem] transition ${active ? "bg-slate-100" : "bg-white hover:bg-slate-50"}`} onClick={() => setSelectedId(coupon.id)}>
                   <span className="font-mono text-[0.68rem]">{coupon.code}</span>
                   <span className="font-bold">{coupon.name}</span>
-                  <span>{coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지할인" : "장바구니"}</span>
+                  <span>{coupon.scope === "ONE_PLUS_ONE" ? "1+1 할인" : coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지할인" : "장바구니"}</span>
                   <span>{discountLabel(coupon)}</span>
                   <span className="text-[0.68rem] text-muted">{dateLabel(coupon.startAt)} ~ {dateLabel(coupon.endAt)}</span>
                   <span className={coupon.isPaused ? "text-muted" : coupon.isActive ? "text-accent" : "text-muted"}>{coupon.isPaused ? "일시중지" : coupon.isActive ? "사용 가능" : "사용 중지"}</span>

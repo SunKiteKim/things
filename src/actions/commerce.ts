@@ -53,6 +53,20 @@ export async function clearCart() {
   revalidatePath("/cart");
 }
 
+export async function removeCartLines(lines: Array<{ productId: string; onePlusOne?: boolean }>) {
+  if (!Array.isArray(lines) || lines.length === 0) return { error: "삭제할 상품을 선택해 주세요." };
+  const keys = new Set(lines.slice(0, 100).map((line) => `${String(line.productId)}:${line.onePlusOne ? "1" : "0"}`));
+  const cart = await getCart();
+  const next = cart.filter((line) => !keys.has(`${line.productId}:${line.onePlusOne ? "1" : "0"}`));
+  const removed = cart.length - next.length;
+  if (!removed) return { error: "삭제할 장바구니 상품을 찾지 못했습니다." };
+  await setCart(next);
+  await setSelectedCoupon("");
+  revalidatePath("/cart");
+  revalidatePath("/checkout");
+  return { ok: true, removed, message: `${removed}개 상품이 장바구니에서 삭제되었습니다.` };
+}
+
 export async function applyCoupon(code: string) {
   const session = await requireUser();
   const cart = await getCart();

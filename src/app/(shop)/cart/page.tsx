@@ -1,11 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import { CartCoupon } from "@/components/cart-coupon";
 import { couponDiscountForLines } from "@/lib/discounts";
 import { getCart, getSelectedCoupon } from "@/lib/cart";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
-import { CartControls } from "@/components/cart-controls";
+import { CartList } from "@/components/cart-list";
 import { requireUser } from "@/lib/auth";
 
 export default async function CartPage() {
@@ -29,7 +28,13 @@ export default async function CartPage() {
   const code = await getSelectedCoupon();
   const selectedCoupon = visibleCoupons.find(coupon => coupon.code === code);
   const discount = selectedCoupon ? couponDiscountForLines(selectedCoupon, couponLines, new Date(), session?.user.id) : null;
-  const options = visibleCoupons.map(coupon => ({ code: coupon.code, eligible: couponDiscountForLines(coupon, couponLines, new Date(), session?.user.id) !== null, label: `[${coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지할인" : "장바구니"}] ` + coupon.name + (coupon.scope === "MULTI_CART" ? " · 서로 다른 상품 2종 이상" : coupon.minQuantity > 0 ? ' · ' + coupon.minQuantity + '개 이상' : '') + ' · ' + coupon.discountValue + (coupon.discountType === "PERCENT" ? "%" : "원") + ' 할인' }));
+  const options = visibleCoupons.map(coupon => ({
+    code: coupon.code,
+    eligible: couponDiscountForLines(coupon, couponLines, new Date(), session?.user.id) !== null,
+    label: coupon.scope === "ONE_PLUS_ONE"
+      ? `[1+1 할인] ${coupon.name} · 동일 상품 2개당 1개 가격 할인`
+      : `[${coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지할인" : "장바구니"}] ${coupon.name}${coupon.scope === "MULTI_CART" ? " · 서로 다른 상품 2종 이상" : coupon.minQuantity > 0 ? ` · ${coupon.minQuantity}개 이상` : ""} · ${coupon.discountValue}${coupon.discountType === "PERCENT" ? "%" : "원"} 할인`,
+  }));
   return (
     <div>
       <h1 className="display text-5xl">장바구니</h1>
@@ -39,23 +44,7 @@ export default async function CartPage() {
         </p>
       ) : (
         <div className="mt-10 grid gap-12 lg:grid-cols-[1.4fr_0.6fr]">
-          <div className="space-y-6">
-            {rows.map((row) => (
-              <div key={row.productId + String(!!row.onePlusOne)} className="grid grid-cols-[96px_1fr] gap-4 border-b border-line pb-6">
-                <div className="relative aspect-square overflow-hidden bg-surface">
-                  <Image src={row.product.imageUrl} alt={row.product.name} fill className="object-cover" />
-                </div>
-                <div>
-                  <Link href={`/product/${row.product.id}`} className="product-name">
-                    {row.product.name}
-                  </Link>
-                  <p className="mt-1 text-sm text-muted">{formatPrice(row.product.price)}</p>
-                  {row.onePlusOne && <p className="text-sm">1+1 · 구매 {row.quantity}개 + 증정 {row.quantity}개</p>}
-                  <CartControls productId={row.productId} quantity={row.quantity} onePlusOne={row.onePlusOne} />
-                </div>
-              </div>
-            ))}
-          </div>
+          <CartList rows={rows.map((row) => ({ productId: row.productId, quantity: row.quantity, onePlusOne: row.onePlusOne, product: { id: row.product.id, name: row.product.name, price: row.product.price, imageUrl: row.product.imageUrl } }))} />
           <aside className="h-fit border border-line bg-surface p-6">
             <p className="text-sm text-muted">합계</p>
             <p className="mt-2 text-2xl">{formatPrice(total - (discount ?? 0))}</p>

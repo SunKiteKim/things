@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Product } from "@prisma/client";
 import { formatPrice } from "@/lib/utils";
+import { ProductQuickActions } from "@/components/product-quick-actions";
 
 export function ProductCard({
   product,
@@ -19,8 +20,10 @@ export function ProductCard({
   );
 
   return (
-    <Link href={`/product/${product.id}`} className="group block">
-      <div className="relative aspect-square overflow-hidden bg-surface">
+    <div className="group relative block">
+      <div className="relative">
+        <Link href={`/product/${product.id}`} className="block">
+          <div className="relative aspect-square overflow-hidden bg-surface">
         {product.imageUrl ? (
           <Image
             src={product.imageUrl}
@@ -32,8 +35,11 @@ export function ProductCard({
         ) : (
           <div className="flex h-full items-center justify-center font-normal text-muted">things</div>
         )}
+          </div>
+        </Link>
+        <ProductQuickActions productId={product.id} soldOut={product.stock <= 0} />
       </div>
-      <div className="mt-3">
+      <Link href={`/product/${product.id}`} className="mt-3 block">
         {showProductId ? (
           <p className="text-[0.72rem] tracking-wide text-muted">{product.id}</p>
         ) : null}
@@ -49,7 +55,7 @@ export function ProductCard({
             <span className="line-through opacity-60">{formatPrice(originalPrice)}</span>
           ) : null}
         </p>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }

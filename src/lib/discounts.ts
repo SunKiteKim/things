@@ -46,6 +46,11 @@ export function couponDiscountForLines(coupon: CouponRule, lines: CouponLine[], 
   if (coupon.scope === "MULTI_CART" && new Set(eligibleLines.map((line) => line.productId)).size < 2) return null;
   const amount = eligibleLines.reduce((sum, line) => sum + line.amount, 0);
   const quantity = eligibleLines.reduce((sum, line) => sum + line.quantity, 0);
+  if (coupon.scope === "ONE_PLUS_ONE") {
+    if (!coupon.isActive || coupon.isPaused || coupon.startAt > now || coupon.endAt < now || (coupon.maxUses !== null && coupon.usedCount >= coupon.maxUses) || amount < coupon.minOrderAmount || quantity < 2) return null;
+    const discount = eligibleLines.reduce((sum, line) => sum + Math.floor(line.quantity / 2) * Math.floor(line.amount / line.quantity), 0);
+    return discount > 0 ? Math.min(amount, discount) : null;
+  }
   return couponDiscount(
     coupon.scope === "CART"
       ? { ...coupon, minQuantity: 0 }
