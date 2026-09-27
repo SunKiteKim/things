@@ -174,6 +174,10 @@ export async function completeDemoPayment(orderId: string) {
   });
   if (!order) return { error: "주문을 찾을 수 없습니다." };
   if (order.status === ORDER_STATUS.PAID) return { ok: true };
+  if (order.couponCode) {
+    const coupon = await prisma.coupon.findUnique({ where: { code: order.couponCode }, select: { isActive: true, isPaused: true } });
+    if (!coupon?.isActive || coupon.isPaused) return { error: "일시중지되었거나 사용할 수 없는 쿠폰입니다." };
+  }
   await prisma.order.update({
     where: { id: orderId },
     data: { status: ORDER_STATUS.PAID, paymentMethod: "DEMO" },

@@ -34,6 +34,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "amount mismatch" }, { status: 400 });
   }
 
+  if (order.couponCode) {
+    const coupon = await prisma.coupon.findUnique({ where: { code: order.couponCode }, select: { isActive: true, isPaused: true } });
+    if (!coupon?.isActive || coupon.isPaused) {
+      return NextResponse.json({ error: "coupon unavailable" }, { status: 400 });
+    }
+  }
+
   const secret = process.env.TOSS_SECRET_KEY;
   if (secret && body.paymentKey) {
     const confirm = await fetch("https://api.tosspayments.com/v1/payments/confirm", {

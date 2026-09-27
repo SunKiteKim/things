@@ -106,6 +106,17 @@ export async function deleteCoupon(formData: FormData) {
   return;
 }
 
+export async function toggleCouponPause(formData: FormData) {
+  if (!(await requireAdmin())) return;
+  const id = text(formData, "id");
+  const coupon = await prisma.coupon.findUnique({ where: { id }, select: { isPaused: true } });
+  if (!coupon) return;
+  await prisma.coupon.update({ where: { id }, data: { isPaused: !coupon.isPaused } });
+  revalidatePath("/admin/promotions/coupons");
+  revalidatePath("/cart");
+  revalidatePath("/checkout");
+}
+
 export async function createExhibition(formData: FormData) {
   if (!(await requireAdmin())) return;
   const title = text(formData, "title");

@@ -112,6 +112,7 @@ model Coupon {
   startAt        DateTime
   endAt          DateTime
   isActive       Boolean  @default(true)
+  isPaused       Boolean  @default(false)
   createdAt      DateTime @default(now())
 }
 

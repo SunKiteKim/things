@@ -22,7 +22,7 @@ export default async function CartPage() {
   const total = rows.reduce((sum, row) => sum + row.product.price * row.quantity, 0);
 
   const couponLines = rows.map((row) => ({ productId: row.product.id, amount: row.product.price * row.quantity, quantity: row.quantity }));
-  const coupons = await prisma.coupon.findMany({ where: { isActive: true, startAt: { lte: new Date() }, endAt: { gte: new Date() } } });
+  const coupons = await prisma.coupon.findMany({ where: { isActive: true, isPaused: false, startAt: { lte: new Date() }, endAt: { gte: new Date() } } });
   const code = await getSelectedCoupon();
   const selectedCoupon = coupons.find(coupon => coupon.code === code);
   const discount = selectedCoupon ? couponDiscountForLines(selectedCoupon, couponLines) : null;
