@@ -20,15 +20,17 @@ type Props = {
     addressDetail: string;
     email: string;
   };
+  initialCoupon?: { code: string; discount: number };
   subtotal: number;
   orderName: string;
   tossClientKey: string;
 };
 
-export function CheckoutClient({ user, subtotal, orderName, tossClientKey }: Props) {
+export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initialCoupon }: Props) {
   const router = useRouter();
-  const [discount, setDiscount] = useState(0);
-  const [couponCode, setCouponCode] = useState("");
+  const [discount, setDiscount] = useState(initialCoupon?.discount ?? 0);
+  const [couponCode, setCouponCode] = useState(initialCoupon?.code ?? "");
+  const [appliedCode, setAppliedCode] = useState(initialCoupon?.code ?? "");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [widgetsReady, setWidgetsReady] = useState(false);
@@ -86,14 +88,16 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey }: Pro
   }, [total, widgetsReady]);
 
   async function onCoupon() {
-    const result = await applyCoupon(couponCode, subtotal);
+    const result = await applyCoupon(couponCode);
     if ("error" in result && result.error) {
       setDiscount(0);
+      setAppliedCode("");
       setMessage(result.error);
       return;
     }
-    if (result.ok && result.discount) {
+    if (result.ok && result.discount !== undefined) {
       setDiscount(result.discount);
+      setAppliedCode(result.code ?? "");
       setCouponCode(result.code ?? couponCode);
       setMessage(`${result.name} 적용`);
     }
@@ -102,7 +106,7 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey }: Pro
   async function createOrder() {
     const form = document.getElementById("checkout-form") as HTMLFormElement;
     const formData = new FormData(form);
-    formData.set("couponCode", couponCode);
+    formData.set("couponCode", appliedCode);
     const created = await createPendingOrder(formData);
     if ("error" in created && created.error) {
       setMessage(created.error);
@@ -141,6 +145,7 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey }: Pro
       }
       const created = await createOrder();
       if (!created) return;
+      await widgetsRef.current.setAmount({ currency: "KRW", value: created.amount! });
 
       const phone = user.phone.replace(/\D/g, "");
       try {
@@ -203,7 +208,7 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey }: Pro
         <input
           className="field"
           value={couponCode}
-          onChange={(event) => setCouponCode(event.target.value)}
+          onChange={(event) => { setCouponCode(event.target.value); setDiscount(0); setAppliedCode(""); }}
           placeholder="쿠폰 코드 THINGS10"
         />
         <button type="button" className="btn btn-ghost" onClick={onCoupon}>

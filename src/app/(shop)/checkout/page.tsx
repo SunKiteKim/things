@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { getCart } from "@/lib/cart";
+import { applyCoupon } from "@/actions/commerce";
+import { getCart, getSelectedCoupon } from "@/lib/cart";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import { CheckoutClient } from "@/components/checkout-client";
@@ -23,6 +24,8 @@ export default async function CheckoutPage() {
   const subtotal = rows.reduce((sum, row) => sum + row.product.price * row.quantity, 0);
   if (!rows.length) redirect("/cart");
 
+  const code = await getSelectedCoupon();
+  const applied = code ? await applyCoupon(code) : null;
   return (
     <div>
       <h1 className="display text-5xl">주문서</h1>
@@ -37,6 +40,7 @@ export default async function CheckoutPage() {
             addressDetail: user?.addressDetail ?? "",
             email: user?.email ?? "",
           }}
+          initialCoupon={applied?.ok ? { code: applied.code!, discount: applied.discount! } : undefined}
           subtotal={subtotal}
           orderName={rows[0].product.name + (rows.length > 1 ? ` 외 ${rows.length - 1}건` : "")}
           tossClientKey={process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? ""}
@@ -45,9 +49,9 @@ export default async function CheckoutPage() {
           <p className="text-sm text-muted">주문 상품</p>
           <ul className="mt-4 space-y-3 text-sm">
             {rows.map((row) => (
-              <li key={row.productId} className="flex justify-between gap-4">
+              <li key={row.productId + String(!!row.onePlusOne)} className="flex justify-between gap-4">
                 <span>
-                  <span className="product-name">{row.product.name}</span> × {row.quantity}
+                  <span className="product-name">{row.product.name}</span> × {row.quantity}{row.onePlusOne ? ` (1+1 증정 ${row.quantity}개)` : ""}
                 </span>
                 <span>{formatPrice(row.product.price * row.quantity)}</span>
               </li>

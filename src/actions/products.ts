@@ -2,6 +2,8 @@
 
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
+import sharp from "sharp";
+import { PRODUCT_IMAGES } from "@/lib/product-image-library";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -31,8 +33,9 @@ async function nextProductId() {
 }
 
 async function saveThumbnail(file: File | null, productId: string, fallback: string) {
-  if (!file || file.size === 0) return fallback;
-  const bytes = Buffer.from(await file.arrayBuffer());
+  if (!(file instanceof File) || file.size === 0) return fallback;
+  if (file.size > 2 * 1024 * 1024) throw new Error("썸네일 파일이 너무 큽니다.");
+  const bytes = await sharp(Buffer.from(await file.arrayBuffer()), { limitInputPixels: 40_000_000 }).rotate().resize(550, 550, { fit: "contain", background: "#ffffff" }).jpeg({ quality: 88 }).toBuffer();
   const dir = path.join(process.cwd(), "public", "uploads", "products");
   await mkdir(dir, { recursive: true });
   const filename = `${productId}.jpg`;
@@ -77,7 +80,7 @@ export async function createProduct(formData: FormData) {
   const imageUrl = await saveThumbnail(
     formData.get("thumbnail") as File | null,
     id,
-    text(formData, "imageUrl"),
+    PRODUCT_IMAGES.find(image => image.src === text(formData, "imageUrl"))?.src ?? "",
   );
   if (!imageUrl) return;
 
@@ -88,6 +91,7 @@ export async function createProduct(formData: FormData) {
       slug: text(formData, "slug") || slugify(name),
       description: text(formData, "description"),
       ...pricing(formData),
+      onePlusOne: bool(formData, "onePlusOne"),
       stock: num(formData, "stock") || 10,
       imageUrl,
       isPublished: bool(formData, "isPublished"),
@@ -115,7 +119,7 @@ export async function updateProduct(formData: FormData) {
   const imageUrl = await saveThumbnail(
     formData.get("thumbnail") as File | null,
     id,
-    existing.imageUrl,
+    PRODUCT_IMAGES.find(image => image.src === text(formData, "imageUrl"))?.src ?? existing.imageUrl,
   );
 
   await prisma.product.update({
@@ -125,6 +129,7 @@ export async function updateProduct(formData: FormData) {
       slug: text(formData, "slug") || slugify(name),
       description: text(formData, "description"),
       ...pricing(formData),
+      onePlusOne: bool(formData, "onePlusOne"),
       stock: num(formData, "stock") || existing.stock,
       imageUrl,
       isPublished: bool(formData, "isPublished"),

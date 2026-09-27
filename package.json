@@ -10,7 +10,9 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma db push --force-reset --skip-generate && tsx prisma/seed.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "admin:recovery": "tsx scripts/admin-recovery.ts",
+    "member:recovery": "tsx scripts/member-recovery.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -23,6 +25,7 @@
     "next-auth": "^4.24.15",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "sharp": "0.34.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {

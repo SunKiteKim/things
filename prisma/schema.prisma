@@ -21,6 +21,8 @@ model User {
   addressDetail String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  recoveryCodes AdminRecoveryCode[]
+  memberRecoveryCodes MemberRecoveryCode[]
   orders        Order[]
   updatedProducts Product[] @relation("ProductUpdatedBy")
 }
@@ -44,6 +46,7 @@ model Product {
   price              Int
   originalPrice      Int?
   discountRate       Int                  @default(0)
+  onePlusOne         Boolean              @default(false)
   stock              Int                  @default(10)
   imageUrl           String
   gallery            String               @default("[]")
@@ -100,6 +103,7 @@ model Coupon {
   discountType   String
   discountValue  Int
   minOrderAmount Int      @default(0)
+  minQuantity    Int      @default(0)
   maxUses        Int?
   usedCount      Int      @default(0)
   startAt        DateTime
@@ -140,5 +144,28 @@ model OrderItem {
   name      String
   price     Int
   quantity  Int
+  freeQuantity Int @default(0)
   imageUrl  String
+}
+
+model AdminRecoveryCode {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId])
+}
+
+model MemberRecoveryCode {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId])
 }

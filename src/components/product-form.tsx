@@ -1,27 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ProductImagePicker } from "@/components/product-image-picker";
 import type { Category, Product } from "@prisma/client";
 import { createProduct, updateProduct } from "@/actions/products";
 import { discountedPrice, formatDateTime, formatPrice } from "@/lib/utils";
-
-const THUMB_SIZE = 550;
-
-async function resizeThumbnail(file: File) {
-  const bitmap = await createImageBitmap(file);
-  const canvas = document.createElement("canvas");
-  canvas.width = THUMB_SIZE;
-  canvas.height = THUMB_SIZE;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return file;
-  const scale = Math.max(THUMB_SIZE / bitmap.width, THUMB_SIZE / bitmap.height);
-  const width = bitmap.width * scale;
-  const height = bitmap.height * scale;
-  ctx.drawImage(bitmap, (THUMB_SIZE - width) / 2, (THUMB_SIZE - height) / 2, width, height);
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
-  if (!blob) return file;
-  return new File([blob], "thumbnail.jpg", { type: "image/jpeg" });
-}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -41,11 +24,11 @@ export function ProductForm({
 }) {
   const [salePrice, setSalePrice] = useState(product?.originalPrice ?? product?.price ?? 0);
   const [rate, setRate] = useState(product?.discountRate ?? 0);
-  const [preview, setPreview] = useState(product?.imageUrl ?? "");
+  const [imageBusy, setImageBusy] = useState(false);
   const sale = useMemo(() => discountedPrice(salePrice, rate), [salePrice, rate]);
 
   return (
-    <form action={product ? updateProduct : createProduct} className="mt-8 grid max-w-3xl gap-5">
+    <form onSubmit={event => { if (imageBusy) event.preventDefault(); }} action={product ? updateProduct : createProduct} className="mt-8 grid max-w-3xl gap-5">
       {product ? <input type="hidden" name="id" value={product.id} /> : null}
       <Field label="상품번호">
         <input className="field bg-surface" name="idDisplay" value={product?.id ?? "저장 시 자동 발급 (prd0001)"} readOnly />
@@ -87,34 +70,12 @@ export function ProductForm({
           <span className="text-sm text-muted">%</span>
         </div>
       </Field>
+      <Field label="1+1 할인"><label><input type="checkbox" name="onePlusOne" defaultChecked={product?.onePlusOne ?? false} /> 같은 상품 1개 증정 옵션 허용</label></Field>
       <Field label="할인가">
         <input className="field bg-surface" value={formatPrice(sale)} readOnly />
       </Field>
       <Field label="썸네일">
-        <div className="space-y-3">
-          <input
-            className="field"
-            name="thumbnail"
-            type="file"
-            accept="image/*"
-            required={!product}
-            onChange={async (event) => {
-              const input = event.currentTarget;
-              const file = input.files?.[0];
-              if (!file) return;
-              const resized = await resizeThumbnail(file);
-              const dt = new DataTransfer();
-              dt.items.add(resized);
-              input.files = dt.files;
-              setPreview(URL.createObjectURL(resized));
-            }}
-          />
-          <p className="text-sm text-muted">550×550 정사각으로 저장됩니다.</p>
-          {preview ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={preview} alt="썸네일 미리보기" width={160} height={160} className="h-40 w-40 object-cover" />
-          ) : null}
-        </div>
+        <ProductImagePicker initialImage={product?.imageUrl} onBusy={setImageBusy} />
       </Field>
       <Field label="설명">
         <textarea className="field min-h-32" name="description" defaultValue={product?.description} />
@@ -150,7 +111,7 @@ export function ProductForm({
       ) : null}
       <div className="admin-row">
         <span />
-        <button className="btn w-fit">{product ? "상품 수정" : "상품 등록"}</button>
+        <button disabled={imageBusy} className="btn w-fit disabled:opacity-50">{product ? "상품 수정" : "상품 등록"}</button>
       </div>
     </form>
   );

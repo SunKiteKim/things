@@ -20,6 +20,7 @@ export default async function CouponsAdminPage() {
         </select>
         <input className="field" name="discountValue" type="number" placeholder="할인값" required />
         <input className="field" name="minOrderAmount" type="number" placeholder="최소 주문금액" defaultValue="0" />
+        <label>살수록 할인 최소 수량 (0: 제한 없음)<input className="field" name="minQuantity" type="number" min={0} step={1} defaultValue={0} /></label>
         <input className="field" name="maxUses" type="number" placeholder="최대 사용 횟수" />
         <input className="field" name="startAt" type="datetime-local" required />
         <input className="field" name="endAt" type="datetime-local" required />
@@ -40,6 +41,7 @@ export default async function CouponsAdminPage() {
             </select>
             <input className="field" name="discountValue" type="number" defaultValue={coupon.discountValue} />
             <input className="field" name="minOrderAmount" type="number" defaultValue={coupon.minOrderAmount} />
+            <label>살수록 할인 최소 수량<input className="field" name="minQuantity" type="number" min={0} step={1} defaultValue={coupon.minQuantity} /></label>
             <input className="field" name="maxUses" type="number" defaultValue={coupon.maxUses ?? 0} />
             <input className="field" name="startAt" type="datetime-local" defaultValue={localInput(coupon.startAt)} />
             <input className="field" name="endAt" type="datetime-local" defaultValue={localInput(coupon.endAt)} />

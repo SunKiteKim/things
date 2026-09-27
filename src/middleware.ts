@@ -61,11 +61,7 @@ export async function middleware(request: NextRequest) {
   requestHeaders.set("x-pathname", pathname);
 
   if (pathname.startsWith("/admin")) {
-    if (pathname === "/admin/login") {
-      if (token?.role === "ADMIN" && token.portal === "admin") {
-        const home = onAdminHost ? new URL("/", request.url) : new URL("/admin", request.url);
-        return NextResponse.redirect(home);
-      }
+    if (pathname === "/admin/login" || pathname === "/admin/login/recovery") {
       if (pathname !== request.nextUrl.pathname) {
         const url = request.nextUrl.clone();
         url.pathname = pathname;

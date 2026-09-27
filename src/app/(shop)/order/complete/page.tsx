@@ -28,7 +28,7 @@ export default async function OrderCompletePage({
       <ul className="mt-8 space-y-2 text-sm text-muted">
         {order.items.map((item) => (
           <li key={item.id}>
-            <span className="product-name">{item.name}</span> × {item.quantity}
+            <span className="product-name">{item.name}</span> × {item.quantity}{item.freeQuantity > 0 ? ` + 1+1 증정 ${item.freeQuantity}개 (총 ${item.quantity + item.freeQuantity}개)` : ""}
           </li>
         ))}
       </ul>

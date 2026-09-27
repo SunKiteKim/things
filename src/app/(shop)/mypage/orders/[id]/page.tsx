@@ -35,7 +35,7 @@ export default async function MyOrderDetailPage({
             <div className="text-sm">
               <p className="product-name">{item.name}</p>
               <p className="text-muted">
-                {formatPrice(item.price)} × {item.quantity}
+                {formatPrice(item.price)} × {item.quantity}{item.freeQuantity > 0 ? ` + 1+1 증정 ${item.freeQuantity}개 (총 ${item.quantity + item.freeQuantity}개)` : ""}
               </p>
             </div>
           </div>

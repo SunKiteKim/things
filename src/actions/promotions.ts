@@ -17,8 +17,21 @@ function bool(formData: FormData, key: string) {
   return formData.get(key) === "on" || formData.get(key) === "true";
 }
 
+
+function validateCoupon(formData: FormData) {
+  const type = text(formData, "discountType");
+  const value = num(formData, "discountValue");
+  const minimum = num(formData, "minQuantity");
+  const amount = num(formData, "minOrderAmount");
+  const maxUses = num(formData, "maxUses");
+  const start = new Date(text(formData, "startAt"));
+  const end = new Date(text(formData, "endAt"));
+  if (!["PERCENT", "AMOUNT"].includes(type) || !Number.isSafeInteger(value) || value <= 0 || (type === "PERCENT" && value > 100) || ![minimum, amount, maxUses].every(n => Number.isSafeInteger(n) && n >= 0) || !Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end < start) throw new Error("쿠폰의 할인값, 최소 수량·금액, 사용 기간을 확인해 주세요.");
+}
+
 export async function createCoupon(formData: FormData) {
   if (!(await requireAdmin())) return;
+  validateCoupon(formData);
   const code = text(formData, "code").toUpperCase();
   if (!code) return;
   await prisma.coupon.create({
@@ -28,6 +41,7 @@ export async function createCoupon(formData: FormData) {
       discountType: text(formData, "discountType") || "PERCENT",
       discountValue: num(formData, "discountValue"),
       minOrderAmount: num(formData, "minOrderAmount"),
+      minQuantity: num(formData, "minQuantity"),
       maxUses: num(formData, "maxUses") || null,
       startAt: new Date(text(formData, "startAt") || Date.now()),
       endAt: new Date(text(formData, "endAt") || Date.now()),
@@ -40,6 +54,7 @@ export async function createCoupon(formData: FormData) {
 
 export async function updateCoupon(formData: FormData) {
   if (!(await requireAdmin())) return;
+  validateCoupon(formData);
   const id = text(formData, "id");
   await prisma.coupon.update({
     where: { id },
@@ -49,6 +64,7 @@ export async function updateCoupon(formData: FormData) {
       discountType: text(formData, "discountType") || "PERCENT",
       discountValue: num(formData, "discountValue"),
       minOrderAmount: num(formData, "minOrderAmount"),
+      minQuantity: num(formData, "minQuantity"),
       maxUses: num(formData, "maxUses") || null,
       startAt: new Date(text(formData, "startAt")),
       endAt: new Date(text(formData, "endAt")),

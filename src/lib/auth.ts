@@ -1,9 +1,11 @@
+import { createHash } from "node:crypto";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { compare } from "bcryptjs";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
+import { SITE_HOST } from "@/lib/site";
 import { LIMITS } from "@/lib/utils";
 
 const providers: NextAuthOptions["providers"] = [
@@ -31,6 +33,7 @@ const providers: NextAuthOptions["providers"] = [
         name: user.name,
         role: user.role,
         portal,
+        passwordVersion: createHash("sha256").update(user.passwordHash).digest("hex"),
       };
     },
   }),
@@ -48,6 +51,18 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
+  cookies: process.env.VERCEL_ENV === "production" ? {
+    sessionToken: {
+      name: "__Secure-next-auth.session-token",
+      options: {
+        domain: `.${SITE_HOST}`,
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: true,
+      },
+    },
+  } : undefined,
   pages: {
     signIn: "/login",
   },
@@ -82,6 +97,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = user.role ?? "MEMBER";
         token.portal = user.portal ?? "shop";
+        token.passwordVersion = user.passwordVersion;
       }
       if (account && account.provider !== "credentials" && user.email) {
         const dbUser = await prisma.user.findUnique({
@@ -91,6 +107,14 @@ export const authOptions: NextAuthOptions = {
           token.id = dbUser.id;
           token.role = dbUser.role;
           token.portal = "shop";
+          token.passwordVersion = dbUser.passwordHash ? createHash("sha256").update(dbUser.passwordHash).digest("hex") : "oauth";
+        }
+      }
+      if (token.role === "ADMIN" || token.role === "MEMBER") {
+        const current = await prisma.user.findUnique({ where: { id: String(token.id) } });
+        const version = current?.passwordHash ? createHash("sha256").update(current.passwordHash).digest("hex") : current?.provider !== "credentials" && current?.role === "MEMBER" ? "oauth" : null;
+        if (!current || current.role !== token.role || !version || token.passwordVersion !== version) {
+          token.id = ""; token.role = "REVOKED"; token.portal = "";
         }
       }
       return token;

@@ -47,7 +47,7 @@ export function OAuthButtons() {
         type="button"
         className="gsi-material-button mx-auto"
         disabled={providers !== null && !googleReady}
-        onClick={() => signIn("google", { callbackUrl: "/" })}
+        onClick={() => signIn("google", { callbackUrl: "/mypage" })}
       >
         <div className="gsi-material-button-state" />
         <div className="gsi-material-button-content-wrapper">

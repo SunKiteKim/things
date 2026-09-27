@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { updateProfile } from "@/actions/members";
 import { FormField } from "@/components/form-field";
 import { PostcodeAddress } from "@/components/postcode-address";
+import { WithdrawalButton } from "@/components/withdrawal-button";
 
 export default async function MyProfilePage() {
   const session = await requireUser();
@@ -14,9 +15,6 @@ export default async function MyProfilePage() {
   return (
     <div>
       <h1 className="display text-5xl">회원정보</h1>
-      <p className="mt-3 text-sm text-muted">
-        {user.email} · {user.provider === "credentials" ? "일반 가입" : `${user.provider} 연동`}
-      </p>
       <form action={updateProfile} className="mt-10 max-w-xl grid gap-5">
         <FormField label="이름" htmlFor="profile-name">
           <input id="profile-name" className="field" name="name" defaultValue={user.name} />
@@ -34,7 +32,10 @@ export default async function MyProfilePage() {
         />
         <div className="form-row">
           <span />
-          <button className="btn w-fit">저장</button>
+          <div className="flex flex-wrap gap-3">
+            <button className="btn w-fit">저장</button>
+            <WithdrawalButton />
+          </div>
         </div>
       </form>
     </div>

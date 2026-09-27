@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { getCart } from "@/lib/cart";
+import { prisma } from "@/lib/prisma";
 import { Logo } from "@/components/logo";
 import { LogoutButton } from "@/components/logout-button";
 
@@ -9,6 +10,12 @@ export async function ShopHeader() {
   const count = cart.reduce((sum, line) => sum + line.quantity, 0);
   const shopUser =
     session?.user && session.user.portal !== "admin" && session.user.role !== "ADMIN";
+  const member = shopUser
+    ? await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { name: true },
+      })
+    : null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-paper">
@@ -26,13 +33,24 @@ export async function ShopHeader() {
           </Link>
         </nav>
         <div className="flex items-center gap-5">
-          <form action="/search" className="hidden w-40 shrink-0 sm:block">
-            <input
-              name="q"
-              placeholder="검색"
-              className="w-full border-0 border-b border-line bg-transparent py-1 outline-none placeholder:text-muted"
-            />
-          </form>
+          <div className="hidden min-w-10 items-center justify-end gap-4 sm:flex">
+            {member ? (
+              <Link href="/mypage" className="whitespace-nowrap text-sm font-normal hover:opacity-60">
+                &lsquo;{member.name}&rsquo; 님
+              </Link>
+            ) : null}
+            <Link
+              href="/search"
+              aria-label="검색"
+              title="검색"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full transition hover:bg-surface"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <circle cx="11" cy="11" r="6.5" />
+                <path d="m16 16 4 4" />
+              </svg>
+            </Link>
+          </div>
           <div className="utility-links -mt-1 flex items-center text-[0.78rem] font-normal">
             {shopUser ? (
               <>

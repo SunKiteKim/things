@@ -41,7 +41,7 @@ export default async function ProductPage({
         </p>
         <p className="mt-8 max-w-md text-sm leading-7 text-muted">{product.description}</p>
         <p className="mt-6 text-sm">재고 {product.stock}개</p>
-        <AddToCart productId={product.id} stock={product.stock} />
+        <AddToCart productId={product.id} stock={product.stock} onePlusOne={product.onePlusOne} />
       </div>
     </div>
   );

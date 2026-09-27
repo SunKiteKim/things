@@ -24,7 +24,7 @@ export default async function AdminOrderDetailPage({
       <ul className="mt-8 space-y-2 text-sm">
         {order.items.map((item) => (
           <li key={item.id}>
-            <span className="product-name">{item.name}</span> × {item.quantity} · {formatPrice(item.price * item.quantity)}
+            <span className="product-name">{item.name}</span> × {item.quantity}{item.freeQuantity > 0 ? ` + 1+1 증정 ${item.freeQuantity}개 (총 ${item.quantity + item.freeQuantity}개)` : ""} · {formatPrice(item.price * item.quantity)}
           </li>
         ))}
       </ul>

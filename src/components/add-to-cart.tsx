@@ -4,20 +4,25 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { addToCart, buyNow } from "@/actions/commerce";
 
-export function AddToCart({ productId, stock }: { productId: string; stock: number }) {
+export function AddToCart({ productId, stock, onePlusOne = false }: { productId: string; stock: number; onePlusOne?: boolean }) {
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [pending, start] = useTransition();
-  const max = Math.max(stock, 0);
+  const [bundle, setBundle] = useState(false);
+  const [error, setError] = useState("");
+  const max = Math.max(Math.floor(stock / (bundle ? 2 : 1)), 0);
   const soldOut = max <= 0;
 
   function changeQty(next: number) {
     if (soldOut) return;
-    setQuantity(Math.min(max, Math.max(1, next)));
+    setQuantity(Math.min(max, Math.max(1, Math.floor(next))));
   }
 
   return (
     <div className="mt-8 max-w-sm space-y-5">
+      {onePlusOne && <label>구매 옵션<select className="field" value={bundle ? "bundle" : "single"} disabled={pending} onChange={event => { setBundle(event.target.value === "bundle"); setQuantity(1); }}><option value="single">일반 구매</option><option value="bundle" disabled={stock < 2}>1+1 할인 · 같은 상품 1개 증정</option></select></label>}
+      {bundle && <p>{quantity}세트 · 총 {quantity * 2}개 수령</p>}
+      {error && <p role="alert">{error}</p>}
       <div className="form-row">
         <span>수량</span>
         <div className="qty-box">
@@ -44,7 +49,8 @@ export function AddToCart({ productId, stock }: { productId: string; stock: numb
           disabled={soldOut || pending}
           onClick={() =>
             start(async () => {
-              await addToCart(productId, quantity);
+              const result = await addToCart(productId, quantity, bundle);
+              setError(result.error ?? "");
               router.refresh();
             })
           }
@@ -57,8 +63,8 @@ export function AddToCart({ productId, stock }: { productId: string; stock: numb
           disabled={soldOut || pending}
           onClick={() =>
             start(async () => {
-              const result = await buyNow(productId, quantity);
-              if (result && "error" in result && result.error) return;
+              const result = await buyNow(productId, quantity, bundle);
+              if (result?.error) setError(result.error);
             })
           }
         >
