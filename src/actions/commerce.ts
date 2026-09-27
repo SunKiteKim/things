@@ -53,14 +53,15 @@ export async function clearCart() {
 }
 
 export async function applyCoupon(code: string) {
+  const session = await requireUser();
   const cart = await getCart();
   const products = await prisma.product.findMany({ where: { id: { in: cart.map(line => line.productId) } } });
   const lines = cart.flatMap((line) => {
     const product = products.find((item) => item.id === line.productId && item.isPublished);
-    return product ? [{ productId: product.id, amount: product.price * line.quantity, quantity: line.quantity }] : [];
+    return product ? [{ productId: product.id, categoryId: product.categoryId, amount: product.price * line.quantity, quantity: line.quantity }] : [];
   });
-  const coupon = await prisma.coupon.findUnique({ where: { code: code.trim().toUpperCase() } });
-  const discount = coupon ? couponDiscountForLines(coupon, lines) : null;
+  const coupon = await prisma.coupon.findUnique({ where: { code: code.trim().toUpperCase() }, include: { issues: true } });
+  const discount = coupon ? couponDiscountForLines(coupon, lines, new Date(), session?.user.id) : null;
   if (discount === null) return { error: "쿠폰의 구매 수량·금액 또는 사용 조건을 확인해 주세요." };
   return { ok: true, discount, code: coupon!.code, name: coupon!.name };
 }
@@ -102,12 +103,13 @@ export async function createPendingOrder(formData: FormData) {
   const couponCode = String(formData.get("couponCode") ?? await getSelectedCoupon()).trim().toUpperCase();
   let discount = 0;
   if (couponCode) {
-    const coupon = await prisma.coupon.findUnique({ where: { code: couponCode } });
+    const coupon = await prisma.coupon.findUnique({ where: { code: couponCode }, include: { issues: true } });
     const applied = coupon ? couponDiscountForLines(coupon, items.map((row) => ({
       productId: row.product.id,
+      categoryId: row.product.categoryId,
       amount: row.product.price * row.quantity,
       quantity: row.quantity,
-    }))) : null;
+    })), new Date(), session.user.id) : null;
     if (applied === null) return { error: "쿠폰의 구매 수량·금액 또는 사용 조건을 확인해 주세요." };
     discount = applied;
   }

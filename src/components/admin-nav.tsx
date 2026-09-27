@@ -7,7 +7,7 @@ const NAV = [
   { href: "/admin/members", label: "회원관리" },
   { href: "/admin/display/banners", label: "배너관리" },
   { href: "/admin/display/categories", label: "카테고리 관리" },
-  { href: "/admin/products", label: "상품 등록" },
+  { href: "/admin/products", label: "상품관리" },
   { href: "/admin/products/display", label: "상품전시관리" },
   { href: "/admin/promotions/coupons", label: "쿠폰관리" },
   { href: "/admin/promotions/exhibitions", label: "기획전 관리" },
@@ -16,7 +16,7 @@ const NAV = [
 
 export function AdminNav() {
   return (
-    <aside className="border-r border-line bg-surface">
+    <aside className="border-r border-line bg-white md:sticky md:top-0 md:h-screen">
       <div className="px-6 py-6">
         <Logo href="/admin" className="text-xl" />
         <p className="mt-2 text-[0.68rem] uppercase tracking-[0.2em] text-muted">Admin</p>
@@ -26,7 +26,7 @@ export function AdminNav() {
           <Link
             key={item.href}
             href={item.href}
-            className="rounded-sm px-3 py-2 hover:bg-paper"
+            className="rounded-md px-3 py-2.5 text-slate-700 hover:bg-slate-100"
           >
             {item.label}
           </Link>

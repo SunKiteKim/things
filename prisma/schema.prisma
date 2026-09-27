@@ -8,59 +8,61 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  name          String
-  phone         String?
-  passwordHash  String?
-  provider      String   @default("credentials")
-  providerId    String?
-  role          String   @default("MEMBER")
-  zipCode       String?
-  address       String?
-  addressDetail String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  recoveryCodes AdminRecoveryCode[]
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  name                String
+  phone               String?
+  passwordHash        String?
+  provider            String               @default("credentials")
+  providerId          String?
+  role                String               @default("MEMBER")
+  zipCode             String?
+  address             String?
+  addressDetail       String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  recoveryCodes       AdminRecoveryCode[]
   memberRecoveryCodes MemberRecoveryCode[]
-  orders        Order[]
-  updatedProducts Product[] @relation("ProductUpdatedBy")
+  orders              Order[]
+  updatedProducts     Product[]            @relation("ProductUpdatedBy")
+  couponIssues        CouponIssue[]
 }
 
 model Category {
-  id          String    @id @default(cuid())
-  name        String
-  slug        String    @unique
-  description String    @default("")
-  imageUrl    String    @default("")
-  sortOrder   Int       @default(0)
-  isVisible   Boolean   @default(true)
-  products    Product[]
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  description  String        @default("")
+  imageUrl     String        @default("")
+  sortOrder    Int           @default(0)
+  isVisible    Boolean       @default(true)
+  products     Product[]
+  couponIssues CouponIssue[]
 }
 
 model Product {
-  id                 String               @id
+  id                 String              @id
   name               String
-  slug               String               @unique
-  description        String               @default("")
+  slug               String              @unique
+  description        String              @default("")
   price              Int
   originalPrice      Int?
-  discountRate       Int                  @default(0)
-  onePlusOne         Boolean              @default(false)
-  stock              Int                  @default(10)
+  discountRate       Int                 @default(0)
+  onePlusOne         Boolean             @default(false)
+  stock              Int                 @default(10)
   imageUrl           String
-  gallery            String               @default("[]")
-  isPublished        Boolean              @default(true)
-  isFeatured         Boolean              @default(false)
-  sortOrder          Int                  @default(0)
+  gallery            String              @default("[]")
+  isPublished        Boolean             @default(true)
+  isFeatured         Boolean             @default(false)
+  sortOrder          Int                 @default(0)
   categoryId         String
-  category           Category             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  registeredAt       DateTime             @default(now())
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
+  category           Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  registeredAt       DateTime            @default(now())
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
   updatedById        String?
-  updatedByName      String               @default("")
-  updatedBy          User?                @relation("ProductUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedByName      String              @default("")
+  updatedBy          User?               @relation("ProductUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   orderItems         OrderItem[]
   exhibitionProducts ExhibitionProduct[]
 }
@@ -76,14 +78,14 @@ model Banner {
 }
 
 model Exhibition {
-  id          String               @id @default(cuid())
+  id          String              @id @default(cuid())
   title       String
-  slug        String               @unique
-  description String               @default("")
+  slug        String              @unique
+  description String              @default("")
   imageUrl    String
   startAt     DateTime
   endAt       DateTime
-  isActive    Boolean              @default(true)
+  isActive    Boolean             @default(true)
   products    ExhibitionProduct[]
 }
 
@@ -97,23 +99,39 @@ model ExhibitionProduct {
 }
 
 model Coupon {
-  id             String   @id @default(cuid())
-  code           String   @unique
-  name           String
-  scope          String   @default("CART")
-  includedProductIds String @default("[]")
-  excludedProductIds String @default("[]")
-  discountType   String
-  discountValue  Int
-  minOrderAmount Int      @default(0)
-  minQuantity    Int      @default(0)
-  maxUses        Int?
-  usedCount      Int      @default(0)
-  startAt        DateTime
-  endAt          DateTime
-  isActive       Boolean  @default(true)
-  isPaused       Boolean  @default(false)
-  createdAt      DateTime @default(now())
+  id                 String        @id @default(cuid())
+  code               String        @unique
+  name               String
+  scope              String        @default("CART")
+  includedProductIds String        @default("[]")
+  excludedProductIds String        @default("[]")
+  discountType       String
+  discountValue      Int
+  minOrderAmount     Int           @default(0)
+  minQuantity        Int           @default(0)
+  maxUses            Int?
+  usedCount          Int           @default(0)
+  startAt            DateTime
+  endAt              DateTime
+  isActive           Boolean       @default(true)
+  isPaused           Boolean       @default(false)
+  createdAt          DateTime      @default(now())
+  issues             CouponIssue[]
+}
+
+model CouponIssue {
+  id         String    @id @default(cuid())
+  couponId   String
+  targetType String
+  userId     String?
+  categoryId String?
+  createdAt  DateTime  @default(now())
+  coupon     Coupon    @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([couponId, userId])
+  @@unique([couponId, categoryId])
 }
 
 model Order {
@@ -140,36 +158,38 @@ model Order {
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-  name      String
-  price     Int
-  quantity  Int
-  freeQuantity Int @default(0)
-  imageUrl  String
+  id           String  @id @default(cuid())
+  orderId      String
+  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product @relation(fields: [productId], references: [id])
+  name         String
+  price        Int
+  quantity     Int
+  freeQuantity Int     @default(0)
+  imageUrl     String
 }
 
 model AdminRecoveryCode {
-  id        String   @id @default(cuid())
-  tokenHash String   @unique
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
+
   @@index([userId])
 }
 
 model MemberRecoveryCode {
-  id        String   @id @default(cuid())
-  tokenHash String   @unique
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
+
   @@index([userId])
 }

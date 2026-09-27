@@ -19,10 +19,10 @@ export default async function EditProductPage({
     <div>
       <p className="text-sm">
         <Link href="/admin/products" className="text-muted hover:text-ink">
-          상품 등록
+          상품 관리
         </Link>
       </p>
-      <h1 className="display mt-3 text-4xl">상품 수정</h1>
+      <h1 className="display mt-3 text-3xl">상품 수정</h1>
       <ProductForm product={product} categories={categories} />
     </div>
   );

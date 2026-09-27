@@ -6,6 +6,7 @@ import { getCart, getSelectedCoupon } from "@/lib/cart";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import { CartControls } from "@/components/cart-controls";
+import { requireUser } from "@/lib/auth";
 
 export default async function CartPage() {
   const cart = await getCart();
@@ -21,12 +22,14 @@ export default async function CartPage() {
     .filter((row): row is NonNullable<typeof row> => !!row);
   const total = rows.reduce((sum, row) => sum + row.product.price * row.quantity, 0);
 
-  const couponLines = rows.map((row) => ({ productId: row.product.id, amount: row.product.price * row.quantity, quantity: row.quantity }));
-  const coupons = await prisma.coupon.findMany({ where: { isActive: true, isPaused: false, startAt: { lte: new Date() }, endAt: { gte: new Date() } } });
+  const session = await requireUser();
+  const couponLines = rows.map((row) => ({ productId: row.product.id, categoryId: row.product.categoryId, amount: row.product.price * row.quantity, quantity: row.quantity }));
+  const coupons = await prisma.coupon.findMany({ where: { isActive: true, isPaused: false, startAt: { lte: new Date() }, endAt: { gte: new Date() } }, include: { issues: true } });
+  const visibleCoupons = coupons.filter((coupon) => coupon.issues.length === 0 || coupon.issues.some((issue) => issue.targetType === "CATEGORY" || issue.userId === session?.user.id));
   const code = await getSelectedCoupon();
-  const selectedCoupon = coupons.find(coupon => coupon.code === code);
-  const discount = selectedCoupon ? couponDiscountForLines(selectedCoupon, couponLines) : null;
-  const options = coupons.map(coupon => ({ code: coupon.code, eligible: couponDiscountForLines(coupon, couponLines) !== null, label: `[${coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지할인" : "장바구니"}] ` + coupon.name + (coupon.scope === "MULTI_CART" ? " · 서로 다른 상품 2종 이상" : coupon.minQuantity > 0 ? ' · ' + coupon.minQuantity + '개 이상' : '') + ' · ' + coupon.discountValue + (coupon.discountType === "PERCENT" ? "%" : "원") + ' 할인' }));
+  const selectedCoupon = visibleCoupons.find(coupon => coupon.code === code);
+  const discount = selectedCoupon ? couponDiscountForLines(selectedCoupon, couponLines, new Date(), session?.user.id) : null;
+  const options = visibleCoupons.map(coupon => ({ code: coupon.code, eligible: couponDiscountForLines(coupon, couponLines, new Date(), session?.user.id) !== null, label: `[${coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지할인" : "장바구니"}] ` + coupon.name + (coupon.scope === "MULTI_CART" ? " · 서로 다른 상품 2종 이상" : coupon.minQuantity > 0 ? ' · ' + coupon.minQuantity + '개 이상' : '') + ' · ' + coupon.discountValue + (coupon.discountType === "PERCENT" ? "%" : "원") + ' 할인' }));
   return (
     <div>
       <h1 className="display text-5xl">장바구니</h1>

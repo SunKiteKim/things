@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { createMember, deleteMember } from "@/actions/members";
 import { LIMITS, formatDate, maskEmail, maskPersonalInfo, maskPhone } from "@/lib/utils";
+import { AdminCreateModal } from "@/components/admin-create-modal";
 
 export default async function MembersAdminPage() {
   const members = await prisma.user.findMany({ orderBy: { createdAt: "desc" } });
@@ -9,17 +10,15 @@ export default async function MembersAdminPage() {
 
   return (
     <div>
-      <h1 className="display text-4xl">회원관리</h1>
-      <p className="mt-2 text-sm text-muted">
-        {count} / {LIMITS.MAX_MEMBERS}명
-      </p>
-      <form action={createMember} className="mt-8 grid gap-3 border border-line bg-surface p-6 md:grid-cols-5">
-        <input className="field" name="name" placeholder="이름" required />
-        <input className="field" name="email" type="email" placeholder="이메일" required />
-        <input className="field" name="phone" placeholder="휴대폰" />
-        <input className="field" name="password" placeholder="임시 비밀번호" required />
-        <button className="btn">회원 등록</button>
-      </form>
+      <div className="flex items-end justify-between gap-4">
+        <div><h1 className="display text-3xl">회원관리</h1><p className="mt-2 text-sm text-muted">{count} / {LIMITS.MAX_MEMBERS}명</p></div>
+        <AdminCreateModal title="회원 등록" triggerLabel="회원 등록" action={createMember}>
+          <label className="text-sm font-medium">이름<input className="field mt-2" name="name" required /></label>
+          <label className="text-sm font-medium">이메일<input className="field mt-2" name="email" type="email" required /></label>
+          <label className="text-sm font-medium">휴대폰<input className="field mt-2" name="phone" /></label>
+          <label className="text-sm font-medium">임시 비밀번호<input className="field mt-2" name="password" type="password" required /></label>
+        </AdminCreateModal>
+      </div>
       <div className="mt-8 overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>

@@ -1,27 +1,24 @@
 import { prisma } from "@/lib/prisma";
 import { createCategory, deleteCategory, updateCategory } from "@/actions/display";
 import { LIMITS } from "@/lib/utils";
+import { AdminCreateModal } from "@/components/admin-create-modal";
 
 export default async function CategoriesAdminPage() {
   const categories = await prisma.category.findMany({ orderBy: { sortOrder: "asc" } });
 
   return (
     <div>
-      <h1 className="display text-4xl">카테고리 관리</h1>
-      <p className="mt-2 text-sm text-muted">
-        {categories.length} / {LIMITS.MAX_CATEGORIES}개
-      </p>
-      <form action={createCategory} className="mt-8 grid gap-3 border border-line bg-surface p-6">
-        <input className="field" name="name" placeholder="카테고리명" required />
-        <input className="field" name="slug" placeholder="slug" />
-        <input className="field" name="description" placeholder="설명" />
-        <input className="field" name="imageUrl" placeholder="이미지 URL" />
-        <input className="field" name="sortOrder" type="number" defaultValue={categories.length + 1} />
-        <label className="text-sm">
-          <input type="checkbox" name="isVisible" defaultChecked /> 전시
-        </label>
-        <button className="btn w-fit">카테고리 등록</button>
-      </form>
+      <div className="flex items-end justify-between gap-4">
+        <div><h1 className="display text-3xl">카테고리 관리</h1><p className="mt-2 text-sm text-muted">{categories.length} / {LIMITS.MAX_CATEGORIES}개</p></div>
+        <AdminCreateModal title="카테고리 등록" triggerLabel="카테고리 등록" action={createCategory}>
+          <label className="text-sm font-medium">카테고리명<input className="field mt-2" name="name" required /></label>
+          <label className="text-sm font-medium">슬러그<input className="field mt-2" name="slug" /></label>
+          <label className="text-sm font-medium">설명<input className="field mt-2" name="description" /></label>
+          <label className="text-sm font-medium">이미지 URL<input className="field mt-2" name="imageUrl" /></label>
+          <label className="text-sm font-medium">정렬 순서<input className="field mt-2" name="sortOrder" type="number" defaultValue={categories.length + 1} /></label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="isVisible" defaultChecked /> 전시</label>
+        </AdminCreateModal>
+      </div>
       <div className="mt-8 space-y-6">
         {categories.map((category) => (
           <form key={category.id} action={updateCategory} className="grid gap-3 border border-line p-5">

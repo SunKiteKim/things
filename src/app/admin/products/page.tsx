@@ -2,25 +2,25 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { deleteProduct } from "@/actions/products";
 import { LIMITS, discountedPrice, formatDate, formatPrice } from "@/lib/utils";
+import { AdminCreateModal } from "@/components/admin-create-modal";
+import { ProductForm } from "@/components/product-form";
 
 export default async function ProductsAdminPage() {
-  const products = await prisma.product.findMany({
-    include: { category: true },
-    orderBy: { id: "asc" },
-  });
+  const [products, categories] = await Promise.all([
+    prisma.product.findMany({ include: { category: true }, orderBy: { id: "asc" } }),
+    prisma.category.findMany({ orderBy: { sortOrder: "asc" } }),
+  ]);
 
   return (
     <div>
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="display text-4xl">상품 등록</h1>
+          <h1 className="display text-3xl">상품 관리</h1>
           <p className="mt-2 text-sm text-muted">
             {products.length} / {LIMITS.MAX_PRODUCTS}개
           </p>
         </div>
-        <Link href="/admin/products/new" className="btn">
-          새 상품
-        </Link>
+        <AdminCreateModal title="상품 등록" triggerLabel="상품 등록" wide><ProductForm categories={categories} /></AdminCreateModal>
       </div>
       <table className="mt-8 w-full text-left text-sm">
         <thead>

@@ -18,9 +18,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!session) redirect("/admin/login");
 
   return (
-    <div className="grid min-h-screen md:grid-cols-[240px_1fr]">
+    <div className="admin-shell grid min-h-screen bg-[#f5f6f8] md:grid-cols-[232px_1fr]">
       <AdminNav />
-      <div className="bg-paper px-8 py-10">{children}</div>
+      <main className="min-w-0 px-6 py-8 lg:px-10 lg:py-10">{children}</main>
     </div>
   );
 }

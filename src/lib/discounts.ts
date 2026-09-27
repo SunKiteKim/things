@@ -12,9 +12,10 @@ type CouponRule = {
   discountValue: number;
   includedProductIds: string;
   excludedProductIds: string;
+  issues?: { targetType: string; userId: string | null; categoryId: string | null }[];
 };
 
-type CouponLine = { productId: string; amount: number; quantity: number };
+type CouponLine = { productId: string; categoryId?: string; amount: number; quantity: number };
 
 function parseProductIds(value: string) {
   try {
@@ -30,10 +31,18 @@ export function couponDiscount(coupon: CouponRule, amount: number, quantity: num
   return Math.min(amount, coupon.discountType === "PERCENT" ? Math.floor(amount * coupon.discountValue / 100) : coupon.discountValue);
 }
 
-export function couponDiscountForLines(coupon: CouponRule, lines: CouponLine[], now = new Date()): number | null {
+export function couponDiscountForLines(coupon: CouponRule, lines: CouponLine[], now = new Date(), userId?: string): number | null {
   const included = new Set(parseProductIds(coupon.includedProductIds));
   const excluded = new Set(parseProductIds(coupon.excludedProductIds));
-  const eligibleLines = lines.filter((line) => (included.size === 0 || included.has(line.productId)) && !excluded.has(line.productId));
+  const issues = coupon.issues ?? [];
+  const userIssued = !!userId && issues.some((issue) => issue.targetType === "USER" && issue.userId === userId);
+  const issuedCategoryIds = new Set(issues.filter((issue) => issue.targetType === "CATEGORY" && issue.categoryId).map((issue) => issue.categoryId as string));
+  if (issues.length > 0 && !userIssued && issuedCategoryIds.size === 0) return null;
+  const eligibleLines = lines.filter((line) =>
+    (included.size === 0 || included.has(line.productId)) &&
+    !excluded.has(line.productId) &&
+    (issues.length === 0 || userIssued || (!!line.categoryId && issuedCategoryIds.has(line.categoryId))),
+  );
   if (coupon.scope === "MULTI_CART" && new Set(eligibleLines.map((line) => line.productId)).size < 2) return null;
   const amount = eligibleLines.reduce((sum, line) => sum + line.amount, 0);
   const quantity = eligibleLines.reduce((sum, line) => sum + line.quantity, 0);

@@ -117,6 +117,29 @@ export async function toggleCouponPause(formData: FormData) {
   revalidatePath("/checkout");
 }
 
+export async function issueCoupon(formData: FormData) {
+  if (!(await requireAdmin())) return;
+  const couponId = text(formData, "couponId");
+  const targetType = text(formData, "targetType");
+  const targetIds = [...new Set(formData.getAll("targetIds").map(String).filter(Boolean))];
+  if (!couponId || !["USER", "CATEGORY"].includes(targetType) || targetIds.length === 0) return;
+  const coupon = await prisma.coupon.findUnique({ where: { id: couponId }, select: { isActive: true, isPaused: true } });
+  if (!coupon?.isActive || coupon.isPaused) throw new Error("일시중지되었거나 사용할 수 없는 쿠폰은 발행할 수 없습니다.");
+  const validIds = targetType === "USER"
+    ? (await prisma.user.findMany({ where: { id: { in: targetIds }, role: "MEMBER" }, select: { id: true } })).map((row) => row.id)
+    : (await prisma.category.findMany({ where: { id: { in: targetIds } }, select: { id: true } })).map((row) => row.id);
+  await prisma.couponIssue.createMany({
+    data: validIds.map((targetId) => ({
+      couponId,
+      targetType,
+      userId: targetType === "USER" ? targetId : null,
+      categoryId: targetType === "CATEGORY" ? targetId : null,
+    })),
+    skipDuplicates: true,
+  });
+  revalidatePath("/admin/promotions/coupons");
+}
+
 export async function createExhibition(formData: FormData) {
   if (!(await requireAdmin())) return;
   const title = text(formData, "title");

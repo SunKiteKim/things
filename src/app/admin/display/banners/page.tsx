@@ -1,23 +1,23 @@
 import { prisma } from "@/lib/prisma";
 import { createBanner, deleteBanner, updateBanner } from "@/actions/display";
+import { AdminCreateModal } from "@/components/admin-create-modal";
 
 export default async function BannersAdminPage() {
   const banners = await prisma.banner.findMany({ orderBy: { sortOrder: "asc" } });
 
   return (
     <div>
-      <h1 className="display text-4xl">배너관리</h1>
-      <form action={createBanner} className="mt-8 grid gap-3 border border-line bg-surface p-6">
-        <input className="field" name="title" placeholder="제목" required />
-        <input className="field" name="subtitle" placeholder="부제" />
-        <input className="field" name="imageUrl" placeholder="이미지 URL" required />
-        <input className="field" name="href" placeholder="링크" defaultValue="/" />
-        <input className="field" name="sortOrder" type="number" placeholder="정렬" defaultValue="0" />
-        <label className="text-sm">
-          <input type="checkbox" name="isActive" defaultChecked /> 노출
-        </label>
-        <button className="btn w-fit">배너 등록</button>
-      </form>
+      <div className="flex items-end justify-between gap-4">
+        <h1 className="display text-3xl">배너관리</h1>
+        <AdminCreateModal title="배너 등록" triggerLabel="배너 등록" action={createBanner}>
+          <label className="text-sm font-medium">제목<input className="field mt-2" name="title" required /></label>
+          <label className="text-sm font-medium">부제<input className="field mt-2" name="subtitle" /></label>
+          <label className="text-sm font-medium">이미지 URL<input className="field mt-2" name="imageUrl" required /></label>
+          <label className="text-sm font-medium">연결 링크<input className="field mt-2" name="href" defaultValue="/" /></label>
+          <label className="text-sm font-medium">정렬 순서<input className="field mt-2" name="sortOrder" type="number" defaultValue="0" /></label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="isActive" defaultChecked /> 노출</label>
+        </AdminCreateModal>
+      </div>
       <div className="mt-8 space-y-6">
         {banners.map((banner) => (
           <form key={banner.id} action={updateBanner} className="grid gap-3 border border-line p-5">
