@@ -115,8 +115,8 @@ model Coupon {
 model Order {
   id             String      @id @default(cuid())
   orderNumber    String      @unique
-  userId         String?
-  user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId         String
+  user           User        @relation(fields: [userId], references: [id])
   status         String      @default("PENDING")
   totalAmount    Int
   discountAmount Int         @default(0)

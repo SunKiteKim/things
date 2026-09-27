@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { LIMITS } from "@/lib/utils";
 import { requireAdmin } from "@/lib/auth";
 import { getEmailFormatError, getPasswordError } from "@/lib/signup";
-import { normalizePhone } from "@/lib/member-recovery";
+import { normalizePhone } from "@/lib/phone";
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -22,7 +22,7 @@ export async function createMember(formData: FormData) {
   const email = text(formData, "email").toLowerCase();
   const name = text(formData, "name");
   const password = text(formData, "password");
-  const phone = text(formData, "phone");
+  const phone = normalizePhone(text(formData, "phone"));
   if (!name || getEmailFormatError(email) || getPasswordError(password)) return;
   const exists = await prisma.user.findUnique({ where: { email } });
   if (exists) return;
@@ -44,7 +44,7 @@ export async function updateMember(formData: FormData) {
   if (!(await requireAdmin())) return;
   const id = text(formData, "id");
   const name = text(formData, "name");
-  const phone = text(formData, "phone");
+  const phone = normalizePhone(text(formData, "phone"));
   const role = text(formData, "role") || "MEMBER";
   const password = text(formData, "password");
   if (!id || !name) return;
@@ -71,6 +71,7 @@ export async function deleteMember(formData: FormData) {
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) return;
   if (user.role === "ADMIN") return;
+  await prisma.order.deleteMany({ where: { userId: id } });
   await prisma.user.delete({ where: { id } });
   revalidatePath("/admin/members");
   return;
@@ -83,7 +84,7 @@ export async function updateProfile(formData: FormData) {
     where: { id: session.user.id },
     data: {
       name: text(formData, "name") || session.user.name || "회원",
-      phone: text(formData, "phone") || null,
+      phone: normalizePhone(text(formData, "phone")) || null,
       zipCode: text(formData, "zipCode") || null,
       address: text(formData, "address") || null,
       addressDetail: text(formData, "addressDetail") || null,
@@ -128,10 +129,23 @@ export async function withdrawMember(input: { email: string; phone: string }) {
     }
 
     await prisma.$transaction([
-      prisma.order.updateMany({ where: { userId: user.id }, data: { userId: null } }),
       prisma.adminRecoveryCode.deleteMany({ where: { userId: user.id } }),
       prisma.memberRecoveryCode.deleteMany({ where: { userId: user.id } }),
-      prisma.user.delete({ where: { id: user.id } }),
+      prisma.user.update({
+        where: { id: user.id },
+        data: {
+          email: `withdrawn-${user.id}@deleted.invalid`,
+          name: "탈퇴 회원",
+          phone: null,
+          passwordHash: null,
+          provider: "withdrawn",
+          providerId: null,
+          role: "WITHDRAWN",
+          zipCode: null,
+          address: null,
+          addressDetail: null,
+        },
+      }),
     ]);
     revalidatePath("/", "layout");
     return { ok: true as const };

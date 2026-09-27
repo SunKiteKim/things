@@ -28,7 +28,7 @@ export default async function OrdersAdminPage() {
               <td className="py-4">
                 <Link href={`/admin/orders/${order.id}`}>{order.orderNumber}</Link>
               </td>
-              <td>{order.user ? maskEmail(order.user.email) : "탈퇴 회원"}</td>
+              <td>{order.user.role === "WITHDRAWN" ? "탈퇴 회원" : maskEmail(order.user.email)}</td>
               <td>{formatPrice(order.totalAmount)}</td>
               <td>{ORDER_STATUS_LABEL[order.status]}</td>
               <td>{formatDate(order.createdAt)}</td>

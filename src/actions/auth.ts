@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { LIMITS } from "@/lib/utils";
 import { getEmailFormatError, getPasswordConfirmError, getPasswordError } from "@/lib/signup";
+import { normalizePhone } from "@/lib/phone";
 
 export async function checkSignupEmail(email: string) {
   const formatError = getEmailFormatError(email);
@@ -27,7 +28,7 @@ export async function registerMember(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const passwordConfirm = String(formData.get("passwordConfirm") ?? "");
-  const phone = String(formData.get("phone") ?? "").trim();
+  const phone = normalizePhone(String(formData.get("phone") ?? ""));
   const zipCode = String(formData.get("zipCode") ?? "").trim();
   const address = String(formData.get("address") ?? "").trim();
   const addressDetail = String(formData.get("addressDetail") ?? "").trim();

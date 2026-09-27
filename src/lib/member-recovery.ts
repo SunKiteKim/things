@@ -2,14 +2,11 @@ import { createHash } from "node:crypto";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { getPasswordError } from "@/lib/signup";
+import { normalizePhone } from "@/lib/phone";
 
 export const RECOVERY_ERROR = "복구 코드가 올바르지 않거나 만료·사용되었습니다. 새 코드를 발급받으세요.";
 
 const MEMBER_NOT_FOUND = "입력한 정보와 일치하는 회원을 찾을 수 없습니다.";
-
-export function normalizePhone(value: string) {
-  return value.replace(/\D/g, "");
-}
 
 async function membersWithIdentity(name: string, phone: string) {
   const normalizedName = name.trim();

@@ -39,8 +39,7 @@ export function WithdrawalButton() {
           <div className="w-full max-w-md bg-white p-6 shadow-xl md:p-8">
             <h2 id="withdrawal-title" className="display text-2xl">회원탈퇴 확인</h2>
             <p className="mt-3 text-sm leading-6 text-muted">
-              본인 확인을 위해 가입 ID와 휴대전화 번호를 입력해 주세요. 탈퇴 후 개인정보는 익명화되며,
-              주문 기록은 보존됩니다. 같은 ID로 바로 다시 가입할 수 있습니다.
+              본인 확인을 위해 가입 ID와 휴대전화 번호를 입력해 주세요.
             </p>
             <div className="mt-6 space-y-3">
               <input className="field" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="ID (이메일)" autoComplete="username" />

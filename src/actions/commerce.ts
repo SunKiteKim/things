@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getCart, setCart, getSelectedCoupon, setSelectedCoupon } from "@/lib/cart";
 import { ORDER_STATUS, createOrderNumber } from "@/lib/utils";
 import { requireAdmin, requireUser } from "@/lib/auth";
+import { normalizePhone } from "@/lib/phone";
 
 export async function buyNow(productId: string, quantity = 1, onePlusOne = false) {
   const result = await addToCart(productId, quantity, onePlusOne);
@@ -110,7 +111,7 @@ export async function createPendingOrder(formData: FormData) {
     totalAmount: Math.max(subtotal - discount, 0),
     discountAmount: discount,
     receiverName: String(formData.get("receiverName") ?? "").trim(),
-    receiverPhone: String(formData.get("receiverPhone") ?? "").trim(),
+    receiverPhone: normalizePhone(String(formData.get("receiverPhone") ?? "")),
     zipCode: String(formData.get("zipCode") ?? "").trim(),
     address: String(formData.get("address") ?? "").trim(),
     addressDetail: String(formData.get("addressDetail") ?? "").trim(),
