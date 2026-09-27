@@ -1,6 +1,6 @@
-# tHings
+# things
 
-포트폴리오용 오브제 이커머스. 로고는 **Montserrat ExtraBold 900**의 `tHings` 워드마크입니다.
+테스트 자동화 포트폴리오용 이커머스. 로고는 **Montserrat ExtraBold 900**의 `tHings` 워드마크입니다.
 
 **라이브:** [https://things4demo.site](https://things4demo.site)  
 **어드민:** [https://adm.things4demo.site](https://adm.things4demo.site)
@@ -29,15 +29,13 @@ npm run db:reset
 npm run dev
 ```
 
-브라우저에서 [http://localhost:3000](http://localhost:3000)
-
 ## 데모 계정
 
-관리자 시드 계정은 `.env`의 `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`로 생성합니다.
-회원 데모 계정이 필요하면 `SEED_MEMBER_EMAIL`, `SEED_MEMBER_PASSWORD`도 설정하세요.
+관리자 시드 계정은 로그인 페이지 하단에 적혀있습니다.
+회원 데모 계정이 필요하면 회원 가입 가능합니다.
 실서비스 비밀번호나 개인 이메일은 저장소에 커밋하지 마세요.
 
-쿠폰 코드: `THINGS10`, `WELCOME5`
+
 
 ## 구성
 
