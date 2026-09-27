@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { LIMITS, slugify } from "@/lib/utils";
 import { requireAdmin } from "@/lib/auth";
+import { setAdminFlash } from "@/lib/admin-flash";
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -35,6 +36,7 @@ export async function createCategory(formData: FormData) {
       isVisible: bool(formData, "isVisible"),
     },
   });
+  await setAdminFlash("카테고리가 등록되었습니다.");
   revalidatePath("/admin/display/categories");
   revalidatePath("/");
   return;
@@ -56,6 +58,7 @@ export async function updateCategory(formData: FormData) {
       isVisible: bool(formData, "isVisible"),
     },
   });
+  await setAdminFlash("카테고리가 수정되었습니다.");
   revalidatePath("/admin/display/categories");
   revalidatePath("/");
   return;
@@ -67,6 +70,7 @@ export async function deleteCategory(formData: FormData) {
   const used = await prisma.product.count({ where: { categoryId: id } });
   if (used > 0) return;
   await prisma.category.delete({ where: { id } });
+  await setAdminFlash("카테고리가 삭제되었습니다.");
   revalidatePath("/admin/display/categories");
   revalidatePath("/");
   return;
@@ -86,6 +90,7 @@ export async function createBanner(formData: FormData) {
       isActive: bool(formData, "isActive"),
     },
   });
+  await setAdminFlash("배너가 등록되었습니다.");
   revalidatePath("/admin/display/banners");
   revalidatePath("/");
   return;
@@ -106,6 +111,7 @@ export async function updateBanner(formData: FormData) {
       isActive: bool(formData, "isActive"),
     },
   });
+  await setAdminFlash("배너가 수정되었습니다.");
   revalidatePath("/admin/display/banners");
   revalidatePath("/");
   return;
@@ -114,6 +120,7 @@ export async function updateBanner(formData: FormData) {
 export async function deleteBanner(formData: FormData) {
   if (!(await requireAdmin())) return;
   await prisma.banner.delete({ where: { id: text(formData, "id") } });
+  await setAdminFlash("배너가 삭제되었습니다.");
   revalidatePath("/admin/display/banners");
   revalidatePath("/");
   return;

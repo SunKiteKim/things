@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
 import { requireAdmin } from "@/lib/auth";
+import { setAdminFlash } from "@/lib/admin-flash";
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -67,6 +68,7 @@ export async function createCoupon(formData: FormData) {
       isActive: bool(formData, "isActive"),
     },
   });
+  await setAdminFlash("쿠폰이 등록되었습니다.");
   revalidatePath("/admin/promotions/coupons");
   return;
 }
@@ -95,6 +97,7 @@ export async function updateCoupon(formData: FormData) {
       isActive: bool(formData, "isActive"),
     },
   });
+  await setAdminFlash("쿠폰 정보가 수정되었습니다.");
   revalidatePath("/admin/promotions/coupons");
   return;
 }
@@ -102,6 +105,7 @@ export async function updateCoupon(formData: FormData) {
 export async function deleteCoupon(formData: FormData) {
   if (!(await requireAdmin())) return;
   await prisma.coupon.delete({ where: { id: text(formData, "id") } });
+  await setAdminFlash("쿠폰이 삭제되었습니다.");
   revalidatePath("/admin/promotions/coupons");
   return;
 }
@@ -112,6 +116,7 @@ export async function toggleCouponPause(formData: FormData) {
   const coupon = await prisma.coupon.findUnique({ where: { id }, select: { isPaused: true } });
   if (!coupon) return;
   await prisma.coupon.update({ where: { id }, data: { isPaused: !coupon.isPaused } });
+  await setAdminFlash(coupon.isPaused ? "쿠폰 사용이 재개되었습니다." : "쿠폰이 일시중지되었습니다.");
   revalidatePath("/admin/promotions/coupons");
   revalidatePath("/cart");
   revalidatePath("/checkout");
@@ -128,7 +133,7 @@ export async function issueCoupon(formData: FormData) {
   const validIds = targetType === "USER"
     ? (await prisma.user.findMany({ where: { id: { in: targetIds }, role: "MEMBER" }, select: { id: true } })).map((row) => row.id)
     : (await prisma.category.findMany({ where: { id: { in: targetIds } }, select: { id: true } })).map((row) => row.id);
-  await prisma.couponIssue.createMany({
+  const issued = await prisma.couponIssue.createMany({
     data: validIds.map((targetId) => ({
       couponId,
       targetType,
@@ -137,6 +142,7 @@ export async function issueCoupon(formData: FormData) {
     })),
     skipDuplicates: true,
   });
+  await setAdminFlash(issued.count > 0 ? `쿠폰이 ${issued.count}개 대상에 발행되었습니다.` : "이미 발행된 대상입니다.");
   revalidatePath("/admin/promotions/coupons");
 }
 
@@ -159,6 +165,7 @@ export async function createExhibition(formData: FormData) {
       },
     },
   });
+  await setAdminFlash("기획전이 등록되었습니다.");
   revalidatePath("/admin/promotions/exhibitions");
   revalidatePath("/events");
   return;
@@ -184,6 +191,7 @@ export async function updateExhibition(formData: FormData) {
       },
     },
   });
+  await setAdminFlash("기획전이 수정되었습니다.");
   revalidatePath("/admin/promotions/exhibitions");
   revalidatePath("/events");
   return;
@@ -192,6 +200,7 @@ export async function updateExhibition(formData: FormData) {
 export async function deleteExhibition(formData: FormData) {
   if (!(await requireAdmin())) return;
   await prisma.exhibition.delete({ where: { id: text(formData, "id") } });
+  await setAdminFlash("기획전이 삭제되었습니다.");
   revalidatePath("/admin/promotions/exhibitions");
   revalidatePath("/events");
   return;

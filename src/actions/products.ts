@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { LIMITS, discountedPrice, nextProductCode, slugify } from "@/lib/utils";
 import { requireAdmin } from "@/lib/auth";
+import { setAdminFlash } from "@/lib/admin-flash";
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -103,6 +104,7 @@ export async function createProduct(formData: FormData) {
       ...(await editor(session)),
     },
   });
+  await setAdminFlash("상품이 등록되었습니다.");
   revalidatePath("/admin/products");
   redirect(`/admin/products/${product.id}`);
 }
@@ -139,6 +141,7 @@ export async function updateProduct(formData: FormData) {
       ...(await editor(session)),
     },
   });
+  await setAdminFlash("상품 정보가 수정되었습니다.");
   revalidatePath("/admin/products");
   revalidatePath(`/admin/products/${id}`);
   revalidatePath("/");
@@ -150,6 +153,7 @@ export async function deleteProduct(formData: FormData) {
   const id = text(formData, "id");
   await prisma.exhibitionProduct.deleteMany({ where: { productId: id } });
   await prisma.product.delete({ where: { id } });
+  await setAdminFlash("상품이 삭제되었습니다.");
   revalidatePath("/admin/products");
   revalidatePath("/");
   return;
@@ -166,6 +170,7 @@ export async function updateProductDisplay(formData: FormData) {
       sortOrder: num(formData, "sortOrder"),
     },
   });
+  await setAdminFlash("상품 전시 설정이 수정되었습니다.");
   revalidatePath("/admin/products/display");
   revalidatePath("/");
   return;

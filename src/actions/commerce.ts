@@ -8,6 +8,7 @@ import { getCart, setCart, getSelectedCoupon, setSelectedCoupon } from "@/lib/ca
 import { ORDER_STATUS, createOrderNumber } from "@/lib/utils";
 import { requireAdmin, requireUser } from "@/lib/auth";
 import { normalizePhone } from "@/lib/phone";
+import { setAdminFlash } from "@/lib/admin-flash";
 
 export async function buyNow(productId: string, quantity = 1, onePlusOne = false) {
   const result = await addToCart(productId, quantity, onePlusOne);
@@ -200,6 +201,7 @@ export async function updateOrderStatus(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "");
   await prisma.order.update({ where: { id }, data: { status } });
+  await setAdminFlash("주문 상태가 수정되었습니다.");
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${id}`);
 }
@@ -216,6 +218,7 @@ export async function cancelOrder(formData: FormData) {
     where: { id },
     data: { status: ORDER_STATUS.CANCELLED },
   });
+  if (admin) await setAdminFlash("주문이 취소되었습니다.");
   revalidatePath("/admin/orders");
   revalidatePath("/mypage/orders");
 }

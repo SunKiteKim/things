@@ -8,6 +8,7 @@ import { LIMITS } from "@/lib/utils";
 import { requireAdmin } from "@/lib/auth";
 import { getEmailFormatError, getPasswordError } from "@/lib/signup";
 import { normalizePhone } from "@/lib/phone";
+import { setAdminFlash } from "@/lib/admin-flash";
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -36,6 +37,7 @@ export async function createMember(formData: FormData) {
       provider: "credentials",
     },
   });
+  await setAdminFlash("회원이 등록되었습니다.");
   revalidatePath("/admin/members");
   return;
 }
@@ -53,6 +55,7 @@ export async function updateMember(formData: FormData) {
       ...(password && !getPasswordError(password) ? { passwordHash: await hash(password, 12) } : {}),
     },
   });
+  await setAdminFlash("회원 정보가 수정되었습니다.");
   revalidatePath("/admin/members");
   revalidatePath(`/admin/members/${id}`);
   return;
@@ -66,6 +69,7 @@ export async function deleteMember(formData: FormData) {
   if (user.role === "ADMIN") return;
   await prisma.order.deleteMany({ where: { userId: id } });
   await prisma.user.delete({ where: { id } });
+  await setAdminFlash("회원이 삭제되었습니다.");
   revalidatePath("/admin/members");
   return;
 }
