@@ -33,10 +33,15 @@ export function couponDiscountForLines(coupon: CouponRule, lines: CouponLine[], 
   const included = new Set(parseProductIds(coupon.includedProductIds));
   const excluded = new Set(parseProductIds(coupon.excludedProductIds));
   const eligibleLines = lines.filter((line) => (included.size === 0 || included.has(line.productId)) && !excluded.has(line.productId));
+  if (coupon.scope === "MULTI_CART" && new Set(eligibleLines.map((line) => line.productId)).size < 2) return null;
   const amount = eligibleLines.reduce((sum, line) => sum + line.amount, 0);
   const quantity = eligibleLines.reduce((sum, line) => sum + line.quantity, 0);
   return couponDiscount(
-    coupon.scope === "CART" ? { ...coupon, minQuantity: Math.max(2, coupon.minQuantity) } : coupon,
+    coupon.scope === "CART"
+      ? { ...coupon, minQuantity: 0 }
+      : coupon.scope === "MULTI_CART"
+        ? { ...coupon, minQuantity: Math.max(2, coupon.minQuantity) }
+        : coupon,
     amount,
     quantity,
     now,

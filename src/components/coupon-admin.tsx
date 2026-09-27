@@ -83,11 +83,16 @@ function CouponFields({ prefix, products, coupon }: { prefix: string; products: 
       </Field>
       <Field label="쿠폰 유형" htmlFor={`${prefix}-scope`}>
         <select id={`${prefix}-scope`} className="field" name="scope" value={scope} onChange={(event) => setScope(event.target.value)}>
-          <option value="CART">장바구니 쿠폰</option>
+          <option value="CART">일반 장바구니 쿠폰</option>
+          <option value="MULTI_CART">가지가지할인</option>
           <option value="PRODUCT">상품 쿠폰</option>
         </select>
         <p className="mt-2 text-xs text-muted">
-          {scope === "CART" ? "장바구니에서 사용하며 최소 2개 이상 구매 시 적용됩니다." : "선택한 상품의 금액에만 할인이 적용됩니다."}
+          {scope === "CART"
+            ? "장바구니에 상품이 있으면 수량과 관계없이 적용됩니다."
+            : scope === "MULTI_CART"
+              ? "서로 다른 상품이 2종 이상 담긴 장바구니에 추가 할인이 적용됩니다."
+              : "선택한 상품의 금액에만 할인이 적용됩니다."}
         </p>
       </Field>
       <Field label="적용 상품">
@@ -111,7 +116,13 @@ function CouponFields({ prefix, products, coupon }: { prefix: string; products: 
         <input id={`${prefix}-minOrderAmount`} className="field" name="minOrderAmount" type="number" min={0} defaultValue={coupon?.minOrderAmount ?? 0} />
       </Field>
       <Field label="최소 적용수량" htmlFor={`${prefix}-minQuantity`}>
-        <input id={`${prefix}-minQuantity`} className="field" name="minQuantity" type="number" min={scope === "CART" ? 2 : 0} step={1} defaultValue={coupon?.minQuantity ?? (scope === "CART" ? 2 : 0)} />
+        {scope === "CART" ? (
+          <><input type="hidden" name="minQuantity" value="0" /><DisabledText>수량 제한 없음</DisabledText></>
+        ) : scope === "MULTI_CART" ? (
+          <><input type="hidden" name="minQuantity" value="2" /><DisabledText>서로 다른 상품 2종 이상</DisabledText></>
+        ) : (
+          <input id={`${prefix}-minQuantity`} className="field" name="minQuantity" type="number" min={0} step={1} defaultValue={coupon?.minQuantity ?? 0} />
+        )}
       </Field>
       <Field label="최대 사용횟수" htmlFor={`${prefix}-maxUses`}>
         <input id={`${prefix}-maxUses`} className="field" name="maxUses" type="number" min={0} defaultValue={coupon?.maxUses ?? 0} />
@@ -191,7 +202,7 @@ export function CouponAdmin({ coupons, products }: { coupons: CouponView[]; prod
                 <button key={coupon.id} type="button" role="tab" aria-selected={active} aria-controls="coupon-detail-panel" className={`grid w-full min-w-[820px] grid-cols-[1.2fr_1.5fr_0.8fr_0.7fr_1.2fr_0.7fr] gap-4 border-t border-line px-5 py-4 text-left text-sm transition ${active ? "bg-[#f2f2f0]" : "bg-white hover:bg-[#fafaf8]"}`} onClick={() => setSelectedId(coupon.id)}>
                   <span className="font-mono text-xs">{coupon.code}</span>
                   <span className="font-bold">{coupon.name}</span>
-                  <span>{coupon.scope === "PRODUCT" ? "상품" : "장바구니"}</span>
+                  <span>{coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지할인" : "장바구니"}</span>
                   <span>{discountLabel(coupon)}</span>
                   <span className="text-xs text-muted">{dateLabel(coupon.startAt)} ~ {dateLabel(coupon.endAt)}</span>
                   <span className={coupon.isActive ? "text-accent" : "text-muted"}>{coupon.isActive ? "사용 가능" : "사용 중지"}</span>

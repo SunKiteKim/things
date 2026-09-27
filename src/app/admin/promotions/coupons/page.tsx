@@ -11,7 +11,7 @@ export default async function CouponsAdminPage() {
     <CouponAdmin
       coupons={coupons.map((coupon) => ({
         ...coupon,
-        minQuantity: coupon.scope === "CART" ? Math.max(2, coupon.minQuantity) : coupon.minQuantity,
+        minQuantity: coupon.scope === "CART" ? 0 : coupon.scope === "MULTI_CART" ? Math.max(2, coupon.minQuantity) : coupon.minQuantity,
         startAt: coupon.startAt.toISOString(),
         endAt: coupon.endAt.toISOString(),
         createdAt: coupon.createdAt.toISOString(),

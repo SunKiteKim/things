@@ -26,7 +26,7 @@ export default async function CartPage() {
   const code = await getSelectedCoupon();
   const selectedCoupon = coupons.find(coupon => coupon.code === code);
   const discount = selectedCoupon ? couponDiscountForLines(selectedCoupon, couponLines) : null;
-  const options = coupons.map(coupon => ({ code: coupon.code, eligible: couponDiscountForLines(coupon, couponLines) !== null, label: `[${coupon.scope === "PRODUCT" ? "상품" : "장바구니"}] ` + coupon.name + (coupon.minQuantity > 0 ? ' · ' + coupon.minQuantity + '개 이상' : '') + ' · ' + coupon.discountValue + (coupon.discountType === "PERCENT" ? "%" : "원") + ' 할인' }));
+  const options = coupons.map(coupon => ({ code: coupon.code, eligible: couponDiscountForLines(coupon, couponLines) !== null, label: `[${coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지할인" : "장바구니"}] ` + coupon.name + (coupon.scope === "MULTI_CART" ? " · 서로 다른 상품 2종 이상" : coupon.minQuantity > 0 ? ' · ' + coupon.minQuantity + '개 이상' : '') + ' · ' + coupon.discountValue + (coupon.discountType === "PERCENT" ? "%" : "원") + ' 할인' }));
   return (
     <div>
       <h1 className="display text-5xl">장바구니</h1>

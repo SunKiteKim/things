@@ -40,7 +40,7 @@ function validateCoupon(formData: FormData) {
   const start = new Date(text(formData, "startAt"));
   const end = new Date(text(formData, "endAt"));
   const included = productIds(formData, "includedProductIds");
-  if (!["CART", "PRODUCT"].includes(scope) || !["PERCENT", "AMOUNT"].includes(type) || !Number.isSafeInteger(value) || value <= 0 || (type === "PERCENT" && value > 100) || ![minimum, amount, maxUses].every(n => Number.isSafeInteger(n) && n >= 0) || (scope === "PRODUCT" && included.length === 0) || !Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end < start) throw new Error("쿠폰 유형, 적용 상품, 할인값, 최소 수량·금액, 사용 기간을 확인해 주세요.");
+  if (!["CART", "MULTI_CART", "PRODUCT"].includes(scope) || !["PERCENT", "AMOUNT"].includes(type) || !Number.isSafeInteger(value) || value <= 0 || (type === "PERCENT" && value > 100) || ![minimum, amount, maxUses].every(n => Number.isSafeInteger(n) && n >= 0) || (scope === "PRODUCT" && included.length === 0) || !Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end < start) throw new Error("쿠폰 유형, 적용 상품, 할인값, 최소 수량·금액, 사용 기간을 확인해 주세요.");
 }
 
 export async function createCoupon(formData: FormData) {
@@ -60,7 +60,7 @@ export async function createCoupon(formData: FormData) {
       discountType: text(formData, "discountType") || "PERCENT",
       discountValue: num(formData, "discountValue"),
       minOrderAmount: num(formData, "minOrderAmount"),
-      minQuantity: scope === "CART" ? Math.max(2, num(formData, "minQuantity")) : num(formData, "minQuantity"),
+      minQuantity: scope === "CART" ? 0 : scope === "MULTI_CART" ? Math.max(2, num(formData, "minQuantity")) : num(formData, "minQuantity"),
       maxUses: num(formData, "maxUses") || null,
       startAt: new Date(text(formData, "startAt") || Date.now()),
       endAt: new Date(text(formData, "endAt") || Date.now()),
@@ -88,7 +88,7 @@ export async function updateCoupon(formData: FormData) {
       discountType: text(formData, "discountType") || "PERCENT",
       discountValue: num(formData, "discountValue"),
       minOrderAmount: num(formData, "minOrderAmount"),
-      minQuantity: scope === "CART" ? Math.max(2, num(formData, "minQuantity")) : num(formData, "minQuantity"),
+      minQuantity: scope === "CART" ? 0 : scope === "MULTI_CART" ? Math.max(2, num(formData, "minQuantity")) : num(formData, "minQuantity"),
       maxUses: num(formData, "maxUses") || null,
       startAt: new Date(text(formData, "startAt")),
       endAt: new Date(text(formData, "endAt")),
