@@ -156,11 +156,7 @@ function CouponFields({ prefix, products, coupon }: { prefix: string; products: 
         <p className="rounded-sm bg-[#f9fafb] px-4 py-3 text-sm text-muted">쿠폰 코드는 등록 시 자동으로 고유 생성됩니다.</p>
       )}
       <Field label="쿠폰명" htmlFor={`${prefix}-name`}>
-        {scope === "MULTI_CART" ? (
-          <><input type="hidden" name="name" value="가지가지할인" /><DisabledText>가지가지할인</DisabledText></>
-        ) : (
-          <input id={`${prefix}-name`} className="field" name="name" defaultValue={coupon?.name} required />
-        )}
+        <input id={`${prefix}-name`} className="field" name="name" defaultValue={coupon?.name} required />
       </Field>
       <Field label="쿠폰 유형">
         <input type="hidden" name="scope" value={scope} />
@@ -174,7 +170,7 @@ function CouponFields({ prefix, products, coupon }: { prefix: string; products: 
         </div>
         {!isProductCoupon ? (
           <label className="mt-3 flex min-h-12 items-center gap-3 border border-line bg-[#f9fafb] px-4 text-sm">
-            <input type="checkbox" checked={scope === "MULTI_CART"} onChange={(event) => setScope(event.target.checked ? "MULTI_CART" : "CART")} /> 가지가지할인으로 적용
+            <input type="checkbox" checked={scope === "MULTI_CART"} onChange={(event) => setScope(event.target.checked ? "MULTI_CART" : "CART")} /> 가지가지 할인으로 적용
           </label>
         ) : (
           <label className="mt-3 flex min-h-12 items-center gap-3 border border-line bg-[#f9fafb] px-4 text-sm">
@@ -357,6 +353,18 @@ export function CouponAdmin({ coupons, products, issueTargets }: { coupons: Coup
     });
   }
 
+  function submitUpdate(formData: FormData) {
+    startTransition(async () => {
+      setError("");
+      try {
+        const result = await updateCoupon(formData);
+        if (!result?.ok) setError(result?.error ?? "쿠폰 정보를 수정하지 못했습니다.");
+      } catch {
+        setError("연결을 확인한 뒤 다시 시도해 주세요.");
+      }
+    });
+  }
+
   return (
     <div>
       <div className="flex items-end justify-between gap-4">
@@ -377,10 +385,10 @@ export function CouponAdmin({ coupons, products, issueTargets }: { coupons: Coup
             {pageCoupons.map((coupon) => {
               const active = selected?.id === coupon.id;
               return (
-                <button key={coupon.id} type="button" role="tab" aria-selected={active} aria-controls="coupon-detail-panel" className={`grid w-full min-w-[820px] grid-cols-[1.2fr_1.5fr_0.8fr_0.7fr_1.2fr_0.7fr] gap-3 border-t border-line px-3 py-2.5 text-left text-[0.72rem] transition ${active ? "bg-slate-100" : "bg-white hover:bg-slate-50"}`} onClick={() => setSelectedId(coupon.id)}>
+                <button key={coupon.id} type="button" role="tab" aria-selected={active} aria-controls="coupon-detail-panel" className={`grid w-full min-w-[820px] grid-cols-[1.2fr_1.5fr_0.8fr_0.7fr_1.2fr_0.7fr] gap-3 border-t border-line px-3 py-2.5 text-left text-[0.72rem] transition ${active ? "bg-slate-100" : "bg-white hover:bg-slate-50"}`} onClick={() => { setError(""); setSelectedId(coupon.id); }}>
                   <span className="font-mono text-[0.68rem]">{coupon.code}</span>
                   <span className="font-bold">{coupon.name}</span>
-                  <span>{coupon.scope === "ONE_PLUS_ONE" ? "1+1 할인" : coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지할인" : "장바구니"}</span>
+                  <span>{coupon.scope === "ONE_PLUS_ONE" ? "1+1 할인" : coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지 할인" : "장바구니"}</span>
                   <span>{discountLabel(coupon)}</span>
                   <span className="text-[0.68rem] text-muted">{dateLabel(coupon.startAt)} ~ {dateLabel(coupon.endAt)}</span>
                   <span className={coupon.isPaused ? "text-muted" : coupon.isActive ? "text-accent" : "text-muted"}>{coupon.isPaused ? "일시중지" : coupon.isActive ? "사용 가능" : "사용 중지"}</span>
@@ -401,13 +409,14 @@ export function CouponAdmin({ coupons, products, issueTargets }: { coupons: Coup
                 <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-base font-semibold">쿠폰 상세</h2><p className="mt-1 text-xs text-muted">{selected.name} · 발행 {selected.issues.length}건</p></div><CouponIssueModal coupon={selected} targets={issueTargets} /></div>
                 {selected.isPaused ? <p className="mt-3 bg-[#f3f4f6] px-4 py-3 text-sm text-muted">일시중지된 쿠폰으로 발행 및 사용이 불가능합니다.</p> : null}
               </div>
-              <form key={selected.id} action={updateCoupon} className="grid max-w-3xl gap-6">
+              <form key={selected.id} action={submitUpdate} className="grid max-w-3xl gap-6">
                 <input type="hidden" name="id" value={selected.id} />
                 <CouponFields prefix={`edit-${selected.id}`} products={products} coupon={selected} />
+                {error ? <p className="text-sm text-accent" role="alert">{error}</p> : null}
                 <div className="admin-row">
                   <span />
                   <div className="flex gap-3">
-                    <button className="btn">쿠폰 수정</button>
+                    <button className="btn" disabled={pending}>{pending ? "수정 중…" : "쿠폰 수정"}</button>
                     <button className="btn btn-ghost" formAction={toggleCouponPause}>{selected.isPaused ? "쿠폰 재개" : "쿠폰 일시중지"}</button>
                     <button className="btn btn-ghost" formAction={deleteCoupon}>쿠폰 삭제</button>
                   </div>

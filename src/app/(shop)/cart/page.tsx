@@ -33,7 +33,7 @@ export default async function CartPage() {
     eligible: couponDiscountForLines(coupon, couponLines, new Date(), session?.user.id) !== null,
     label: coupon.scope === "ONE_PLUS_ONE"
       ? `[1+1 할인] ${coupon.name} · 동일 상품 2개당 1개 가격 할인`
-      : `[${coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지할인" : "장바구니"}] ${coupon.name}${coupon.scope === "MULTI_CART" ? " · 서로 다른 상품 2종 이상" : coupon.minQuantity > 0 ? ` · ${coupon.minQuantity}개 이상` : ""} · ${coupon.discountValue}${coupon.discountType === "PERCENT" ? "%" : "원"} 할인`,
+      : `[${coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지 할인" : "장바구니"}] ${coupon.name}${coupon.scope === "MULTI_CART" ? " · 서로 다른 상품 2종 이상" : coupon.minQuantity > 0 ? ` · ${coupon.minQuantity}개 이상` : ""} · ${coupon.discountValue}${coupon.discountType === "PERCENT" ? "%" : "원"} 할인`,
   }));
   return (
     <div>
