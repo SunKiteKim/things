@@ -19,10 +19,10 @@ export function ProductQuickActions({ productId, soldOut }: { productId: string;
 
   return (
     <>
-      <div className="absolute right-3 top-3 z-10 flex translate-y-1 gap-2 opacity-100 transition md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100">
+      <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-3 opacity-100 transition md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
         <button
           type="button"
-          className="grid h-10 w-10 place-items-center rounded-full border border-black/10 bg-white/95 shadow-sm hover:bg-black hover:text-white"
+          className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full border border-black/10 bg-white/95 shadow-md hover:bg-black hover:text-white"
           aria-label="위시리스트에 추가"
           title="위시리스트"
           disabled={pending}
@@ -38,7 +38,7 @@ export function ProductQuickActions({ productId, soldOut }: { productId: string;
         </button>
         <button
           type="button"
-          className="grid h-10 w-10 place-items-center rounded-full border border-black/10 bg-white/95 shadow-sm hover:bg-black hover:text-white disabled:opacity-40"
+          className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full border border-black/10 bg-white/95 shadow-md hover:bg-black hover:text-white disabled:opacity-40"
           aria-label="장바구니에 담기"
           title="장바구니 담기"
           disabled={pending || soldOut}

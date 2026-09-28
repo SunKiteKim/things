@@ -8,7 +8,6 @@ const NAV = [
   { href: "/admin/display/banners", label: "배너관리" },
   { href: "/admin/display/categories", label: "카테고리 관리" },
   { href: "/admin/products", label: "상품관리" },
-  { href: "/admin/products/display", label: "상품전시관리" },
   { href: "/admin/promotions/coupons", label: "쿠폰관리" },
   { href: "/admin/promotions/exhibitions", label: "기획전 관리" },
   { href: "/admin/orders", label: "주문관리" },

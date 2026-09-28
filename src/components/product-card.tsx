@@ -24,17 +24,20 @@ export function ProductCard({
       <div className="relative">
         <Link href={`/product/${product.id}`} className="block">
           <div className="relative aspect-square overflow-hidden bg-surface">
-        {product.imageUrl ? (
-          <Image
-            src={product.imageUrl}
-            alt={product.name}
-            fill
-            className="object-cover transition duration-500 group-hover:scale-[1.03]"
-            sizes="(min-width: 1024px) 25vw, 50vw"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center font-normal text-muted">things</div>
-        )}
+            {product.imageUrl ? (
+              <Image
+                src={product.imageUrl}
+                alt={product.name}
+                fill
+                className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                sizes="(min-width: 1024px) 25vw, 50vw"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center font-normal text-muted">
+                things
+              </div>
+            )}
+            <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-300 md:group-hover:bg-black/35 md:group-focus-within:bg-black/35" />
           </div>
         </Link>
         <ProductQuickActions productId={product.id} soldOut={product.stock <= 0} />
