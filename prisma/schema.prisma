@@ -148,34 +148,37 @@ model WishlistItem {
 }
 
 model Order {
-  id             String      @id @default(cuid())
-  orderNumber    String      @unique
-  userId         String
-  user           User        @relation(fields: [userId], references: [id])
-  status         String      @default("PENDING")
-  totalAmount    Int
-  discountAmount Int         @default(0)
-  paymentMethod  String      @default("TOSS")
-  paymentKey     String?
-  tossOrderId    String?
-  receiverName   String
-  receiverPhone  String
-  zipCode        String
-  address        String
-  addressDetail  String      @default("")
-  memo           String      @default("")
-  couponCode     String?
-  trackingNumber String?
-  paidAt         DateTime?
-  preparingAt    DateTime?
-  shippedAt      DateTime?
-  deliveredAt    DateTime?
-  cancelledAt    DateTime?
-  returnedAt     DateTime?
-  exchangedAt    DateTime?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  items          OrderItem[]
+  id                    String      @id @default(cuid())
+  orderNumber           String      @unique
+  userId                String
+  user                  User        @relation(fields: [userId], references: [id])
+  status                String      @default("PENDING")
+  totalAmount           Int
+  discountAmount        Int         @default(0)
+  paymentMethod         String      @default("TOSS")
+  paymentKey            String?
+  tossOrderId           String?
+  receiverName          String
+  receiverPhone         String
+  zipCode               String
+  address               String
+  addressDetail         String      @default("")
+  memo                  String      @default("")
+  couponCode            String?
+  trackingNumber        String?
+  paidAt                DateTime?
+  preparingAt           DateTime?
+  shippedAt             DateTime?
+  deliveredAt           DateTime?
+  cancelledAt           DateTime?
+  returnRequestedAt     DateTime?
+  exchangeRequestedAt   DateTime?
+  collectionConfirmedAt DateTime?
+  returnedAt            DateTime?
+  exchangedAt           DateTime?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  items                 OrderItem[]
 }
 
 model OrderItem {

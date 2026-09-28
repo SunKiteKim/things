@@ -10,8 +10,8 @@ export function AdminOrderStatusForm({ id, currentStatus, trackingNumber }: { id
   const [status, setStatus] = useState(currentStatus);
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
-  const afterSaleAllowed = currentStatus === ORDER_STATUS.DELIVERED || currentStatus === ORDER_STATUS.RETURNED || currentStatus === ORDER_STATUS.EXCHANGED;
-  const options = Object.entries(ORDER_STATUS_LABEL).filter(([value]) => (value !== ORDER_STATUS.RETURNED && value !== ORDER_STATUS.EXCHANGED) || afterSaleAllowed);
+  const afterSaleStatuses: string[] = [ORDER_STATUS.RETURN_REQUESTED, ORDER_STATUS.EXCHANGE_REQUESTED, ORDER_STATUS.RETURNED, ORDER_STATUS.EXCHANGED];
+  const options = Object.entries(ORDER_STATUS_LABEL).filter(([value]) => !afterSaleStatuses.includes(value));
 
   function submit(formData: FormData) {
     startTransition(async () => {

@@ -215,17 +215,59 @@ export async function updateOrderStatus(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "");
   const trackingNumber = String(formData.get("trackingNumber") ?? "").trim();
-  if (!Object.values(ORDER_STATUS).includes(status as (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS])) return { ok: false, error: "올바른 주문 상태를 선택해 주세요." };
+  const normalStatuses: string[] = [ORDER_STATUS.PENDING, ORDER_STATUS.PAID, ORDER_STATUS.PREPARING, ORDER_STATUS.SHIPPED, ORDER_STATUS.DELIVERED, ORDER_STATUS.CANCELLED];
+  if (!normalStatuses.includes(status)) return { ok: false, error: "반품·교환 상태는 전용 처리 영역을 이용해 주세요." };
   const order = await prisma.order.findUnique({ where: { id }, select: { status: true, trackingNumber: true } });
   if (!order) return { ok: false, error: "주문을 찾을 수 없습니다." };
   const savedTrackingNumber = trackingNumber || order.trackingNumber;
   if (status === ORDER_STATUS.DELIVERED && !savedTrackingNumber) return { ok: false, error: "배송 완료 처리에는 운송장번호가 필요합니다." };
-  if ((status === ORDER_STATUS.RETURNED || status === ORDER_STATUS.EXCHANGED) && order.status !== ORDER_STATUS.DELIVERED) return { ok: false, error: "배송 완료된 주문만 반품 또는 교환 처리할 수 있습니다." };
   await prisma.order.update({ where: { id }, data: { status, trackingNumber: savedTrackingNumber || null, ...orderStatusTimestamp(status) } });
   await setAdminFlash("주문 상태가 수정되었습니다.");
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${id}`);
   return { ok: true };
+}
+
+export async function requestOrderAfterSale(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const requestType = String(formData.get("requestType") ?? "");
+  const admin = await requireAdmin();
+  const session = await requireUser();
+  if (!admin && !session) return;
+  const order = await prisma.order.findUnique({ where: { id }, select: { userId: true, status: true } });
+  if (!order || (!admin && order.userId !== session?.user.id) || order.status !== ORDER_STATUS.DELIVERED) return;
+  const status = requestType === "RETURN" ? ORDER_STATUS.RETURN_REQUESTED : requestType === "EXCHANGE" ? ORDER_STATUS.EXCHANGE_REQUESTED : "";
+  if (!status) return;
+  await prisma.order.update({ where: { id }, data: { status, collectionConfirmedAt: null, ...orderStatusTimestamp(status) } });
+  if (admin) await setAdminFlash(status === ORDER_STATUS.RETURN_REQUESTED ? "반품 신청으로 변경되었습니다." : "교환 신청으로 변경되었습니다.");
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${id}`);
+  revalidatePath("/mypage/orders");
+  revalidatePath(`/mypage/orders/${id}`);
+}
+
+export async function confirmOrderCollection(formData: FormData) {
+  if (!(await requireAdmin()) || formData.get("collectionConfirmed") !== "on") return;
+  const id = String(formData.get("id") ?? "");
+  const order = await prisma.order.findUnique({ where: { id }, select: { status: true } });
+  if (!order || (order.status !== ORDER_STATUS.RETURN_REQUESTED && order.status !== ORDER_STATUS.EXCHANGE_REQUESTED)) return;
+  await prisma.order.update({ where: { id }, data: { collectionConfirmedAt: new Date() } });
+  await setAdminFlash("물품 회수를 확인했습니다.");
+  revalidatePath(`/admin/orders/${id}`);
+}
+
+export async function completeOrderAfterSale(formData: FormData) {
+  if (!(await requireAdmin())) return;
+  const id = String(formData.get("id") ?? "");
+  const order = await prisma.order.findUnique({ where: { id }, select: { status: true, collectionConfirmedAt: true } });
+  if (!order?.collectionConfirmedAt) return;
+  const status = order.status === ORDER_STATUS.RETURN_REQUESTED ? ORDER_STATUS.RETURNED : order.status === ORDER_STATUS.EXCHANGE_REQUESTED ? ORDER_STATUS.EXCHANGED : "";
+  if (!status) return;
+  await prisma.order.update({ where: { id }, data: { status, ...orderStatusTimestamp(status) } });
+  await setAdminFlash(status === ORDER_STATUS.RETURNED ? "반품 완료 처리했습니다." : "교환 상품 발송 처리했습니다.");
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${id}`);
+  revalidatePath(`/mypage/orders/${id}`);
 }
 
 export async function cancelOrder(formData: FormData) {

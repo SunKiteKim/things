@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { formatDateTime, formatPrice, maskPersonalInfo, ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/utils";
-import { cancelOrder } from "@/actions/commerce";
+import { formatDateTime, formatPrice, maskPersonalInfo, ORDER_STATUS, ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/utils";
+import { cancelOrder, completeOrderAfterSale, confirmOrderCollection, requestOrderAfterSale } from "@/actions/commerce";
 import { AdminOrderStatusForm } from "@/components/admin-order-status-form";
 
 export default async function AdminOrderDetailPage({
@@ -24,8 +24,11 @@ export default async function AdminOrderDetailPage({
     { label: "배송중", date: order.shippedAt },
     { label: "배송 완료", date: order.deliveredAt },
     { label: "취소", date: order.cancelledAt },
+    { label: "반품 신청", date: order.returnRequestedAt },
+    { label: "교환 신청", date: order.exchangeRequestedAt },
+    { label: "물품 회수 확인", date: order.collectionConfirmedAt },
     { label: "반품 완료", date: order.returnedAt },
-    { label: "교환 완료", date: order.exchangedAt },
+    { label: "교환 상품 발송", date: order.exchangedAt },
   ];
 
   const InfoRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -102,10 +105,31 @@ export default async function AdminOrderDetailPage({
         </section>
       </div>
       <AdminOrderStatusForm id={order.id} currentStatus={order.status} trackingNumber={order.trackingNumber ?? ""} />
-      <form action={cancelOrder} className="mt-3">
-        <input type="hidden" name="id" value={order.id} />
-        <button className="btn btn-ghost">주문 취소</button>
-      </form>
+      <div className="mt-3 flex flex-wrap gap-3">
+        <form action={cancelOrder}><input type="hidden" name="id" value={order.id} /><button className="btn btn-ghost">주문 취소</button></form>
+        {order.status === ORDER_STATUS.DELIVERED ? <>
+          <form action={requestOrderAfterSale}><input type="hidden" name="id" value={order.id} /><input type="hidden" name="requestType" value="RETURN" /><button className="btn btn-ghost">반품 신청</button></form>
+          <form action={requestOrderAfterSale}><input type="hidden" name="id" value={order.id} /><input type="hidden" name="requestType" value="EXCHANGE" /><button className="btn btn-ghost">교환 신청</button></form>
+        </> : null}
+      </div>
+      {order.status === ORDER_STATUS.RETURN_REQUESTED || order.status === ORDER_STATUS.EXCHANGE_REQUESTED ? (
+        <section className="mt-8 max-w-2xl border border-line bg-white p-5">
+          <h2 className="font-semibold">교환·반품 회수 처리</h2>
+          {!order.collectionConfirmedAt ? (
+            <form action={confirmOrderCollection} className="mt-4 flex flex-wrap items-center gap-3">
+              <input type="hidden" name="id" value={order.id} />
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="collectionConfirmed" required /> 물품 회수 완료 확인</label>
+              <button className="btn btn-ghost">회수 확인 저장</button>
+            </form>
+          ) : (
+            <form action={completeOrderAfterSale} className="mt-4">
+              <input type="hidden" name="id" value={order.id} />
+              <p className="mb-3 text-sm text-muted">회수 확인: {formatDateTime(order.collectionConfirmedAt)}</p>
+              <button className="btn">{order.status === ORDER_STATUS.RETURN_REQUESTED ? "반품 완료" : "교환 상품 보내기"}</button>
+            </form>
+          )}
+        </section>
+      ) : null}
     </div>
   );
 }
