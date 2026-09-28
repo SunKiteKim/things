@@ -6,7 +6,12 @@ import { FormField } from "@/components/form-field";
 import { PostcodeAddress } from "@/components/postcode-address";
 import { WithdrawalButton } from "@/components/withdrawal-button";
 
-export default async function MyProfilePage() {
+export default async function MyProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string }>;
+}) {
+  const { saved } = await searchParams;
   const session = await requireUser();
   if (!session) redirect("/login");
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
@@ -15,6 +20,11 @@ export default async function MyProfilePage() {
   return (
     <div>
       <h1 className="display text-5xl">회원정보</h1>
+      {saved === "1" ? (
+        <p className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="status">
+          회원정보가 저장되었습니다.
+        </p>
+      ) : null}
       <form action={updateProfile} className="mt-10 max-w-xl grid gap-5">
         <FormField label="이름" htmlFor="profile-name">
           <input id="profile-name" className="field" name="name" defaultValue={user.name} />
@@ -33,7 +43,7 @@ export default async function MyProfilePage() {
         <div className="form-row">
           <span />
           <div className="flex flex-wrap gap-3">
-            <button className="btn w-fit">저장</button>
+            <button type="submit" className="btn w-fit">저장</button>
             <WithdrawalButton />
           </div>
         </div>

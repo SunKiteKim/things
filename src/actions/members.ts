@@ -89,7 +89,7 @@ export async function updateProfile(formData: FormData) {
   });
   revalidatePath("/mypage");
   revalidatePath("/mypage/profile");
-  return;
+  redirect("/mypage/profile?saved=1");
 }
 
 export async function completeGooglePhone(formData: FormData) {
