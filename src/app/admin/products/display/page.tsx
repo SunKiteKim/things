@@ -5,7 +5,7 @@ import { AdminPagedList } from "@/components/admin-paged-list";
 export default async function ProductDisplayPage() {
   const products = await prisma.product.findMany({
     include: { category: true },
-    orderBy: { sortOrder: "asc" },
+    orderBy: { createdAt: "desc" },
   });
 
   return (
