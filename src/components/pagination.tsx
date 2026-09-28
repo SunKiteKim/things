@@ -29,7 +29,7 @@ export function Pagination({
           href={hrefFor(item)}
           className={cn(
             "min-w-10 px-3 py-2 text-center text-sm",
-            item === page ? "bg-ink text-paper" : "border border-line hover:border-ink",
+            item === page ? "bg-ink !text-white" : "border border-line hover:border-ink",
           )}
         >
           {item}
