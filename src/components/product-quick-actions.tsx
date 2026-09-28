@@ -51,7 +51,14 @@ export function ProductQuickActions({ productId, soldOut }: { productId: string;
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20 8H6" /><circle cx="10" cy="20" r="1" /><circle cx="17" cy="20" r="1" /></svg>
         </button>
       </div>
-      {message ? <div className="fixed bottom-6 right-6 z-[150] rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-xl" role="status">{message}</div> : null}
+      {message ? (
+        <div
+          className="fixed left-1/2 top-6 z-[150] w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-center text-sm text-slate-700 shadow-xl"
+          role="status"
+        >
+          {message}
+        </div>
+      ) : null}
     </>
   );
 }
