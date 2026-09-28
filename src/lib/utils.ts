@@ -11,6 +11,8 @@ export const ORDER_STATUS = {
   SHIPPED: "SHIPPED",
   DELIVERED: "DELIVERED",
   CANCELLED: "CANCELLED",
+  RETURNED: "RETURNED",
+  EXCHANGED: "EXCHANGED",
 } as const;
 
 export const ORDER_STATUS_LABEL: Record<string, string> = {
@@ -20,6 +22,13 @@ export const ORDER_STATUS_LABEL: Record<string, string> = {
   SHIPPED: "배송중",
   DELIVERED: "배송 완료",
   CANCELLED: "취소",
+  RETURNED: "반품 완료",
+  EXCHANGED: "교환 완료",
+};
+
+export const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  TOSS: "토스페이먼츠",
+  DEMO: "데모 결제",
 };
 
 export function orderStatusTimestamp(status: string, date = new Date()) {
@@ -34,6 +43,10 @@ export function orderStatusTimestamp(status: string, date = new Date()) {
       return { deliveredAt: date };
     case ORDER_STATUS.CANCELLED:
       return { cancelledAt: date };
+    case ORDER_STATUS.RETURNED:
+      return { returnedAt: date };
+    case ORDER_STATUS.EXCHANGED:
+      return { exchangedAt: date };
     default:
       return {};
   }

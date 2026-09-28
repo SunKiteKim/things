@@ -165,11 +165,14 @@ model Order {
   addressDetail  String      @default("")
   memo           String      @default("")
   couponCode     String?
+  trackingNumber String?
   paidAt         DateTime?
   preparingAt    DateTime?
   shippedAt      DateTime?
   deliveredAt    DateTime?
   cancelledAt    DateTime?
+  returnedAt     DateTime?
+  exchangedAt    DateTime?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   items          OrderItem[]

@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { formatDateTime, formatPrice, maskPersonalInfo, ORDER_STATUS_LABEL } from "@/lib/utils";
-import { cancelOrder, updateOrderStatus } from "@/actions/commerce";
+import { formatDateTime, formatPrice, maskPersonalInfo, ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/utils";
+import { cancelOrder } from "@/actions/commerce";
+import { AdminOrderStatusForm } from "@/components/admin-order-status-form";
 
 export default async function AdminOrderDetailPage({
   params,
@@ -23,6 +24,8 @@ export default async function AdminOrderDetailPage({
     { label: "배송중", date: order.shippedAt },
     { label: "배송 완료", date: order.deliveredAt },
     { label: "취소", date: order.cancelledAt },
+    { label: "반품 완료", date: order.returnedAt },
+    { label: "교환 완료", date: order.exchangedAt },
   ];
 
   const InfoRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -45,8 +48,9 @@ export default async function AdminOrderDetailPage({
             <InfoRow label="회원">{order.user.role === "WITHDRAWN" ? "탈퇴 회원" : maskPersonalInfo(order.user.email)}</InfoRow>
             <InfoRow label="주문일시">{formatDateTime(order.createdAt)}</InfoRow>
             <InfoRow label="현재 상태">{ORDER_STATUS_LABEL[order.status] ?? order.status}</InfoRow>
-            <InfoRow label="결제수단">{order.paymentMethod}</InfoRow>
+            <InfoRow label="결제수단">{PAYMENT_METHOD_LABEL[order.paymentMethod] ?? order.paymentMethod}</InfoRow>
             <InfoRow label="쿠폰 코드">{order.couponCode ?? "-"}</InfoRow>
+            <InfoRow label="운송장번호">{order.trackingNumber ?? "-"}</InfoRow>
           </tbody>
         </table>
       </section>
@@ -97,17 +101,7 @@ export default async function AdminOrderDetailPage({
           </tbody></table>
         </section>
       </div>
-      <form action={updateOrderStatus} className="mt-8 flex gap-3">
-        <input type="hidden" name="id" value={order.id} />
-        <select className="field max-w-xs" name="status" defaultValue={order.status}>
-          {Object.entries(ORDER_STATUS_LABEL).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <button className="btn">상태 변경</button>
-      </form>
+      <AdminOrderStatusForm id={order.id} currentStatus={order.status} trackingNumber={order.trackingNumber ?? ""} />
       <form action={cancelOrder} className="mt-3">
         <input type="hidden" name="id" value={order.id} />
         <button className="btn btn-ghost">주문 취소</button>

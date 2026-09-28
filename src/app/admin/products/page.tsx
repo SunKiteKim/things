@@ -7,7 +7,7 @@ import { AdminMasterDetail } from "@/components/admin-master-detail";
 
 export default async function ProductsAdminPage() {
   const [products, categories] = await Promise.all([
-    prisma.product.findMany({ include: { category: true }, orderBy: { id: "asc" } }),
+    prisma.product.findMany({ include: { category: true }, orderBy: { createdAt: "desc" } }),
     prisma.category.findMany({ orderBy: { sortOrder: "asc" } }),
   ]);
 

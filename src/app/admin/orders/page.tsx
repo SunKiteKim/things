@@ -15,7 +15,8 @@ export default async function OrdersAdminPage() {
       <table className="mt-8 w-full text-left text-sm">
         <thead>
           <tr className="border-b border-line text-muted">
-            <th className="py-3">주문번호</th>
+            <th className="py-3">No</th>
+            <th>주문번호</th>
             <th>회원</th>
             <th>금액</th>
             <th>상태</th>
@@ -23,9 +24,10 @@ export default async function OrdersAdminPage() {
           </tr>
         </thead>
         <tbody>
-          {orders.map((order) => (
+          {orders.map((order, index) => (
             <tr key={order.id} className="border-b border-line">
-              <td className="py-4">
+              <td className="py-4">{index + 1}</td>
+              <td>
                 <Link href={`/admin/orders/${order.id}`}>{order.orderNumber}</Link>
               </td>
               <td>{order.user.role === "WITHDRAWN" ? "탈퇴 회원" : maskEmail(order.user.email)}</td>

@@ -5,7 +5,7 @@ import { AdminCreateModal } from "@/components/admin-create-modal";
 import { AdminMasterDetail } from "@/components/admin-master-detail";
 
 export default async function CategoriesAdminPage() {
-  const categories = await prisma.category.findMany({ orderBy: { sortOrder: "asc" } });
+  const categories = await prisma.category.findMany({ orderBy: { id: "desc" } });
 
   return (
     <div>

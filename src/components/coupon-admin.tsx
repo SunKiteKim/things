@@ -379,13 +379,14 @@ export function CouponAdmin({ coupons, products, issueTargets }: { coupons: Coup
         <>
           <h2 className="mt-8 text-base font-semibold">쿠폰 목록</h2>
           <div className="mt-4 overflow-x-auto border border-line" role="tablist" aria-label="등록 쿠폰">
-            <div className="grid min-w-[820px] grid-cols-[1.2fr_1.5fr_0.8fr_0.7fr_1.2fr_0.7fr] gap-3 bg-slate-50 px-3 py-2 text-[0.68rem] font-semibold text-muted">
-              <span>쿠폰 코드</span><span>쿠폰명</span><span>쿠폰 유형</span><span>할인</span><span>사용 기간</span><span>상태</span>
+            <div className="grid min-w-[860px] grid-cols-[0.35fr_1.2fr_1.5fr_0.8fr_0.7fr_1.2fr_0.7fr] gap-3 bg-slate-50 px-3 py-2 text-[0.68rem] font-semibold text-muted">
+              <span>No</span><span>쿠폰 코드</span><span>쿠폰명</span><span>쿠폰 유형</span><span>할인</span><span>사용 기간</span><span>상태</span>
             </div>
             {pageCoupons.map((coupon) => {
               const active = selected?.id === coupon.id;
               return (
-                <button key={coupon.id} type="button" role="tab" aria-selected={active} aria-controls="coupon-detail-panel" className={`grid w-full min-w-[820px] grid-cols-[1.2fr_1.5fr_0.8fr_0.7fr_1.2fr_0.7fr] gap-3 border-t border-line px-3 py-2.5 text-left text-[0.72rem] transition ${active ? "bg-slate-100" : "bg-white hover:bg-slate-50"}`} onClick={() => { setError(""); setSelectedId(coupon.id); }}>
+                <button key={coupon.id} type="button" role="tab" aria-selected={active} aria-controls="coupon-detail-panel" className={`grid w-full min-w-[860px] grid-cols-[0.35fr_1.2fr_1.5fr_0.8fr_0.7fr_1.2fr_0.7fr] gap-3 border-t border-line px-3 py-2.5 text-left text-[0.72rem] transition ${active ? "bg-slate-100" : "bg-white hover:bg-slate-50"}`} onClick={() => { setError(""); setSelectedId(coupon.id); }}>
+                  <span>{(page - 1) * PAGE_SIZE + pageCoupons.indexOf(coupon) + 1}</span>
                   <span className="font-mono text-[0.68rem]">{coupon.code}</span>
                   <span className="font-bold">{coupon.name}</span>
                   <span>{coupon.scope === "ONE_PLUS_ONE" ? "1+1 할인" : coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지 할인" : "장바구니"}</span>

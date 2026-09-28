@@ -12,7 +12,7 @@ export default async function ExhibitionsAdminPage() {
   const [exhibitions, products] = await Promise.all([
     prisma.exhibition.findMany({
       include: { products: true },
-      orderBy: { startAt: "desc" },
+      orderBy: { id: "desc" },
     }),
     prisma.product.findMany({ orderBy: { name: "asc" } }),
   ]);

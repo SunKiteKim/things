@@ -37,9 +37,9 @@ export function AdminMasterDetail({
       <h2 className="mt-8 text-base font-semibold">{listTitle}</h2>
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-left">
-          <thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead>
+          <thead><tr><th>No</th>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead>
           <tbody>
-            {pageRows.length ? pageRows.map((row) => (
+            {pageRows.length ? pageRows.map((row, rowIndex) => (
               <tr
                 key={row.id}
                 className={`cursor-pointer border-t border-line transition hover:bg-slate-50 ${selectedId === row.id ? "bg-slate-100" : ""}`}
@@ -48,9 +48,10 @@ export function AdminMasterDetail({
                 onClick={() => setSelectedId(row.id)}
                 onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedId(row.id); } }}
               >
+                <td>{(page - 1) * pageSize + rowIndex + 1}</td>
                 {row.cells.map((cell, index) => <td key={index}>{cell}</td>)}
               </tr>
-            )) : <tr><td colSpan={columns.length} className="py-12 text-center text-muted">등록된 항목이 없습니다.</td></tr>}
+            )) : <tr><td colSpan={columns.length + 1} className="py-12 text-center text-muted">등록된 항목이 없습니다.</td></tr>}
           </tbody>
         </table>
       </div>

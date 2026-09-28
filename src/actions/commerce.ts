@@ -211,14 +211,21 @@ export async function completeDemoPayment(orderId: string) {
 }
 
 export async function updateOrderStatus(formData: FormData) {
-  if (!(await requireAdmin())) return;
+  if (!(await requireAdmin())) return { ok: false, error: "관리자 로그인이 필요합니다." };
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "");
-  if (!Object.values(ORDER_STATUS).includes(status as (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS])) return;
-  await prisma.order.update({ where: { id }, data: { status, ...orderStatusTimestamp(status) } });
+  const trackingNumber = String(formData.get("trackingNumber") ?? "").trim();
+  if (!Object.values(ORDER_STATUS).includes(status as (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS])) return { ok: false, error: "올바른 주문 상태를 선택해 주세요." };
+  const order = await prisma.order.findUnique({ where: { id }, select: { status: true, trackingNumber: true } });
+  if (!order) return { ok: false, error: "주문을 찾을 수 없습니다." };
+  const savedTrackingNumber = trackingNumber || order.trackingNumber;
+  if (status === ORDER_STATUS.DELIVERED && !savedTrackingNumber) return { ok: false, error: "배송 완료 처리에는 운송장번호가 필요합니다." };
+  if ((status === ORDER_STATUS.RETURNED || status === ORDER_STATUS.EXCHANGED) && order.status !== ORDER_STATUS.DELIVERED) return { ok: false, error: "배송 완료된 주문만 반품 또는 교환 처리할 수 있습니다." };
+  await prisma.order.update({ where: { id }, data: { status, trackingNumber: savedTrackingNumber || null, ...orderStatusTimestamp(status) } });
   await setAdminFlash("주문 상태가 수정되었습니다.");
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${id}`);
+  return { ok: true };
 }
 
 export async function cancelOrder(formData: FormData) {

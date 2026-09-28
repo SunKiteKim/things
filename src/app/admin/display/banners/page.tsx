@@ -4,7 +4,7 @@ import { AdminCreateModal } from "@/components/admin-create-modal";
 import { AdminMasterDetail } from "@/components/admin-master-detail";
 
 export default async function BannersAdminPage() {
-  const banners = await prisma.banner.findMany({ orderBy: { sortOrder: "asc" } });
+  const banners = await prisma.banner.findMany({ orderBy: { id: "desc" } });
 
   return (
     <div>
