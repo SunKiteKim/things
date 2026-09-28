@@ -22,6 +22,23 @@ export const ORDER_STATUS_LABEL: Record<string, string> = {
   CANCELLED: "취소",
 };
 
+export function orderStatusTimestamp(status: string, date = new Date()) {
+  switch (status) {
+    case ORDER_STATUS.PAID:
+      return { paidAt: date };
+    case ORDER_STATUS.PREPARING:
+      return { preparingAt: date };
+    case ORDER_STATUS.SHIPPED:
+      return { shippedAt: date };
+    case ORDER_STATUS.DELIVERED:
+      return { deliveredAt: date };
+    case ORDER_STATUS.CANCELLED:
+      return { cancelledAt: date };
+    default:
+      return {};
+  }
+}
+
 export function slugify(value: string) {
   const base = value
     .trim()

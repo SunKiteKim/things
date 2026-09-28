@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCart, setCart, getSelectedCoupon, setSelectedCoupon } from "@/lib/cart";
-import { ORDER_STATUS, createOrderNumber } from "@/lib/utils";
+import { ORDER_STATUS, createOrderNumber, orderStatusTimestamp } from "@/lib/utils";
 import { requireAdmin, requireUser } from "@/lib/auth";
 import { normalizePhone } from "@/lib/phone";
 import { setAdminFlash } from "@/lib/admin-flash";
@@ -197,7 +197,7 @@ export async function completeDemoPayment(orderId: string) {
   }
   await prisma.order.update({
     where: { id: orderId },
-    data: { status: ORDER_STATUS.PAID, paymentMethod: "DEMO" },
+    data: { status: ORDER_STATUS.PAID, paymentMethod: "DEMO", ...orderStatusTimestamp(ORDER_STATUS.PAID) },
   });
   if (order.couponCode) {
     await prisma.coupon.updateMany({
@@ -214,7 +214,8 @@ export async function updateOrderStatus(formData: FormData) {
   if (!(await requireAdmin())) return;
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "");
-  await prisma.order.update({ where: { id }, data: { status } });
+  if (!Object.values(ORDER_STATUS).includes(status as (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS])) return;
+  await prisma.order.update({ where: { id }, data: { status, ...orderStatusTimestamp(status) } });
   await setAdminFlash("주문 상태가 수정되었습니다.");
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${id}`);
@@ -230,7 +231,7 @@ export async function cancelOrder(formData: FormData) {
   if (!admin && order.userId !== session?.user.id) return;
   await prisma.order.update({
     where: { id },
-    data: { status: ORDER_STATUS.CANCELLED },
+    data: { status: ORDER_STATUS.CANCELLED, ...orderStatusTimestamp(ORDER_STATUS.CANCELLED) },
   });
   if (admin) await setAdminFlash("주문이 취소되었습니다.");
   revalidatePath("/admin/orders");

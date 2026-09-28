@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ORDER_STATUS } from "@/lib/utils";
+import { ORDER_STATUS, orderStatusTimestamp } from "@/lib/utils";
 import { auth } from "@/lib/auth";
 
 export async function POST(request: Request) {
@@ -64,6 +64,7 @@ export async function POST(request: Request) {
     where: { id: order.id },
     data: {
       status: ORDER_STATUS.PAID,
+      ...orderStatusTimestamp(ORDER_STATUS.PAID),
       paymentKey: body.paymentKey ?? null,
       paymentMethod: "TOSS",
     },
