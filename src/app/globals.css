@@ -20,8 +20,8 @@
   --color-accent-deep: var(--accent-deep);
   --color-surface: var(--surface);
   --color-white: var(--white);
-  --font-sans: "Roboto", "Nanum Gothic", sans-serif;
-  --font-display: "Roboto", "Nanum Gothic", sans-serif;
+  --font-sans: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-display: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   --font-logo: var(--font-logo);
 }
 
@@ -36,7 +36,7 @@ body {
 }
 
 body {
-  font-family: "Roboto", "Nanum Gothic", "Malgun Gothic", sans-serif;
+  font-family: var(--font-sans);
   font-weight: 400;
   letter-spacing: -0.01em;
 }
@@ -54,13 +54,13 @@ textarea {
 }
 
 .display {
-  font-family: "Roboto", "Nanum Gothic", "Malgun Gothic", sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 header {
-  font-weight: 700;
+  font-weight: 600;
 }
 
 header .logo-type {
@@ -73,7 +73,7 @@ header .utility-links button {
 }
 
 .product-name {
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .logo-type {
