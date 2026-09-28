@@ -68,6 +68,7 @@ export async function createCoupon(formData: FormData) {
       startAt: new Date(text(formData, "startAt") || Date.now()),
       endAt: new Date(text(formData, "endAt") || Date.now()),
       isActive: bool(formData, "isActive"),
+      isStackable: bool(formData, "isStackable"),
     },
   });
   await setAdminFlash("쿠폰이 등록되었습니다.");
@@ -98,6 +99,7 @@ export async function updateCoupon(formData: FormData) {
         startAt: new Date(text(formData, "startAt")),
         endAt: new Date(text(formData, "endAt")),
         isActive: bool(formData, "isActive"),
+        isStackable: bool(formData, "isStackable"),
       },
     });
     await setAdminFlash("쿠폰 정보가 수정되었습니다.");

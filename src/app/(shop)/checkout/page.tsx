@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { applyCoupon } from "@/actions/commerce";
 import { getCart, getSelectedCoupon } from "@/lib/cart";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import { CheckoutClient } from "@/components/checkout-client";
+import { couponDiscountForLines } from "@/lib/discounts";
 
 export default async function CheckoutPage() {
   const session = await requireUser();
@@ -25,7 +25,19 @@ export default async function CheckoutPage() {
   if (!rows.length) redirect("/cart");
 
   const code = await getSelectedCoupon();
-  const applied = code ? await applyCoupon(code) : null;
+  const couponLines = rows.map((row) => ({ productId: row.product.id, categoryId: row.product.categoryId, amount: row.product.price * row.quantity, quantity: row.quantity }));
+  const coupons = await prisma.coupon.findMany({ where: { isActive: true, isPaused: false, startAt: { lte: new Date() }, endAt: { gte: new Date() } }, include: { issues: true } });
+  const options = coupons
+    .filter((coupon) => coupon.issues.length === 0 || coupon.issues.some((issue) => issue.targetType === "CATEGORY" || issue.userId === session.user.id))
+    .map((coupon) => ({
+      code: coupon.code,
+      discount: couponDiscountForLines(coupon, couponLines, new Date(), session.user.id),
+      isStackable: coupon.isStackable,
+      label: `[${coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "ONE_PLUS_ONE" ? "1+1 할인" : coupon.scope === "MULTI_CART" ? "가지가지 할인" : "장바구니"}] ${coupon.name}`,
+    }))
+    .filter((option): option is typeof option & { discount: number } => option.discount !== null)
+    .map((option) => ({ ...option, eligible: true }));
+  const selectedOption = options.find((option) => option.code === code) ?? options.reduce<(typeof options)[number] | undefined>((best, option) => !best || option.discount > best.discount ? option : best, undefined);
   return (
     <div>
       <h1 className="display text-5xl">주문서</h1>
@@ -40,7 +52,8 @@ export default async function CheckoutPage() {
             addressDetail: user?.addressDetail ?? "",
             email: user?.email ?? "",
           }}
-          initialCoupon={applied?.ok ? { code: applied.code!, discount: applied.discount! } : undefined}
+          initialCoupon={selectedOption ? { code: selectedOption.code, discount: selectedOption.discount } : undefined}
+          couponOptions={options}
           subtotal={subtotal}
           orderName={rows[0].product.name + (rows.length > 1 ? ` 외 ${rows.length - 1}건` : "")}
           tossClientKey={process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? ""}

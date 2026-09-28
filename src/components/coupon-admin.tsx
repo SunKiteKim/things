@@ -22,6 +22,7 @@ type CouponView = {
   endAt: string;
   isActive: boolean;
   isPaused: boolean;
+  isStackable: boolean;
   createdAt: string;
   issues: { id: string; targetType: string; userId: string | null; categoryId: string | null; createdAt: string }[];
 };
@@ -220,6 +221,12 @@ function CouponFields({ prefix, products, coupon }: { prefix: string; products: 
       </Field>
       <Field label="최대 사용횟수" htmlFor={`${prefix}-maxUses`}>
         <input id={`${prefix}-maxUses`} className="field" name="maxUses" type="number" min={0} defaultValue={coupon?.maxUses ?? 0} />
+      </Field>
+      <Field label="중복 적용 가능 여부" htmlFor={`${prefix}-isStackable`}>
+        <label className="flex min-h-[3.2rem] items-center gap-2 text-sm">
+          <input id={`${prefix}-isStackable`} name="isStackable" type="checkbox" defaultChecked={coupon?.isStackable ?? false} />
+          다른 상품·장바구니 쿠폰과 중복 적용 가능
+        </label>
       </Field>
       <Field label="사용 시작일" htmlFor={`${prefix}-startAt`}>
         <input id={`${prefix}-startAt`} className="field" name="startAt" type="datetime-local" defaultValue={localInput(coupon?.startAt ?? start)} required />

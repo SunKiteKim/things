@@ -117,6 +117,7 @@ model Coupon {
   endAt              DateTime
   isActive           Boolean       @default(true)
   isPaused           Boolean       @default(false)
+  isStackable        Boolean       @default(false)
   createdAt          DateTime      @default(now())
   issues             CouponIssue[]
 }

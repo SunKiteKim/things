@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
-import { applyCoupon, completeDemoPayment, createPendingOrder } from "@/actions/commerce";
+import { completeDemoPayment, createPendingOrder, selectCartCoupon } from "@/actions/commerce";
 import { formatPrice } from "@/lib/utils";
 import { FormField } from "@/components/form-field";
 import { PostcodeAddress } from "@/components/postcode-address";
+import { CouponPicker, type CouponOption } from "@/components/cart-coupon";
 
 type TossWidgets = ReturnType<Awaited<ReturnType<typeof loadTossPayments>>["widgets"]>;
 
@@ -21,15 +22,15 @@ type Props = {
     email: string;
   };
   initialCoupon?: { code: string; discount: number };
+  couponOptions: CouponOption[];
   subtotal: number;
   orderName: string;
   tossClientKey: string;
 };
 
-export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initialCoupon }: Props) {
+export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initialCoupon, couponOptions }: Props) {
   const router = useRouter();
   const [discount, setDiscount] = useState(initialCoupon?.discount ?? 0);
-  const [couponCode, setCouponCode] = useState(initialCoupon?.code ?? "");
   const [appliedCode, setAppliedCode] = useState(initialCoupon?.code ?? "");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -86,22 +87,6 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initi
     if (!widgetsReady || !widgetsRef.current) return;
     void widgetsRef.current.setAmount({ currency: "KRW", value: total });
   }, [total, widgetsReady]);
-
-  async function onCoupon() {
-    const result = await applyCoupon(couponCode);
-    if ("error" in result && result.error) {
-      setDiscount(0);
-      setAppliedCode("");
-      setMessage(result.error);
-      return;
-    }
-    if (result.ok && result.discount !== undefined) {
-      setDiscount(result.discount);
-      setAppliedCode(result.code ?? "");
-      setCouponCode(result.code ?? couponCode);
-      setMessage(`${result.name} 적용`);
-    }
-  }
 
   async function createOrder() {
     const form = document.getElementById("checkout-form") as HTMLFormElement;
@@ -204,17 +189,7 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initi
           <textarea id="memo" className="field min-h-24" name="memo" placeholder="배송 메모" />
         </FormField>
       </form>
-      <div className="mt-6 flex gap-2">
-        <input
-          className="field"
-          value={couponCode}
-          onChange={(event) => { setCouponCode(event.target.value); setDiscount(0); setAppliedCode(""); }}
-          placeholder="쿠폰 코드 THINGS10"
-        />
-        <button type="button" className="btn btn-ghost" onClick={onCoupon}>
-          적용
-        </button>
-      </div>
+      <CouponPicker options={couponOptions} selected={appliedCode} subtotal={subtotal} onApply={async (option) => { const result = await selectCartCoupon(option.code); if ("error" in result && result.error) throw new Error(result.error); setDiscount(option.discount); setAppliedCode(option.code); setMessage(`${option.label} 적용`); }} />
       <p className="mt-4 text-sm">할인 {formatPrice(discount)}</p>
       <p className="text-lg">결제 금액 {formatPrice(total)}</p>
       {message ? <p className="mt-3 text-sm text-accent">{message}</p> : null}
