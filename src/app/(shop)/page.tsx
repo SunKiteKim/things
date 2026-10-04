@@ -1,21 +1,22 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Fragment } from "react";
 import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/product-card";
 import { QuickMenu } from "@/components/quick-menu";
+import { loadPageDisplay } from "@/lib/display";
+import { HOME_SECTIONS, shortcutIcon } from "@/lib/display-items";
 import bannerMain from "@/img/banner_main_things_1520_500.png";
 import bannerCoupon from "@/img/banner_coupon_things_1380_180.png";
 
 export default async function HomePage() {
-  const [categories, products] = await Promise.all([
-    prisma.category.findMany({
-      where: { isVisible: true },
-      orderBy: { sortOrder: "asc" },
-    }),
+  const [categories, products, display] = await Promise.all([
+    prisma.category.findMany(),
     prisma.product.findMany({
       where: { isPublished: true },
       orderBy: { sortOrder: "asc" },
     }),
+    loadPageDisplay("home"),
   ]);
 
   const bestSelling = products.filter((item) => item.isFeatured).slice(0, 4);
@@ -23,78 +24,122 @@ export default async function HomePage() {
     .filter((item) => !bestSelling.some((best) => best.id === item.id))
     .slice(0, 4);
 
-  const iconBySlug: Record<string, "object" | "light" | "table" | "textile" | "scent"> = {
-    object: "object",
-    light: "light",
-    table: "table",
-    textile: "textile",
-    scent: "scent",
-  };
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
+  const shortcutRows = display.filter((item) => item.kind === "shortcut");
+  const quickItems =
+    shortcutRows.length > 0
+      ? shortcutRows
+          .filter((item) => item.isVisible)
+          .filter((item) => {
+            if (!item.refId) return true;
+            return categoryById.get(item.refId)?.isVisible === true;
+          })
+          .map((item) => ({
+            href: item.href,
+            label: item.label,
+            icon: item.icon,
+          }))
+      : [
+          ...categories
+            .filter((category) => category.isVisible)
+            .sort((left, right) => left.sortOrder - right.sortOrder)
+            .map((category) => ({
+              href: `/category/${category.slug}`,
+              label: category.name,
+              icon: shortcutIcon(category.slug),
+            })),
+          { href: "/events", label: "이벤트", icon: "event" },
+          { href: "/events", label: "쿠폰", icon: "coupon" },
+          { href: "/mypage", label: "마이", icon: "account" },
+        ];
 
-  const quickItems = [
-    ...categories.map((category) => ({
-      href: `/category/${category.slug}`,
-      label: category.name,
-      icon: iconBySlug[category.slug] ?? ("object" as const),
-    })),
-    { href: "/events", label: "이벤트", icon: "event" as const },
-    { href: "/events", label: "쿠폰", icon: "coupon" as const },
-    { href: "/mypage", label: "마이", icon: "account" as const },
-  ];
+  const storedSections = display.filter((item) => item.kind === "section");
+  const sections =
+    storedSections.length > 0
+      ? storedSections
+      : HOME_SECTIONS.map((section) => ({
+          id: section.slotKey,
+          slotKey: section.slotKey,
+          label: section.label,
+          href: section.href,
+          isVisible: true,
+          sortOrder: section.sortOrder,
+        }));
 
   return (
     <div className="pb-8">
-      <section className="mx-auto w-full max-w-[1520px]">
-        <Link href="/category/object" className="block w-full">
-          <Image
-            src={bannerMain}
-            alt="SELECT. STAY. BE WITH THINGS."
-            width={1520}
-            height={500}
-            priority
-            unoptimized
-            className="block h-auto w-full object-contain"
-          />
-        </Link>
-      </section>
-
-      <section className="mx-auto w-full max-w-[1280px] px-5 py-10 md:px-8 md:py-12">
-        <QuickMenu items={quickItems} />
-      </section>
-
-      <section className="mx-auto w-full max-w-[1280px] px-5 pb-14 md:px-8">
-        <h2 className="mb-8 text-[1.75rem] font-bold tracking-tight md:text-[2rem]">Best Selling</h2>
-        <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4 lg:gap-x-8">
-          {bestSelling.map((product) => (
-            <ProductCard key={product.id} product={product} showDiscountRate showProductId />
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-[1390px] pb-14">
-        <Link
-          href="/events"
-          className="mx-auto flex aspect-[1390/190] w-full max-w-[1390px] items-center justify-center"
-        >
-          <Image
-            src={bannerCoupon}
-            alt="적용 가능한 모든 쿠폰 받으러가기"
-            width={1380}
-            height={180}
-            unoptimized
-            className="h-auto max-h-full w-auto max-w-full object-contain"
-          />
-        </Link>
-      </section>
-
-      <section className="mx-auto w-full max-w-[1280px] px-5 pb-6 md:px-8">
-        <h2 className="mb-8 text-[1.75rem] font-bold tracking-tight md:text-[2rem]">Promotion product2</h2>
-        <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4 lg:gap-x-8">
-          {promotion.map((product) => (
-            <ProductCard key={product.id} product={product} showDiscountRate showProductId />
-          ))}
-        </div>
-      </section>
+      {sections.map((section) => {
+        if (!section.isVisible) return null;
+        if (section.slotKey === "section:hero") {
+          return (
+            <section key={section.id} className="mx-auto w-full max-w-[1520px]">
+              <Link href={section.href || "/category/object"} className="block w-full">
+                <Image
+                  src={bannerMain}
+                  alt="SELECT. STAY. BE WITH THINGS."
+                  width={1520}
+                  height={500}
+                  priority
+                  unoptimized
+                  className="block h-auto w-full object-contain"
+                />
+              </Link>
+            </section>
+          );
+        }
+        if (section.slotKey === "section:quick") {
+          if (quickItems.length === 0) return null;
+          return (
+            <section key={section.id} className="mx-auto w-full max-w-[1280px] px-5 py-10 md:px-8 md:py-12">
+              <QuickMenu items={quickItems} />
+            </section>
+          );
+        }
+        if (section.slotKey === "section:best") {
+          return (
+            <section key={section.id} className="mx-auto w-full max-w-[1280px] px-5 pb-14 md:px-8">
+              <h2 className="mb-8 text-[1.75rem] font-bold tracking-tight md:text-[2rem]">{section.label}</h2>
+              <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4 lg:gap-x-8">
+                {bestSelling.map((product) => (
+                  <ProductCard key={product.id} product={product} showDiscountRate showProductId />
+                ))}
+              </div>
+            </section>
+          );
+        }
+        if (section.slotKey === "section:coupon") {
+          return (
+            <section key={section.id} className="mx-auto w-full max-w-[1390px] pb-14">
+              <Link
+                href={section.href || "/events"}
+                className="mx-auto flex aspect-[1390/190] w-full max-w-[1390px] items-center justify-center"
+              >
+                <Image
+                  src={bannerCoupon}
+                  alt="적용 가능한 모든 쿠폰 받으러가기"
+                  width={1380}
+                  height={180}
+                  unoptimized
+                  className="h-auto max-h-full w-auto max-w-full object-contain"
+                />
+              </Link>
+            </section>
+          );
+        }
+        if (section.slotKey === "section:promotion") {
+          return (
+            <section key={section.id} className="mx-auto w-full max-w-[1280px] px-5 pb-6 md:px-8">
+              <h2 className="mb-8 text-[1.75rem] font-bold tracking-tight md:text-[2rem]">{section.label}</h2>
+              <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4 lg:gap-x-8">
+                {promotion.map((product) => (
+                  <ProductCard key={product.id} product={product} showDiscountRate showProductId />
+                ))}
+              </div>
+            </section>
+          );
+        }
+        return <Fragment key={section.id} />;
+      })}
     </div>
   );
 }

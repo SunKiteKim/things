@@ -5,6 +5,7 @@ import { SITE_URL } from "@/lib/site";
 const NAV = [
   { href: "/admin", label: "대시보드" },
   { href: "/admin/members", label: "회원관리" },
+  { href: "/admin/display", label: "전시관리" },
   { href: "/admin/display/banners", label: "배너관리" },
   { href: "/admin/display/categories", label: "카테고리 관리" },
   { href: "/admin/products", label: "상품관리" },

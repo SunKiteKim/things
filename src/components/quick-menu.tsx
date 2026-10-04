@@ -1,13 +1,14 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { shortcutIcon, type ShortcutIcon } from "@/lib/display-items";
 
 type QuickItem = {
   href: string;
   label: string;
-  icon: "object" | "light" | "table" | "textile" | "scent" | "event" | "coupon" | "account";
+  icon: string;
 };
 
-const ICONS: Record<QuickItem["icon"], ReactNode> = {
+const ICONS: Record<ShortcutIcon, ReactNode> = {
   object: (
     <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.6">
       <path d="M12 3 20 8v8l-8 5-8-5V8l8-5Z" />
@@ -60,10 +61,10 @@ const ICONS: Record<QuickItem["icon"], ReactNode> = {
 export function QuickMenu({ items }: { items: QuickItem[] }) {
   return (
     <nav className="grid grid-cols-4 gap-y-6 sm:grid-cols-8">
-      {items.map((item) => (
-        <Link key={item.label} href={item.href} className="group flex flex-col items-center gap-2.5">
+      {items.map((item, index) => (
+        <Link key={`${item.href}-${item.label}-${index}`} href={item.href} className="group flex flex-col items-center gap-2.5">
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-ink text-paper transition group-hover:bg-accent">
-            {ICONS[item.icon]}
+            {ICONS[shortcutIcon(item.icon)]}
           </span>
           <span className="text-[0.8rem] font-normal">{item.label}</span>
         </Link>

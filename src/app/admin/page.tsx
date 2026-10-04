@@ -14,6 +14,7 @@ export default async function AdminHome() {
     { href: "/admin/members", label: "회원", value: `${members} / ${LIMITS.MAX_MEMBERS}` },
     { href: "/admin/products", label: "상품", value: `${products} / ${LIMITS.MAX_PRODUCTS}` },
     { href: "/admin/display/categories", label: "카테고리", value: `${categories} / ${LIMITS.MAX_CATEGORIES}` },
+    { href: "/admin/display", label: "전시관리", value: "페이지별 노출" },
     { href: "/admin/orders", label: "주문", value: String(orders) },
   ];
 
@@ -21,7 +22,7 @@ export default async function AdminHome() {
     <div>
       <h1 className="display text-4xl">things Admin</h1>
       <p className="mt-2 text-sm text-muted">포트폴리오 한도 안에서 CRUD를 운영합니다. 주문은 생성 없이 조회·수정·취소만 가능합니다.</p>
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {cards.map((card) => (
           <Link key={card.href} href={card.href} className="border border-line bg-surface p-6">
             <p className="text-xs uppercase tracking-widest text-muted">{card.label}</p>

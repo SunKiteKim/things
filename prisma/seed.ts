@@ -1,6 +1,7 @@
 import { loadEnvConfig } from "@next/env";
 import { PrismaClient } from "@prisma/client";
 import { hashSync } from "bcryptjs";
+import { syncDisplayItems } from "../src/lib/display-items";
 
 loadEnvConfig(process.cwd());
 
@@ -20,6 +21,7 @@ async function main() {
   await prisma.exhibition.deleteMany();
   await prisma.coupon.deleteMany();
   await prisma.banner.deleteMany();
+  await prisma.displayItem.deleteMany();
   await prisma.product.deleteMany();
   await prisma.category.deleteMany();
   await prisma.user.deleteMany();
@@ -408,6 +410,8 @@ async function main() {
       },
     ],
   });
+
+  await syncDisplayItems(prisma);
 
   console.log("tHings seed complete.");
 }

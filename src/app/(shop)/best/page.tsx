@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ORDER_STATUS } from "@/lib/utils";
 import { ProductCard } from "@/components/product-card";
+import { loadPageDisplay } from "@/lib/display";
 
 const SOLD_STATUSES = [
   ORDER_STATUS.PAID,
@@ -10,7 +11,7 @@ const SOLD_STATUSES = [
 ];
 
 export default async function BestPage() {
-  const [products, sold] = await Promise.all([
+  const [products, sold, display] = await Promise.all([
     prisma.product.findMany({
       where: { isPublished: true },
     }),
@@ -21,10 +22,14 @@ export default async function BestPage() {
         order: { status: { in: [...SOLD_STATUSES] } },
       },
     }),
+    loadPageDisplay("best"),
   ]);
 
+  const hidden = new Set(
+    display.filter((item) => item.kind === "product" && !item.isVisible).map((item) => item.refId),
+  );
   const soldMap = new Map(sold.map((row) => [row.productId, row._sum.quantity ?? 0]));
-  const ranked = [...products].sort((left, right) => {
+  const ranked = products.filter((product) => !hidden.has(product.id)).sort((left, right) => {
     const diff = (soldMap.get(right.id) ?? 0) - (soldMap.get(left.id) ?? 0);
     if (diff !== 0) return diff;
     return right.registeredAt.getTime() - left.registeredAt.getTime();

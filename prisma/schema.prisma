@@ -79,6 +79,22 @@ model Banner {
   isActive  Boolean @default(true)
 }
 
+model DisplayItem {
+  id        String  @id @default(cuid())
+  pageKey   String
+  slotKey   String
+  kind      String
+  refId     String  @default("")
+  label     String
+  href      String  @default("")
+  icon      String  @default("")
+  sortOrder Int     @default(0)
+  isVisible Boolean @default(true)
+
+  @@unique([pageKey, slotKey])
+  @@index([pageKey, sortOrder])
+}
+
 model Exhibition {
   id          String              @id @default(cuid())
   title       String

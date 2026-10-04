@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/product-card";
 import { CategoryPills } from "@/components/category-pills";
 import { Pagination } from "@/components/pagination";
+import { loadPageDisplay } from "@/lib/display";
 
 const PAGE_SIZE = 20;
 
@@ -14,12 +15,21 @@ export default async function ProductsPage({
   const requestedPage = Number.parseInt(pageParam ?? "1", 10);
   const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
 
-  const categories = await prisma.category.findMany({
-    where: { isVisible: true },
-    orderBy: { sortOrder: "asc" },
-  });
+  const [catalog, display] = await Promise.all([
+    prisma.category.findMany({ orderBy: { sortOrder: "asc" } }),
+    loadPageDisplay("products"),
+  ]);
+  const visibleCatalog = catalog.filter((category) => category.isVisible);
+  const listed = display.filter((item) => item.kind === "category" && item.isVisible);
+  const categories =
+    display.some((item) => item.kind === "category")
+      ? listed.flatMap((item) => {
+          const category = visibleCatalog.find((entry) => entry.id === item.refId);
+          return category ? [category] : [];
+        })
+      : visibleCatalog;
   const activeCategory = categorySlug
-    ? categories.find((item) => item.slug === categorySlug) ?? null
+    ? visibleCatalog.find((item) => item.slug === categorySlug) ?? null
     : null;
 
   const where = {
