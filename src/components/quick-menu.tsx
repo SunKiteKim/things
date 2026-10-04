@@ -60,9 +60,9 @@ const ICONS: Record<ShortcutIcon, ReactNode> = {
 
 export function QuickMenu({ items }: { items: QuickItem[] }) {
   return (
-    <nav className="grid grid-cols-4 gap-y-6 sm:grid-cols-8">
+    <nav className="quick-menu">
       {items.map((item, index) => (
-        <Link key={`${item.href}-${item.label}-${index}`} href={item.href} className="group flex flex-col items-center gap-2.5">
+        <Link key={`${item.href}-${item.label}-${index}`} href={item.href} className="group">
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-ink text-paper transition group-hover:bg-accent">
             {ICONS[shortcutIcon(item.icon)]}
           </span>

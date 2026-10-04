@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { LIMITS, slugify } from "@/lib/utils";
 import { requireAdmin } from "@/lib/auth";
 import { setAdminFlash } from "@/lib/admin-flash";
-import { isDisplayPage, shortcutIcon } from "@/lib/display-items";
+import { ASSIGN_AREAS, isDisplayPage, shortcutIcon, type AssignArea } from "@/lib/display-items";
 
 function revalidateStorefront() {
   revalidatePath("/");
@@ -152,10 +152,12 @@ export async function saveDisplayItems(formData: FormData) {
       const sortOrder = Number.isFinite(parsedSort)
         ? Math.max(0, Math.min(9999, Math.round(parsedSort)))
         : item.sortOrder;
-      const data: { sortOrder: number; isVisible: boolean; label?: string; href?: string; icon?: string } = {
+      const data: { sortOrder: number; isVisible?: boolean; label?: string; href?: string; icon?: string } = {
         sortOrder,
-        isVisible: formData.get(`visible:${item.id}`) === "on",
       };
+      if (item.kind === "section") {
+        data.isVisible = formData.get(`visible:${item.id}`) === "on";
+      }
 
       const editableLink = item.kind === "shortcut" && item.refId === "";
       const editableHeading = item.slotKey === "section:best" || item.slotKey === "section:promotion";
@@ -203,17 +205,99 @@ export async function createDisplayShortcut(formData: FormData) {
       isVisible: true,
     },
   });
-  await setAdminFlash("바로가기가 추가되었습니다.");
+  await setAdminFlash("퀵메뉴에 추가되었습니다.");
   revalidateStorefront();
 }
 
-export async function deleteDisplayShortcut(formData: FormData) {
+function isAssignArea(value: string): value is AssignArea {
+  return value in ASSIGN_AREAS;
+}
+
+export async function assignDisplayContent(formData: FormData) {
+  if (!(await requireAdmin())) return;
+  const areaKey = text(formData, "area");
+  if (!isAssignArea(areaKey)) return;
+  const area = ASSIGN_AREAS[areaKey];
+  const refIds = [...new Set(formData.getAll("refId").map((value) => String(value)).filter(Boolean))];
+  if (refIds.length === 0) return;
+
+  const [categories, products, exhibitions, current] = await Promise.all([
+    prisma.category.findMany({ where: { id: { in: refIds } } }),
+    prisma.product.findMany({ where: { id: { in: refIds } } }),
+    prisma.exhibition.findMany({ where: { id: { in: refIds } } }),
+    prisma.displayItem.aggregate({
+      where: { pageKey: area.pageKey, kind: area.kind },
+      _max: { sortOrder: true },
+    }),
+  ]);
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
+  const productById = new Map(products.map((product) => [product.id, product]));
+  const exhibitionById = new Map(exhibitions.map((exhibition) => [exhibition.id, exhibition]));
+
+  let sortOrder = (current._max.sortOrder ?? 0) + 1;
+  for (const refId of refIds) {
+    const slotKey = area.slot(refId);
+    const content = contentForArea(areaKey, refId, categoryById, productById, exhibitionById);
+    if (!content) continue;
+    await prisma.displayItem.upsert({
+      where: { pageKey_slotKey: { pageKey: area.pageKey, slotKey } },
+      create: {
+        pageKey: area.pageKey,
+        slotKey,
+        kind: area.kind,
+        refId,
+        label: content.label,
+        href: content.href,
+        icon: content.icon,
+        sortOrder,
+        isVisible: true,
+      },
+      update: {
+        label: content.label,
+        href: content.href,
+        isVisible: true,
+      },
+    });
+    sortOrder += 1;
+  }
+
+  await setAdminFlash("영역에 컨텐츠를 추가했습니다.");
+  revalidateStorefront();
+}
+
+function contentForArea(
+  area: AssignArea,
+  refId: string,
+  categories: Map<string, { name: string; slug: string }>,
+  products: Map<string, { id: string; name: string }>,
+  exhibitions: Map<string, { title: string; slug: string }>,
+) {
+  if (area === "quick-category" || area === "products") {
+    const category = categories.get(refId);
+    if (!category) return null;
+    return {
+      label: category.name,
+      href: area === "products" ? `/products?category=${category.slug}` : `/category/${category.slug}`,
+      icon: area === "quick-category" ? shortcutIcon(category.slug) : "",
+    };
+  }
+  if (area === "home-best" || area === "home-promotion" || area === "best") {
+    const product = products.get(refId);
+    if (!product) return null;
+    return { label: product.name, href: `/product/${product.id}`, icon: "" };
+  }
+  const exhibition = exhibitions.get(refId);
+  if (!exhibition) return null;
+  return { label: exhibition.title, href: `/events/${exhibition.slug}`, icon: "" };
+}
+
+export async function removeDisplayItem(formData: FormData) {
   if (!(await requireAdmin())) return;
   const id = text(formData, "id");
   if (!id) return;
   const item = await prisma.displayItem.findUnique({ where: { id } });
-  if (!item || item.pageKey !== "home" || !item.slotKey.startsWith("link:custom:")) return;
+  if (!item || item.kind === "section" || item.kind === "meta") return;
   await prisma.displayItem.delete({ where: { id } });
-  await setAdminFlash("바로가기가 삭제되었습니다.");
+  await setAdminFlash("영역에서 컨텐츠를 제외했습니다.");
   revalidateStorefront();
 }

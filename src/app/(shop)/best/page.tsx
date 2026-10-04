@@ -25,21 +25,25 @@ export default async function BestPage() {
     loadPageDisplay("best"),
   ]);
 
-  const hidden = new Set(
-    display.filter((item) => item.kind === "product" && !item.isVisible).map((item) => item.refId),
-  );
+  const productById = new Map(products.map((product) => [product.id, product]));
   const soldMap = new Map(sold.map((row) => [row.productId, row._sum.quantity ?? 0]));
-  const ranked = products.filter((product) => !hidden.has(product.id)).sort((left, right) => {
-    const diff = (soldMap.get(right.id) ?? 0) - (soldMap.get(left.id) ?? 0);
-    if (diff !== 0) return diff;
-    return right.registeredAt.getTime() - left.registeredAt.getTime();
-  });
+  const ranked = display
+    .filter((item) => item.kind === "product" && item.isVisible)
+    .flatMap((item) => {
+      const product = productById.get(item.refId);
+      return product ? [product] : [];
+    })
+    .sort((left, right) => {
+      const diff = (soldMap.get(right.id) ?? 0) - (soldMap.get(left.id) ?? 0);
+      if (diff !== 0) return diff;
+      return right.registeredAt.getTime() - left.registeredAt.getTime();
+    });
 
   return (
     <div>
       <p className="text-[0.72rem] uppercase tracking-[0.28em] text-muted">Best</p>
       <h1 className="display mt-3 text-5xl">Best</h1>
-      <p className="mt-3 text-muted">판매량 순으로 정렬한 제품 {ranked.length}개</p>
+      <p className="mt-3 text-muted">전시에 등록한 제품 {ranked.length}개 · 판매량 순</p>
       {ranked.length === 0 ? (
         <p className="mt-16 text-muted">등록된 제품이 없습니다.</p>
       ) : (

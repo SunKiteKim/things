@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/product-card";
 import { QuickMenu } from "@/components/quick-menu";
 import { loadPageDisplay } from "@/lib/display";
-import { HOME_SECTIONS, shortcutIcon } from "@/lib/display-items";
+import { HOME_SECTIONS } from "@/lib/display-items";
 import bannerMain from "@/img/banner_main_things_1520_500.png";
 import bannerCoupon from "@/img/banner_coupon_things_1380_180.png";
 
@@ -19,39 +19,29 @@ export default async function HomePage() {
     loadPageDisplay("home"),
   ]);
 
-  const bestSelling = products.filter((item) => item.isFeatured).slice(0, 4);
-  const promotion = products
-    .filter((item) => !bestSelling.some((best) => best.id === item.id))
-    .slice(0, 4);
+  const productById = new Map(products.map((product) => [product.id, product]));
+  const placedProducts = (prefix: string) =>
+    display
+      .filter((item) => item.kind === "product" && item.isVisible && item.slotKey.startsWith(prefix))
+      .flatMap((item) => {
+        const product = productById.get(item.refId);
+        return product ? [product] : [];
+      });
+  const bestSelling = placedProducts("best-product:");
+  const promotion = placedProducts("promotion-product:");
 
   const categoryById = new Map(categories.map((category) => [category.id, category]));
-  const shortcutRows = display.filter((item) => item.kind === "shortcut");
-  const quickItems =
-    shortcutRows.length > 0
-      ? shortcutRows
-          .filter((item) => item.isVisible)
-          .filter((item) => {
-            if (!item.refId) return true;
-            return categoryById.get(item.refId)?.isVisible === true;
-          })
-          .map((item) => ({
-            href: item.href,
-            label: item.label,
-            icon: item.icon,
-          }))
-      : [
-          ...categories
-            .filter((category) => category.isVisible)
-            .sort((left, right) => left.sortOrder - right.sortOrder)
-            .map((category) => ({
-              href: `/category/${category.slug}`,
-              label: category.name,
-              icon: shortcutIcon(category.slug),
-            })),
-          { href: "/events", label: "이벤트", icon: "event" },
-          { href: "/events", label: "쿠폰", icon: "coupon" },
-          { href: "/mypage", label: "마이", icon: "account" },
-        ];
+  const quickItems = display
+    .filter((item) => item.kind === "shortcut" && item.isVisible)
+    .filter((item) => {
+      if (!item.refId) return true;
+      return categoryById.get(item.refId)?.isVisible === true;
+    })
+    .map((item) => ({
+      href: item.href,
+      label: item.label,
+      icon: item.icon,
+    }));
 
   const storedSections = display.filter((item) => item.kind === "section");
   const sections =

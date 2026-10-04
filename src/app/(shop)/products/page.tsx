@@ -20,14 +20,12 @@ export default async function ProductsPage({
     loadPageDisplay("products"),
   ]);
   const visibleCatalog = catalog.filter((category) => category.isVisible);
-  const listed = display.filter((item) => item.kind === "category" && item.isVisible);
-  const categories =
-    display.some((item) => item.kind === "category")
-      ? listed.flatMap((item) => {
-          const category = visibleCatalog.find((entry) => entry.id === item.refId);
-          return category ? [category] : [];
-        })
-      : visibleCatalog;
+  const categories = display
+    .filter((item) => item.kind === "category" && item.isVisible)
+    .flatMap((item) => {
+      const category = visibleCatalog.find((entry) => entry.id === item.refId);
+      return category ? [category] : [];
+    });
   const activeCategory = categorySlug
     ? visibleCatalog.find((item) => item.slug === categorySlug) ?? null
     : null;

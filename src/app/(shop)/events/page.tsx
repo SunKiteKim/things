@@ -15,7 +15,7 @@ export default async function EventsPage() {
     display.filter((item) => item.kind === "exhibition").map((item) => [item.refId, item]),
   );
   const visible = exhibitions
-    .filter((item) => placement.get(item.id)?.isVisible !== false)
+    .filter((item) => placement.get(item.id)?.isVisible === true)
     .sort((left, right) => {
       const leftOrder = placement.get(left.id)?.sortOrder ?? 0;
       const rightOrder = placement.get(right.id)?.sortOrder ?? 0;

@@ -11,7 +11,7 @@ export default async function ProductDisplayPage() {
   return (
     <div>
       <h1 className="display text-4xl">상품전시관리</h1>
-      <p className="mt-2 text-sm text-muted">공개 여부, 메인 노출, 정렬만 빠르게 바꿉니다.</p>
+      <p className="mt-2 text-sm text-muted">공개 여부, 추천, 정렬만 빠르게 바꿉니다. 홈 진열 상품은 전시관리에서 등록합니다.</p>
       <AdminPagedList pageSize={10}>
         {products.map((product) => (
           <form
@@ -28,7 +28,7 @@ export default async function ProductDisplayPage() {
               <input type="checkbox" name="isPublished" defaultChecked={product.isPublished} /> 공개
             </label>
             <label className="text-sm">
-              <input type="checkbox" name="isFeatured" defaultChecked={product.isFeatured} /> 메인
+              <input type="checkbox" name="isFeatured" defaultChecked={product.isFeatured} /> 추천
             </label>
             <input className="field" name="sortOrder" type="number" defaultValue={product.sortOrder} />
             <button className="btn btn-ghost">저장</button>

@@ -1,22 +1,25 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { loadPageDisplay, isDisplayPage } from "@/lib/display";
-import { createDisplayShortcut, deleteDisplayShortcut, saveDisplayItems } from "@/actions/display";
-import { DISPLAY_PAGES, SHORTCUT_ICONS, SHORTCUT_ICON_LABEL, shortcutIcon } from "@/lib/display-items";
+import { isDisplayPage, loadPageDisplay } from "@/lib/display";
+import { assignDisplayContent, createDisplayShortcut, removeDisplayItem, saveDisplayItems } from "@/actions/display";
+import { DISPLAY_PAGES, SHORTCUT_ICONS, SHORTCUT_ICON_LABEL, shortcutIcon, type AssignArea } from "@/lib/display-items";
 import { AdminCreateModal } from "@/components/admin-create-modal";
 
 const PAGE_COPY: Record<(typeof DISPLAY_PAGES)[number]["key"], string> = {
-  home: "홈의 원형 메뉴와 배너, 상품 섹션을 조절합니다. 카테고리 이름과 주소는 카테고리 관리를 따르고, Best Selling 상품은 상품 관리의 메인 노출을 따릅니다.",
-  products: "전체상품 상단 카테고리 필터의 노출과 순서를 조절합니다. 카테고리 관리에서 숨긴 항목은 여기서 켜도 스토어에 나오지 않습니다.",
-  best: "베스트에 올릴 상품을 고릅니다. 공개 상품만 스토어에 나오고, 순서는 판매량 기준입니다.",
-  events: "이벤트 페이지에 올릴 기획전과 순서를 조절합니다. 기획전이 비공개면 여기서 켜도 스토어에 나오지 않습니다.",
+  home: "홈의 영역을 먼저 고르고, 각 영역에 올릴 컨텐츠를 추가합니다.",
+  products: "전체상품 필터 영역에 올릴 카테고리를 추가합니다.",
+  best: "베스트 영역에 올릴 상품을 추가합니다. 스토어에서는 등록된 상품을 판매량 순으로 보여 줍니다.",
+  events: "이벤트 영역에 올릴 기획전을 추가합니다. 비공개 기획전은 여기서 추가해도 스토어에 나오지 않습니다.",
 };
+
+type DisplayRow = Awaited<ReturnType<typeof loadPageDisplay>>[number];
+type Option = { id: string; label: string };
 
 function ExposureCheckbox({ id, checked }: { id: string; checked: boolean }) {
   return (
     <label className="inline-flex items-center gap-2 whitespace-nowrap text-sm">
       <input type="checkbox" name={`visible:${id}`} defaultChecked={checked} />
-      노출
+      영역 노출
     </label>
   );
 }
@@ -43,6 +46,40 @@ function IconField({ id, value }: { id: string; value: string }) {
   );
 }
 
+function AssignButton({ title, area, options }: { title: string; area: AssignArea; options: Option[] }) {
+  if (options.length === 0) return <p className="text-sm text-muted">추가할 항목이 없습니다.</p>;
+  return (
+    <AdminCreateModal title={title} triggerLabel={title} action={assignDisplayContent} wide>
+      <input type="hidden" name="area" value={area} />
+      <div className="grid max-h-64 gap-2 overflow-y-auto rounded-md border border-line p-4 md:grid-cols-2">
+        {options.map((option) => (
+          <label key={option.id} className="text-sm">
+            <input type="checkbox" name="refId" value={option.id} /> {option.label}
+          </label>
+        ))}
+      </div>
+    </AdminCreateModal>
+  );
+}
+
+function RemoveButton({ id }: { id: string }) {
+  return (
+    <button className="btn btn-ghost" type="submit" form={`remove-display-${id}`}>
+      제외
+    </button>
+  );
+}
+
+function EmptyRow({ colSpan }: { colSpan: number }) {
+  return (
+    <tr>
+      <td colSpan={colSpan} className="py-10 text-center text-muted">
+        이 영역에 등록된 컨텐츠가 없습니다.
+      </td>
+    </tr>
+  );
+}
+
 export default async function DisplayAdminPage({
   searchParams,
 }: {
@@ -52,19 +89,36 @@ export default async function DisplayAdminPage({
   const pageKey = isDisplayPage(requested) ? requested : "home";
   const [items, categories, products, exhibitions] = await Promise.all([
     loadPageDisplay(pageKey),
-    prisma.category.findMany({ select: { id: true, isVisible: true } }),
-    pageKey === "best"
-      ? prisma.product.findMany({ select: { id: true, isPublished: true, category: { select: { name: true } } } })
-      : Promise.resolve([]),
-    pageKey === "events" ? prisma.exhibition.findMany({ select: { id: true, isActive: true } }) : Promise.resolve([]),
+    prisma.category.findMany({ orderBy: { sortOrder: "asc" } }),
+    prisma.product.findMany({ include: { category: true }, orderBy: { name: "asc" } }),
+    prisma.exhibition.findMany({ orderBy: { startAt: "desc" } }),
   ]);
 
-  const categoryVisible = new Map(categories.map((category) => [category.id, category.isVisible]));
+  const visibleItems = items.filter((item) => item.kind !== "meta" && item.kind !== "section" && item.isVisible);
+  const sections = items.filter((item) => item.kind === "section").sort((left, right) => left.sortOrder - right.sortOrder);
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
   const productById = new Map(products.map((product) => [product.id, product]));
   const exhibitionById = new Map(exhibitions.map((exhibition) => [exhibition.id, exhibition]));
-  const shortcuts = items.filter((item) => item.kind === "shortcut");
-  const sections = items.filter((item) => item.kind === "section");
-  const page = DISPLAY_PAGES.find((item) => item.key === pageKey) ?? DISPLAY_PAGES[0];
+  const taken = (rows: DisplayRow[]) => new Set(rows.map((item) => item.refId));
+
+  const quickItems = visibleItems.filter((item) => item.kind === "shortcut");
+  const homeBest = visibleItems.filter((item) => item.slotKey.startsWith("best-product:"));
+  const homePromotion = visibleItems.filter((item) => item.slotKey.startsWith("promotion-product:"));
+  const productFilters = visibleItems.filter((item) => item.kind === "category");
+  const bestProducts = visibleItems.filter((item) => item.kind === "product");
+  const eventItems = visibleItems.filter((item) => item.kind === "exhibition");
+
+  const categoryOptions = categories
+    .filter((category) => category.isVisible)
+    .filter((category) => !taken(pageKey === "home" ? quickItems : productFilters).has(category.id))
+    .map((category) => ({ id: category.id, label: category.name }));
+  const productOptions = (assigned: DisplayRow[]) =>
+    products
+      .filter((product) => !taken(assigned).has(product.id))
+      .map((product) => ({ id: product.id, label: `${product.name} · ${product.category.name}` }));
+  const exhibitionOptions = exhibitions
+    .filter((exhibition) => !taken(eventItems).has(exhibition.id))
+    .map((exhibition) => ({ id: exhibition.id, label: exhibition.title }));
 
   return (
     <div>
@@ -79,279 +133,349 @@ export default async function DisplayAdminPage({
       </div>
 
       <nav className="mt-6 flex flex-wrap gap-2" aria-label="전시 페이지">
-        {DISPLAY_PAGES.map((item) => (
-          <Link
-            key={item.key}
-            href={`/admin/display?page=${item.key}`}
-            className={`inline-flex h-9 items-center rounded-md border px-4 text-sm ${
-              item.key === pageKey ? "border-slate-700 bg-slate-700 text-white" : "border-line bg-white text-slate-700"
-            }`}
-            aria-current={item.key === pageKey ? "page" : undefined}
-          >
-            {item.label}
-          </Link>
-        ))}
+        {DISPLAY_PAGES.map((item) => {
+          const active = item.key === pageKey;
+          return (
+            <Link
+              key={item.key}
+              href={`/admin/display?page=${item.key}`}
+              className={`display-tab inline-flex h-9 items-center rounded-md border px-4 text-sm ${
+                active ? "border-slate-700 bg-slate-700" : "border-line bg-white text-slate-700"
+              }`}
+              aria-current={active ? "page" : undefined}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
       </nav>
 
-      <form id="display-form" action={saveDisplayItems}>
+      <form id="display-form" action={saveDisplayItems} className="mt-8 grid gap-8">
         <input type="hidden" name="pageKey" value={pageKey} />
 
-        {pageKey === "home" ? (
-          <>
-            <div className="mt-8 flex items-end justify-between gap-4">
+        {pageKey === "home"
+          ? sections.map((section) => {
+              if (section.slotKey === "section:quick") {
+                return (
+                  <section key={section.id} className="rounded-lg border border-line bg-white p-6">
+                    <div className="flex flex-wrap items-end justify-between gap-4">
+                      <div>
+                        <h2 className="text-base font-semibold">퀵메뉴</h2>
+                        <p className="mt-1 text-sm text-muted">홈 원형 메뉴에 올릴 항목입니다.</p>
+                      </div>
+                      <div className="flex flex-wrap items-end gap-3">
+                        <input type="hidden" name="id" value={section.id} />
+                        <ExposureCheckbox id={section.id} checked={section.isVisible} />
+                        <label className="text-sm">
+                          영역 순서
+                          <SortField id={section.id} value={section.sortOrder} />
+                        </label>
+                        <AssignButton title="카테고리 추가" area="quick-category" options={categoryOptions} />
+                        <AdminCreateModal title="퀵메뉴 직접 추가" triggerLabel="직접 추가" action={createDisplayShortcut}>
+                          <label className="text-sm font-medium">
+                            이름
+                            <input className="field mt-2" name="label" required maxLength={40} />
+                          </label>
+                          <label className="text-sm font-medium">
+                            링크
+                            <input className="field mt-2" name="href" defaultValue="/" required />
+                          </label>
+                          <label className="text-sm font-medium">
+                            아이콘
+                            <select className="field mt-2" name="icon" defaultValue="object">
+                              {SHORTCUT_ICONS.map((icon) => (
+                                <option key={icon} value={icon}>
+                                  {SHORTCUT_ICON_LABEL[icon]}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </AdminCreateModal>
+                      </div>
+                    </div>
+                    <div className="mt-4 overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr>
+                            <th>항목</th>
+                            <th>구분</th>
+                            <th>아이콘</th>
+                            <th>링크</th>
+                            <th>정렬</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {quickItems.length === 0 ? (
+                            <EmptyRow colSpan={6} />
+                          ) : (
+                            quickItems.map((item) => (
+                              <tr key={item.id} className="border-t border-line">
+                                <td>
+                                  <input type="hidden" name="id" value={item.id} />
+                                  {item.refId ? (
+                                    <span>
+                                      {item.label}
+                                      {categoryById.get(item.refId)?.isVisible === false ? (
+                                        <span className="ml-2 text-xs text-muted">카테고리 숨김</span>
+                                      ) : null}
+                                    </span>
+                                  ) : (
+                                    <input className="field" name={`label:${item.id}`} defaultValue={item.label} maxLength={40} />
+                                  )}
+                                </td>
+                                <td>{item.refId ? "카테고리" : "직접 추가"}</td>
+                                <td>
+                                  <IconField id={item.id} value={item.icon} />
+                                </td>
+                                <td>
+                                  {item.refId ? (
+                                    <span className="text-muted">{item.href}</span>
+                                  ) : (
+                                    <input className="field" name={`href:${item.id}`} defaultValue={item.href} />
+                                  )}
+                                </td>
+                                <td>
+                                  <SortField id={item.id} value={item.sortOrder} />
+                                </td>
+                                <td>
+                                  <RemoveButton id={item.id} />
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                );
+              }
+
+              if (section.slotKey === "section:best" || section.slotKey === "section:promotion") {
+                const assigned = section.slotKey === "section:best" ? homeBest : homePromotion;
+                const area: AssignArea = section.slotKey === "section:best" ? "home-best" : "home-promotion";
+                return (
+                  <section key={section.id} className="rounded-lg border border-line bg-white p-6">
+                    <div className="flex flex-wrap items-end justify-between gap-4">
+                      <div className="min-w-64 flex-1">
+                        <h2 className="text-base font-semibold">{section.slotKey === "section:best" ? "Best Selling" : "Promotion"}</h2>
+                        <label className="mt-3 block text-sm font-medium">
+                          영역 제목
+                          <input className="field mt-2" name={`label:${section.id}`} defaultValue={section.label} maxLength={40} />
+                        </label>
+                      </div>
+                      <div className="flex flex-wrap items-end gap-3">
+                        <input type="hidden" name="id" value={section.id} />
+                        <ExposureCheckbox id={section.id} checked={section.isVisible} />
+                        <label className="text-sm">
+                          영역 순서
+                          <SortField id={section.id} value={section.sortOrder} />
+                        </label>
+                        <AssignButton title="제품 추가" area={area} options={productOptions(assigned)} />
+                      </div>
+                    </div>
+                    <ProductRows products={assigned} productById={productById} />
+                  </section>
+                );
+              }
+
+              const linked = section.slotKey === "section:hero" || section.slotKey === "section:coupon";
+              return (
+                <section key={section.id} className="rounded-lg border border-line bg-white p-6">
+                  <div className="flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                      <h2 className="text-base font-semibold">{section.slotKey === "section:hero" ? "메인 배너" : "쿠폰 배너"}</h2>
+                      <p className="mt-1 text-sm text-muted">이 영역의 노출과 연결 링크를 설정합니다.</p>
+                    </div>
+                    <div className="flex flex-wrap items-end gap-3">
+                      <input type="hidden" name="id" value={section.id} />
+                      <ExposureCheckbox id={section.id} checked={section.isVisible} />
+                      {linked ? (
+                        <label className="text-sm">
+                          연결 링크
+                          <input className="field mt-2" name={`href:${section.id}`} defaultValue={section.href} />
+                        </label>
+                      ) : null}
+                      <label className="text-sm">
+                        영역 순서
+                        <SortField id={section.id} value={section.sortOrder} />
+                      </label>
+                    </div>
+                  </div>
+                </section>
+              );
+            })
+          : null}
+
+        {pageKey === "products" ? (
+          <section className="rounded-lg border border-line bg-white p-6">
+            <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
-                <h2 className="text-base font-semibold">바로가기</h2>
-                <p className="mt-1 text-sm text-muted">{page.label} 원형 메뉴에 보이는 항목입니다.</p>
+                <h2 className="text-base font-semibold">카테고리 필터</h2>
+                <p className="mt-1 text-sm text-muted">전체상품 상단에 올릴 카테고리입니다.</p>
               </div>
-              <AdminCreateModal title="바로가기 추가" triggerLabel="바로가기 추가" action={createDisplayShortcut}>
-                <label className="text-sm font-medium">
-                  이름
-                  <input className="field mt-2" name="label" required maxLength={40} />
-                </label>
-                <label className="text-sm font-medium">
-                  링크
-                  <input className="field mt-2" name="href" defaultValue="/" required />
-                </label>
-                <label className="text-sm font-medium">
-                  아이콘
-                  <select className="field mt-2" name="icon" defaultValue="object">
-                    {SHORTCUT_ICONS.map((icon) => (
-                      <option key={icon} value={icon}>
-                        {SHORTCUT_ICON_LABEL[icon]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </AdminCreateModal>
+              <AssignButton title="카테고리 추가" area="products" options={categoryOptions} />
             </div>
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr>
-                    <th>노출</th>
-                    <th>항목</th>
-                    <th>구분</th>
-                    <th>아이콘</th>
-                    <th>링크</th>
+                    <th>카테고리</th>
                     <th>정렬</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {shortcuts.map((item) => {
-                    const categoryHidden = item.refId !== "" && categoryVisible.get(item.refId) === false;
-                    const custom = item.slotKey.startsWith("link:custom:");
-                    return (
+                  {productFilters.length === 0 ? (
+                    <EmptyRow colSpan={3} />
+                  ) : (
+                    productFilters.map((item) => (
                       <tr key={item.id} className="border-t border-line">
                         <td>
                           <input type="hidden" name="id" value={item.id} />
-                          <ExposureCheckbox id={item.id} checked={item.isVisible} />
-                        </td>
-                        <td>
-                          {item.refId ? (
-                            <span>
-                              {item.label}
-                              {categoryHidden ? <span className="ml-2 text-xs text-muted">카테고리 숨김</span> : null}
-                            </span>
-                          ) : (
-                            <input className="field" name={`label:${item.id}`} defaultValue={item.label} maxLength={40} />
-                          )}
-                        </td>
-                        <td>{item.refId ? "카테고리" : "바로가기"}</td>
-                        <td>
-                          <IconField id={item.id} value={item.icon} />
-                        </td>
-                        <td>
-                          {item.refId ? (
-                            <span className="text-muted">{item.href}</span>
-                          ) : (
-                            <input className="field" name={`href:${item.id}`} defaultValue={item.href} />
-                          )}
+                          {item.label}
+                          {categoryById.get(item.refId)?.isVisible === false ? (
+                            <span className="ml-2 text-xs text-muted">카테고리 숨김</span>
+                          ) : null}
                         </td>
                         <td>
                           <SortField id={item.id} value={item.sortOrder} />
                         </td>
                         <td>
-                          {custom ? (
-                            <button className="btn btn-ghost" type="submit" form={`delete-display-${item.id}`}>
-                              삭제
-                            </button>
-                          ) : (
-                            <span className="text-muted">—</span>
-                          )}
+                          <RemoveButton id={item.id} />
                         </td>
                       </tr>
-                    );
-                  })}
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
+          </section>
+        ) : null}
 
-            <h2 className="mt-10 text-base font-semibold">화면 섹션</h2>
-            <p className="mt-1 text-sm text-muted">위에서 아래 순서로 홈에 배치됩니다.</p>
+        {pageKey === "best" ? (
+          <section className="rounded-lg border border-line bg-white p-6">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h2 className="text-base font-semibold">베스트 상품</h2>
+                <p className="mt-1 text-sm text-muted">베스트 페이지에 올릴 상품입니다.</p>
+              </div>
+              <AssignButton title="제품 추가" area="best" options={productOptions(bestProducts)} />
+            </div>
+            <ProductRows products={bestProducts} productById={productById} showSort={false} />
+          </section>
+        ) : null}
+
+        {pageKey === "events" ? (
+          <section className="rounded-lg border border-line bg-white p-6">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h2 className="text-base font-semibold">기획전</h2>
+                <p className="mt-1 text-sm text-muted">이벤트 페이지에 올릴 기획전입니다.</p>
+              </div>
+              <AssignButton title="기획전 추가" area="events" options={exhibitionOptions} />
+            </div>
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr>
-                    <th>노출</th>
-                    <th>섹션</th>
-                    <th>연결 링크</th>
+                    <th>기획전</th>
+                    <th>상태</th>
                     <th>정렬</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sections.map((item) => {
-                    const heading = item.slotKey === "section:best" || item.slotKey === "section:promotion";
-                    const linked = item.slotKey === "section:hero" || item.slotKey === "section:coupon";
-                    return (
+                  {eventItems.length === 0 ? (
+                    <EmptyRow colSpan={4} />
+                  ) : (
+                    eventItems.map((item) => (
                       <tr key={item.id} className="border-t border-line">
                         <td>
                           <input type="hidden" name="id" value={item.id} />
-                          <ExposureCheckbox id={item.id} checked={item.isVisible} />
+                          {item.label}
                         </td>
-                        <td>
-                          {heading ? (
-                            <input className="field" name={`label:${item.id}`} defaultValue={item.label} maxLength={40} />
-                          ) : (
-                            item.label
-                          )}
-                        </td>
-                        <td>
-                          {linked ? (
-                            <input className="field" name={`href:${item.id}`} defaultValue={item.href} />
-                          ) : (
-                            <span className="text-muted">—</span>
-                          )}
-                        </td>
+                        <td>{exhibitionById.get(item.refId)?.isActive === false ? "비공개" : "공개"}</td>
                         <td>
                           <SortField id={item.id} value={item.sortOrder} />
                         </td>
+                        <td>
+                          <RemoveButton id={item.id} />
+                        </td>
                       </tr>
-                    );
-                  })}
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
-          </>
+          </section>
         ) : null}
 
-        {pageKey === "products" ? (
-          <div className="mt-8 overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr>
-                  <th>노출</th>
-                  <th>카테고리</th>
-                  <th>주소</th>
-                  <th>정렬</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id} className="border-t border-line">
-                    <td>
-                      <input type="hidden" name="id" value={item.id} />
-                      <ExposureCheckbox id={item.id} checked={item.isVisible} />
-                    </td>
-                    <td>
-                      {item.label}
-                      {categoryVisible.get(item.refId) === false ? (
-                        <span className="ml-2 text-xs text-muted">카테고리 숨김</span>
-                      ) : null}
-                    </td>
-                    <td className="text-muted">{item.href}</td>
-                    <td>
-                      <SortField id={item.id} value={item.sortOrder} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-
-        {pageKey === "best" ? (
-          <div className="mt-8 overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr>
-                  <th>노출</th>
-                  <th>상품</th>
-                  <th>카테고리</th>
-                  <th>상태</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => {
-                  const product = productById.get(item.refId);
-                  return (
-                    <tr key={item.id} className="border-t border-line">
-                      <td>
-                        <input type="hidden" name="id" value={item.id} />
-                        <ExposureCheckbox id={item.id} checked={item.isVisible} />
-                      </td>
-                      <td className="product-name">{item.label}</td>
-                      <td>{product?.category.name ?? "—"}</td>
-                      <td>{product?.isPublished === false ? "비공개" : "공개"}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-
-        {pageKey === "events" ? (
-          <div className="mt-8 overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr>
-                  <th>노출</th>
-                  <th>기획전</th>
-                  <th>정렬</th>
-                  <th>상태</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-12 text-center text-muted">
-                      등록된 기획전이 없습니다.
-                    </td>
-                  </tr>
-                ) : (
-                  items.map((item) => (
-                    <tr key={item.id} className="border-t border-line">
-                      <td>
-                        <input type="hidden" name="id" value={item.id} />
-                        <ExposureCheckbox id={item.id} checked={item.isVisible} />
-                      </td>
-                      <td>{item.label}</td>
-                      <td>
-                        <SortField id={item.id} value={item.sortOrder} />
-                      </td>
-                      <td>{exhibitionById.get(item.refId)?.isActive === false ? "비공개" : "공개"}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-
-        <div className="mt-6 flex justify-end">
+        <div className="flex justify-end">
           <button className="btn" type="submit">
             저장
           </button>
         </div>
       </form>
-      {shortcuts
-        .filter((item) => item.slotKey.startsWith("link:custom:"))
-        .map((item) => (
-          <form key={item.id} id={`delete-display-${item.id}`} action={deleteDisplayShortcut}>
-            <input type="hidden" name="id" value={item.id} />
-          </form>
-        ))}
+
+      {visibleItems.map((item) => (
+        <form key={item.id} id={`remove-display-${item.id}`} action={removeDisplayItem}>
+          <input type="hidden" name="id" value={item.id} />
+        </form>
+      ))}
+    </div>
+  );
+}
+
+function ProductRows({
+  products,
+  productById,
+  showSort = true,
+}: {
+  products: DisplayRow[];
+  productById: Map<string, { isPublished: boolean; category: { name: string } }>;
+  showSort?: boolean;
+}) {
+  return (
+    <div className="mt-4 overflow-x-auto">
+      <table className="w-full text-left">
+        <thead>
+          <tr>
+            <th>상품</th>
+            <th>카테고리</th>
+            <th>상태</th>
+            {showSort ? <th>정렬</th> : null}
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {products.length === 0 ? (
+            <EmptyRow colSpan={showSort ? 5 : 4} />
+          ) : (
+            products.map((item) => {
+              const product = productById.get(item.refId);
+              return (
+                <tr key={item.id} className="border-t border-line">
+                  <td className="product-name">
+                    <input type="hidden" name="id" value={item.id} />
+                    {item.label}
+                  </td>
+                  <td>{product?.category.name ?? "—"}</td>
+                  <td>{product?.isPublished === false ? "비공개" : "공개"}</td>
+                  {showSort ? (
+                    <td>
+                      <SortField id={item.id} value={item.sortOrder} />
+                    </td>
+                  ) : null}
+                  <td>
+                    <RemoveButton id={item.id} />
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }

@@ -208,6 +208,22 @@ header .utility-links button {
   cursor: not-allowed;
 }
 
+.quick-menu {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  row-gap: 1.5rem;
+}
+
+.quick-menu a {
+  display: flex;
+  min-width: 4.75rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+  text-align: center;
+}
+
 .admin-shell {
   --paper: #f5f6f8;
   --ink: #1f2937;
@@ -279,6 +295,12 @@ header .utility-links button {
 
 .admin-shell input[type="checkbox"] {
   accent-color: #334155;
+}
+
+.admin-shell a.display-tab[aria-current="page"] {
+  background: #1f2937;
+  border-color: #1f2937;
+  color: #fff;
 }
 
 .gsi-material-button {

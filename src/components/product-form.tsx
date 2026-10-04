@@ -89,9 +89,9 @@ export function ProductForm({
           <input type="checkbox" name="isPublished" defaultChecked={product?.isPublished ?? true} /> 판매 공개
         </label>
       </Field>
-      <Field label="메인 노출">
+      <Field label="추천">
         <label className="flex h-[3.2rem] items-center gap-2 text-sm">
-          <input type="checkbox" name="isFeatured" defaultChecked={product?.isFeatured ?? false} /> 홈 메인 노출
+          <input type="checkbox" name="isFeatured" defaultChecked={product?.isFeatured ?? false} /> 추천 상품
         </label>
       </Field>
       {product ? (
