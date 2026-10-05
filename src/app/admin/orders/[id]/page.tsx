@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { formatDateTime, formatPrice, maskPersonalInfo, ORDER_STATUS, ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/utils";
 import { cancelOrder, completeOrderAfterSale, confirmOrderCollection, requestOrderAfterSale } from "@/actions/commerce";
 import { AdminOrderStatusForm } from "@/components/admin-order-status-form";
+import { ProductImage } from "@/components/product-image";
 
 export default async function AdminOrderDetailPage({
   params,
@@ -68,7 +69,14 @@ export default async function AdminOrderDetailPage({
             <tbody>
               {order.items.map((item) => (
                 <tr key={item.id} className="border-t border-line">
-                  <td className="px-4 py-3 font-semibold">{item.name}</td>
+                  <td className="px-4 py-3">
+                    <span className="flex items-center gap-3 font-semibold">
+                      <span className="relative h-12 w-12 shrink-0 overflow-hidden bg-surface">
+                        <ProductImage src={item.imageUrl} alt="" fill />
+                      </span>
+                      {item.name}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-right">{formatPrice(item.price)}</td>
                   <td className="px-4 py-3 text-right">{item.quantity}</td>
                   <td className="px-4 py-3 text-right">{item.freeQuantity}</td>

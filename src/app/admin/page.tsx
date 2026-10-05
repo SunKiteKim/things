@@ -20,8 +20,7 @@ export default async function AdminHome() {
 
   return (
     <div>
-      <h1 className="display text-4xl">things Admin</h1>
-      <p className="mt-2 text-sm text-muted">포트폴리오 한도 안에서 CRUD를 운영합니다. 주문은 생성 없이 조회·수정·취소만 가능합니다.</p>
+      <h1 className="display text-4xl" style={{ letterSpacing: "0.42em" }}>ADMIN</h1>
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {cards.map((card) => (
           <Link key={card.href} href={card.href} className="border border-line bg-surface p-6">

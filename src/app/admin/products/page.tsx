@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { deleteProduct } from "@/actions/products";
-import { LIMITS, discountedPrice, formatDate, formatPrice } from "@/lib/utils";
+import { discountedPrice, formatDate, formatPrice } from "@/lib/utils";
+import { ProductImage } from "@/components/product-image";
 import { AdminCreateModal } from "@/components/admin-create-modal";
 import { ProductForm } from "@/components/product-form";
 import { AdminMasterDetail } from "@/components/admin-master-detail";
@@ -14,12 +15,7 @@ export default async function ProductsAdminPage() {
   return (
     <div>
       <div className="flex items-end justify-between">
-        <div>
-          <h1 className="display text-3xl">상품 관리</h1>
-          <p className="mt-2 text-sm text-muted">
-            {products.length} / {LIMITS.MAX_PRODUCTS}개
-          </p>
-        </div>
+        <h1 className="display text-3xl">상품 관리</h1>
         <AdminCreateModal title="상품 등록" triggerLabel="상품 등록" wide><ProductForm categories={categories} /></AdminCreateModal>
       </div>
       <AdminMasterDetail
@@ -29,12 +25,7 @@ export default async function ProductsAdminPage() {
         rows={products.map((product) => ({
           id: product.id,
           cells: [
-            product.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={product.id} src={product.imageUrl} alt="" className="h-12 w-12 object-cover" />
-            ) : (
-              <span key={product.id} className="grid h-12 w-12 place-items-center bg-slate-100 text-[0.65rem] text-muted">없음</span>
-            ),
+            <ProductImage key={product.id} src={product.imageUrl} alt="" className="h-12 w-12 object-cover" />,
             product.id,
             product.name,
             product.category.name,

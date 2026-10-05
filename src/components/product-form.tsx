@@ -76,7 +76,7 @@ export function ProductForm({
         <DisabledText>{formatPrice(sale)}</DisabledText>
       </Field>
       <Field label="썸네일">
-        <ProductImagePicker initialImage={product?.imageUrl} onBusy={setImageBusy} />
+        <ProductImagePicker initialImage={product?.imageUrl} editing={Boolean(product)} onBusy={setImageBusy} />
       </Field>
       <Field label="설명">
         <textarea className="field min-h-32" name="description" defaultValue={product?.description} />

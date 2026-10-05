@@ -19,7 +19,7 @@ export function AdminNav() {
     <aside className="border-r border-line bg-white md:sticky md:top-0 md:h-screen">
       <div className="px-6 py-6">
         <Logo href="/admin" className="text-xl" />
-        <p className="mt-2 text-[0.68rem] uppercase tracking-[0.2em] text-muted">Admin</p>
+        <p className="mt-2 text-[0.68rem] tracking-[0.42em] text-muted">ADMIN</p>
       </div>
       <nav className="flex flex-col px-3 pb-10 text-sm">
         {NAV.map((item) => (

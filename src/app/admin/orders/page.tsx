@@ -11,7 +11,6 @@ export default async function OrdersAdminPage() {
   return (
     <div>
       <h1 className="display text-4xl">주문관리</h1>
-      <p className="mt-2 text-sm text-muted">생성은 고객 결제 흐름에서만 이루어집니다. 조회·상태변경·취소만 가능합니다.</p>
       <table className="mt-8 w-full text-left text-sm">
         <thead>
           <tr className="border-b border-line text-muted">

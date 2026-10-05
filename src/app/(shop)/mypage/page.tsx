@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ProductImage } from "@/components/product-image";
 import { formatDate, formatPrice, ORDER_STATUS, ORDER_STATUS_LABEL } from "@/lib/utils";
 import { ProductCard } from "@/components/product-card";
 import { priceProducts } from "@/lib/exhibition-offers";
@@ -102,7 +102,7 @@ export default async function MyPage() {
               <Link key={order.id} href={`/mypage/orders/${order.id}`} className="flex gap-4 rounded-2xl bg-[#f6f6f4] p-4 transition hover:bg-[#efefec]">
                 {firstItem ? (
                   <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-white">
-                    <Image src={firstItem.imageUrl} alt={firstItem.name} fill className="object-cover" />
+                    <ProductImage src={firstItem.imageUrl} alt={firstItem.name} fill />
                   </div>
                 ) : null}
                 <div className="min-w-0 flex-1 py-1">

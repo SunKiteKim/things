@@ -7,7 +7,7 @@ import { AdminCreateModal } from "@/components/admin-create-modal";
 import { ProductSearchPicker, type SearchableProduct } from "@/components/product-search-picker";
 
 const PAGE_COPY: Record<(typeof DISPLAY_PAGES)[number]["key"], string> = {
-  home: "홈의 영역을 먼저 고르고, 각 영역에 올릴 컨텐츠를 추가합니다.",
+  home: "",
   products: "전체상품 필터 영역에 올릴 카테고리를 추가합니다.",
   best: "베스트 영역에 올릴 상품을 추가합니다. 스토어에서는 등록된 상품을 판매량 순으로 보여 줍니다.",
   events: "이벤트 영역에 올릴 기획전을 추가합니다. 비공개 기획전은 여기서 추가해도 스토어에 나오지 않습니다.",
@@ -136,7 +136,7 @@ export default async function DisplayAdminPage({
       <div className="flex items-end justify-between gap-4">
         <div>
           <h1 className="display text-3xl">전시관리</h1>
-          <p className="mt-2 max-w-3xl text-sm text-muted">{PAGE_COPY[pageKey]}</p>
+          {PAGE_COPY[pageKey] ? <p className="mt-2 max-w-3xl text-sm text-muted">{PAGE_COPY[pageKey]}</p> : null}
         </div>
         <button className="btn" type="submit" form="display-form">
           저장

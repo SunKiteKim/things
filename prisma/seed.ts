@@ -117,8 +117,7 @@ async function main() {
         originalPrice: 56000,
         discountRate: 14,
         stock: 18,
-        imageUrl:
-          "https://images.unsplash.com/photo-1603006905003-be475563bc48?auto=format&fit=crop&w=1400&q=80",
+        imageUrl: "/images/default-product.jpg",
         isFeatured: true,
         sortOrder: 1,
         categoryId: object.id,
@@ -173,8 +172,7 @@ async function main() {
         originalPrice: 148000,
         discountRate: 14,
         stock: 8,
-        imageUrl:
-          "https://images.unsplash.com/photo-1507473881161-ead4d0e0d00f?auto=format&fit=crop&w=1400&q=80",
+        imageUrl: "/images/default-product.jpg",
         isFeatured: true,
         sortOrder: 4,
         categoryId: light.id,
@@ -247,8 +245,7 @@ async function main() {
         originalPrice: 89000,
         discountRate: 0,
         stock: 11,
-        imageUrl:
-          "https://images.unsplash.com/photo-1600369671236-e7452150e53e?auto=format&fit=crop&w=1400&q=80",
+        imageUrl: "/images/default-product.jpg",
         isFeatured: true,
         sortOrder: 8,
         categoryId: textile.id,
@@ -303,8 +300,7 @@ async function main() {
         originalPrice: 28000,
         discountRate: 0,
         stock: 30,
-        imageUrl:
-          "https://images.unsplash.com/photo-1608181839517-5110a512fb39?auto=format&fit=crop&w=1400&q=80",
+        imageUrl: "/images/default-product.jpg",
         sortOrder: 11,
         categoryId: scent.id,
         ...audit,

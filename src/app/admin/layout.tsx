@@ -8,7 +8,7 @@ import { ADMIN_FLASH_COOKIE } from "@/lib/admin-flash";
 import { cookies } from "next/headers";
 
 export const metadata: Metadata = {
-  title: { absolute: "things Admin" },
+  title: { absolute: "ADMIN" },
 };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

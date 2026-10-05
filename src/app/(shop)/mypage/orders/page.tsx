@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cn, formatOrderDateTime, formatPrice, ORDER_STATUS, ORDER_STATUS_LABEL } from "@/lib/utils";
+import { ProductImage } from "@/components/product-image";
 
 export default async function MyOrdersPage() {
   const session = await requireUser();
@@ -45,7 +45,7 @@ export default async function MyOrdersPage() {
                   >
                     <div className="flex min-w-0 items-center gap-4">
                       <div className="relative h-20 w-20 shrink-0 overflow-hidden bg-surface">
-                        <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+                        <ProductImage src={item.imageUrl} alt={item.name} fill />
                       </div>
                       <p className="product-name text-sm leading-6">{item.name}</p>
                     </div>

@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDateTime, formatPrice, ORDER_STATUS, ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/utils";
 import { cancelOrder, requestOrderAfterSale } from "@/actions/commerce";
+import { ProductImage } from "@/components/product-image";
 
 export default async function MyOrderDetailPage({
   params,
@@ -32,7 +33,7 @@ export default async function MyOrderDetailPage({
         <InfoRow label="주문번호">{order.orderNumber}</InfoRow><InfoRow label="주문일시">{formatDateTime(order.createdAt)}</InfoRow><InfoRow label="주문상태">{ORDER_STATUS_LABEL[order.status] ?? order.status}</InfoRow><InfoRow label="결제수단">{PAYMENT_METHOD_LABEL[order.paymentMethod] ?? order.paymentMethod}</InfoRow><InfoRow label="운송장번호">{order.trackingNumber ?? "-"}</InfoRow>
       </tbody></table>
       <div className="mt-8 overflow-x-auto border border-line bg-white"><table className="w-full min-w-[680px] text-left text-sm"><thead className="bg-slate-50 text-xs text-muted"><tr><th className="px-4 py-3">상품명</th><th className="px-4 py-3 text-right">판매가</th><th className="px-4 py-3 text-right">구매수량</th><th className="px-4 py-3 text-right">증정수량</th><th className="px-4 py-3 text-right">상품금액</th></tr></thead><tbody>
-        {order.items.map((item) => <tr key={item.id} className="border-t border-line"><td className="px-4 py-3 font-semibold">{item.name}</td><td className="px-4 py-3 text-right">{formatPrice(item.price)}</td><td className="px-4 py-3 text-right">{item.quantity}</td><td className="px-4 py-3 text-right">{item.freeQuantity}</td><td className="px-4 py-3 text-right">{formatPrice(item.price * item.quantity)}</td></tr>)}
+        {order.items.map((item) => <tr key={item.id} className="border-t border-line"><td className="px-4 py-3"><span className="flex items-center gap-3 font-semibold"><span className="relative h-12 w-12 shrink-0 overflow-hidden bg-surface"><ProductImage src={item.imageUrl} alt="" fill /></span>{item.name}</span></td><td className="px-4 py-3 text-right">{formatPrice(item.price)}</td><td className="px-4 py-3 text-right">{item.quantity}</td><td className="px-4 py-3 text-right">{item.freeQuantity}</td><td className="px-4 py-3 text-right">{formatPrice(item.price * item.quantity)}</td></tr>)}
       </tbody><tfoot className="border-t border-line"><tr><th colSpan={4} className="px-4 py-3 text-right">상품 합계</th><td className="px-4 py-3 text-right">{formatPrice(subtotal)}</td></tr><tr><th colSpan={4} className="px-4 py-3 text-right">할인</th><td className="px-4 py-3 text-right">-{formatPrice(order.discountAmount)}</td></tr><tr className="bg-slate-50"><th colSpan={4} className="px-4 py-3 text-right">결제 금액</th><td className="px-4 py-3 text-right font-bold">{formatPrice(order.totalAmount)}</td></tr></tfoot></table></div>
       <table className="mt-8 w-full border border-line bg-white"><tbody><InfoRow label="받는 분">{order.receiverName}</InfoRow><InfoRow label="연락처">{order.receiverPhone}</InfoRow><InfoRow label="주소">({order.zipCode}) {order.address} {order.addressDetail}</InfoRow><InfoRow label="배송 메모">{order.memo || "-"}</InfoRow></tbody></table>
       <div className="mt-8 flex flex-wrap gap-3">

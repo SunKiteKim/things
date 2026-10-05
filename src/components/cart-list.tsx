@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { removeCartLines } from "@/actions/commerce";
 import { CartControls } from "@/components/cart-controls";
+import { ProductImage } from "@/components/product-image";
 import { formatPrice } from "@/lib/utils";
 
 type CartRow = {
@@ -58,7 +58,7 @@ export function CartList({ rows }: { rows: CartRow[] }) {
           return (
             <div key={key} className="relative grid grid-cols-[24px_96px_1fr] gap-4 border-b border-line py-6">
               <input className="mt-1" type="checkbox" aria-label={`${row.product.name} 선택`} checked={selected.includes(key)} onChange={() => setSelected((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key])} />
-              <div className="relative aspect-square overflow-hidden bg-surface"><Image src={row.product.imageUrl} alt={row.product.name} fill className="object-cover" /></div>
+              <div className="relative aspect-square overflow-hidden bg-surface"><ProductImage src={row.product.imageUrl} alt={row.product.name} fill /></div>
               <div className="pr-14">
                 <button type="button" className="absolute right-0 top-5 text-xs text-muted underline underline-offset-4 hover:text-ink" disabled={pending} onClick={() => remove([key])}>삭제</button>
                 <Link href={`/product/${row.product.id}`} className="product-name">{row.product.name}</Link>

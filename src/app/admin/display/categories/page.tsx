@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { createCategory, deleteCategory, updateCategory } from "@/actions/display";
-import { LIMITS } from "@/lib/utils";
 import { AdminCreateModal } from "@/components/admin-create-modal";
 import { AdminMasterDetail } from "@/components/admin-master-detail";
 
@@ -10,7 +9,7 @@ export default async function CategoriesAdminPage() {
   return (
     <div>
       <div className="flex items-end justify-between gap-4">
-        <div><h1 className="display text-3xl">카테고리 관리</h1><p className="mt-2 text-sm text-muted">{categories.length} / {LIMITS.MAX_CATEGORIES}개. 홈과 전체상품에 올릴지는 전시관리에서 페이지별로 조절합니다.</p></div>
+        <h1 className="display text-3xl">카테고리 관리</h1>
         <AdminCreateModal title="카테고리 등록" triggerLabel="카테고리 등록" action={createCategory}>
           <label className="text-sm font-medium">카테고리명<input className="field mt-2" name="name" required /></label>
           <label className="text-sm font-medium">슬러그<input className="field mt-2" name="slug" /></label>

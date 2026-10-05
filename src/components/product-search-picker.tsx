@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import { ProductImage } from "@/components/product-image";
 
 export type SearchableProduct = {
   id: string;
@@ -10,13 +11,7 @@ export type SearchableProduct = {
 };
 
 function ProductThumb({ src }: { src: string }) {
-  return src ? (
-    // Admin product URLs are not limited to the storefront image host.
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt="" className="h-10 w-10 shrink-0 object-cover" />
-  ) : (
-    <span className="grid h-10 w-10 shrink-0 place-items-center bg-slate-100 text-[0.6rem] text-muted">없음</span>
-  );
+  return <ProductImage src={src} alt="" className="h-10 w-10 shrink-0 object-cover" />;
 }
 
 export function ProductSearchPicker({

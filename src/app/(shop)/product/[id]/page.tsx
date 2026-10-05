@@ -1,9 +1,10 @@
-import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { priceProducts } from "@/lib/exhibition-offers";
 import { formatPrice, parseGallery } from "@/lib/utils";
 import { AddToCart } from "@/components/add-to-cart";
+import { ProductImage } from "@/components/product-image";
+import { DEFAULT_PRODUCT_IMAGE } from "@/lib/default-product-image";
 
 export default async function ProductPage({
   params,
@@ -21,13 +22,14 @@ export default async function ProductPage({
   if (!sale) notFound();
 
   const gallery = [product.imageUrl, ...parseGallery(product.gallery)].filter(Boolean);
+  const sources = gallery.length ? gallery : [DEFAULT_PRODUCT_IMAGE];
 
   return (
     <div className="grid gap-12 md:grid-cols-2">
       <div className="space-y-3">
-        {gallery.map((src) => (
+        {sources.map((src) => (
           <div key={src} className="relative aspect-[4/5] overflow-hidden bg-surface">
-            <Image src={src} alt={product.name} fill className="object-cover" />
+            <ProductImage src={src} alt={product.name} fill />
           </div>
         ))}
       </div>
