@@ -289,3 +289,19 @@ export async function cancelOrder(formData: FormData) {
   revalidatePath("/admin/orders");
   revalidatePath("/mypage/orders");
 }
+
+export async function claimCoupon(formData: FormData) {
+  const couponId = String(formData.get("couponId") ?? "");
+  const productId = String(formData.get("productId") ?? "");
+  const back = productId ? `/product/${productId}` : "/";
+  const session = await requireUser();
+  if (!session?.user.id) redirect(`/login?callbackUrl=${encodeURIComponent(back)}`);
+  const coupon = await prisma.coupon.findUnique({ where: { id: couponId } });
+  if (coupon?.isActive && !coupon.isPaused) {
+    await prisma.couponIssue.create({
+      data: { couponId, targetType: "USER", userId: session.user.id },
+    }).catch(() => null);
+  }
+  revalidatePath(back);
+  redirect(back);
+}

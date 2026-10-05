@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { MemberForm } from "@/components/member-form";
 import { maskPersonalInfo } from "@/lib/utils";
+import { memberMids } from "@/lib/member-code";
 
 export default async function EditMemberPage({
   params,
@@ -10,8 +11,12 @@ export default async function EditMemberPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await prisma.user.findUnique({ where: { id } });
+  const [user, members] = await Promise.all([
+    prisma.user.findUnique({ where: { id } }),
+    prisma.user.findMany({ select: { id: true, createdAt: true } }),
+  ]);
   if (!user) notFound();
+  const mid = memberMids(members).get(user.id) ?? "-";
 
   return (
     <div>
@@ -24,6 +29,7 @@ export default async function EditMemberPage({
       <MemberForm
         user={{
           id: user.id,
+          mid,
           name: maskPersonalInfo(user.name),
           email: maskPersonalInfo(user.email),
           phone: maskPersonalInfo(user.phone),

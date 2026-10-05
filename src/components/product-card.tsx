@@ -8,10 +8,12 @@ export function ProductCard({
   product,
   showDiscountRate = false,
   showProductId = false,
+  rank,
 }: {
   product: Product & { exhibitionLabel?: string | null };
   showDiscountRate?: boolean;
   showProductId?: boolean;
+  rank?: number;
 }) {
   const originalPrice = product.originalPrice;
   const hasDiscount = product.discountRate > 0 && Boolean(originalPrice);
@@ -30,6 +32,9 @@ export function ProductCard({
               fill
               className="object-cover transition duration-500 group-hover:scale-[1.03]"
             />
+            {rank ? (
+              <span className="absolute left-3 top-3 z-20 grid h-8 min-w-8 place-items-center bg-ink px-2 text-sm font-semibold text-white">{rank}</span>
+            ) : null}
             <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-300 md:group-hover:bg-black/35 md:group-focus-within:bg-black/35" />
           </div>
         </Link>

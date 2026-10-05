@@ -9,7 +9,7 @@ import { ProductSearchPicker, type SearchableProduct } from "@/components/produc
 const PAGE_COPY: Record<(typeof DISPLAY_PAGES)[number]["key"], string> = {
   home: "",
   products: "전체상품 필터 영역에 올릴 카테고리를 추가합니다.",
-  best: "베스트 영역에 올릴 상품을 추가합니다. 스토어에서는 등록된 상품을 판매량 순으로 보여 줍니다.",
+  best: "베스트 영역에 올릴 상품을 추가하고 순위를 정합니다.",
   events: "이벤트 영역에 올릴 기획전을 추가합니다. 비공개 기획전은 여기서 추가해도 스토어에 나오지 않습니다.",
 };
 
@@ -113,6 +113,7 @@ export default async function DisplayAdminPage({
   const taken = (rows: DisplayRow[]) => new Set(rows.map((item) => item.refId));
 
   const quickItems = visibleItems.filter((item) => item.kind === "shortcut");
+  const homeTimesale = visibleItems.filter((item) => item.slotKey.startsWith("timesale-product:"));
   const homeBest = visibleItems.filter((item) => item.slotKey.startsWith("best-product:"));
   const homePromotion = visibleItems.filter((item) => item.slotKey.startsWith("promotion-product:"));
   const productFilters = visibleItems.filter((item) => item.kind === "category");
@@ -262,18 +263,26 @@ export default async function DisplayAdminPage({
                 );
               }
 
-              if (section.slotKey === "section:best" || section.slotKey === "section:promotion") {
-                const assigned = section.slotKey === "section:best" ? homeBest : homePromotion;
-                const area: AssignArea = section.slotKey === "section:best" ? "home-best" : "home-promotion";
+              if (section.slotKey === "section:best" || section.slotKey === "section:promotion" || section.slotKey === "section:timesale") {
+                const assigned = section.slotKey === "section:best" ? homeBest : section.slotKey === "section:promotion" ? homePromotion : homeTimesale;
+                const area: AssignArea = section.slotKey === "section:best" ? "home-best" : section.slotKey === "section:promotion" ? "home-promotion" : "home-timesale";
+                const heading = section.slotKey === "section:best" ? "Best Selling" : section.slotKey === "section:promotion" ? "Promotion" : "타임세일";
                 return (
                   <section key={section.id} className="rounded-lg border border-line bg-white p-6">
                     <div className="flex flex-wrap items-end justify-between gap-4">
                       <div className="min-w-64 flex-1">
-                        <h2 className="text-base font-semibold">{section.slotKey === "section:best" ? "Best Selling" : "Promotion"}</h2>
+                        <h2 className="text-base font-semibold">{heading}</h2>
                         <label className="mt-3 block text-sm font-medium">
                           영역 제목
                           <input className="field mt-2" name={`label:${section.id}`} defaultValue={section.label} maxLength={40} />
                         </label>
+                        {section.slotKey === "section:timesale" ? (
+                          <label className="mt-3 block text-sm font-medium">
+                            종료 시각
+                            <input className="field mt-2" type="datetime-local" name={`href:${section.id}`} defaultValue={section.href} />
+                          </label>
+                        ) : null}
+                        {section.slotKey === "section:timesale" ? <p className="mt-2 text-xs text-muted">메인에서는 상품 3개씩 넘겨 보여 줍니다.</p> : null}
                       </div>
                       <div className="flex flex-wrap items-end gap-3">
                         <input type="hidden" name="id" value={section.id} />
@@ -373,7 +382,7 @@ export default async function DisplayAdminPage({
               </div>
               <ProductAssignButton title="제품 추가" area="best" products={productOptions(bestProducts)} />
             </div>
-            <ProductRows products={bestProducts} productById={productById} showSort={false} />
+            <ProductRows products={bestProducts} productById={productById} showRank />
           </section>
         ) : null}
 
@@ -442,38 +451,47 @@ function ProductRows({
   products,
   productById,
   showSort = true,
+  showRank = false,
 }: {
   products: DisplayRow[];
   productById: Map<string, { isPublished: boolean; category: { name: string } }>;
   showSort?: boolean;
+  showRank?: boolean;
 }) {
+  const ranked = [...products].sort((left, right) => left.sortOrder - right.sortOrder || left.id.localeCompare(right.id));
   return (
     <div className="mt-4 overflow-x-auto">
       <table className="w-full text-left">
         <thead>
           <tr>
+            {showRank ? <th>순위</th> : null}
             <th>상품</th>
             <th>카테고리</th>
             <th>상태</th>
-            {showSort ? <th>정렬</th> : null}
+            {showSort && !showRank ? <th>정렬</th> : null}
             <th></th>
           </tr>
         </thead>
         <tbody>
-          {products.length === 0 ? (
-            <EmptyRow colSpan={showSort ? 5 : 4} />
+          {ranked.length === 0 ? (
+            <EmptyRow colSpan={(showRank ? 5 : 4) + (showSort && !showRank ? 1 : 0)} />
           ) : (
-            products.map((item) => {
+            ranked.map((item) => {
               const product = productById.get(item.refId);
               return (
                 <tr key={item.id} className="border-t border-line">
+                  {showRank ? (
+                    <td>
+                      <SortField id={item.id} value={item.sortOrder} />
+                    </td>
+                  ) : null}
                   <td className="product-name">
                     <input type="hidden" name="id" value={item.id} />
                     {item.label}
                   </td>
                   <td>{product?.category.name ?? "—"}</td>
                   <td>{product?.isPublished === false ? "비공개" : "공개"}</td>
-                  {showSort ? (
+                  {showSort && !showRank ? (
                     <td>
                       <SortField id={item.id} value={item.sortOrder} />
                     </td>

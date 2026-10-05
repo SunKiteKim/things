@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { priceProducts } from "@/lib/exhibition-offers";
+import { presentProducts } from "@/lib/store-price";
 import { ProductCard } from "@/components/product-card";
 import { CategoryPills } from "@/components/category-pills";
 import { Pagination } from "@/components/pagination";
@@ -46,7 +46,7 @@ export default async function ProductsPage({
     skip: (currentPage - 1) * PAGE_SIZE,
     take: PAGE_SIZE,
   });
-  const products = await priceProducts(listed);
+  const products = await presentProducts(listed);
 
   const title = activeCategory?.name ?? "All Products";
 

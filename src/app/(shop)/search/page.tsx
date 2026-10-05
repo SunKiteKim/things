@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { priceProducts } from "@/lib/exhibition-offers";
+import { presentProducts } from "@/lib/store-price";
 import { ProductCard } from "@/components/product-card";
 
 export default async function SearchPage({
@@ -21,7 +21,7 @@ export default async function SearchPage({
         orderBy: { sortOrder: "asc" },
       })
     : [];
-  const products = await priceProducts(catalog);
+  const products = await presentProducts(catalog);
 
   return (
     <div>

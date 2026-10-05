@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ProductForm } from "@/components/product-form";
+import { ProductDiscountBoard } from "@/components/product-discount-board";
+import { discountBoards } from "@/lib/product-discounts";
 
 export default async function EditProductPage({
   params,
@@ -14,6 +16,8 @@ export default async function EditProductPage({
     prisma.category.findMany({ orderBy: { sortOrder: "asc" } }),
   ]);
   if (!product) notFound();
+  const boards = await discountBoards([product]);
+  const board = boards.get(product.id);
 
   return (
     <div>
@@ -24,6 +28,7 @@ export default async function EditProductPage({
       </p>
       <h1 className="display mt-3 text-3xl">상품 수정</h1>
       <ProductForm product={product} categories={categories} />
+      {board ? <ProductDiscountBoard board={board} /> : null}
     </div>
   );
 }

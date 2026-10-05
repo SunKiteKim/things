@@ -160,8 +160,8 @@ export async function saveDisplayItems(formData: FormData) {
       }
 
       const editableLink = item.kind === "shortcut" && item.refId === "";
-      const editableHeading = item.slotKey === "section:best" || item.slotKey === "section:promotion";
-      const editableHref = item.slotKey === "section:hero" || item.slotKey === "section:coupon";
+      const editableHeading = item.slotKey === "section:best" || item.slotKey === "section:promotion" || item.slotKey === "section:timesale";
+      const editableHref = item.slotKey === "section:hero" || item.slotKey === "section:coupon" || item.slotKey === "section:timesale";
       if (editableLink || editableHeading) {
         const label = text(formData, `label:${item.id}`).slice(0, 40);
         if (label) data.label = label;
@@ -281,7 +281,7 @@ function contentForArea(
       icon: area === "quick-category" ? shortcutIcon(category.slug) : "",
     };
   }
-  if (area === "home-best" || area === "home-promotion" || area === "best") {
+  if (area === "home-best" || area === "home-promotion" || area === "home-timesale" || area === "best") {
     const product = products.get(refId);
     if (!product) return null;
     return { label: product.name, href: `/product/${product.id}`, icon: "" };

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { formatDate, formatPrice, maskEmail, ORDER_STATUS_LABEL } from "@/lib/utils";
+import { formatDate, formatPrice, maskEmail, maskPersonalInfo, ORDER_STATUS_LABEL } from "@/lib/utils";
 
 export default async function OrdersAdminPage() {
   const orders = await prisma.order.findMany({
@@ -16,7 +16,8 @@ export default async function OrdersAdminPage() {
           <tr className="border-b border-line text-muted">
             <th className="py-3">No</th>
             <th>주문번호</th>
-            <th>회원</th>
+            <th>이메일</th>
+            <th>이름</th>
             <th>금액</th>
             <th>상태</th>
             <th>일시</th>
@@ -29,7 +30,8 @@ export default async function OrdersAdminPage() {
               <td>
                 <Link href={`/admin/orders/${order.id}`}>{order.orderNumber}</Link>
               </td>
-              <td>{order.user.role === "WITHDRAWN" ? "탈퇴 회원" : maskEmail(order.user.email)}</td>
+              <td>{order.user.role === "WITHDRAWN" ? "-" : maskEmail(order.user.email)}</td>
+              <td>{order.user.role === "WITHDRAWN" ? "탈퇴 회원" : maskPersonalInfo(order.user.name)}</td>
               <td>{formatPrice(order.totalAmount)}</td>
               <td>{ORDER_STATUS_LABEL[order.status]}</td>
               <td>{formatDate(order.createdAt)}</td>

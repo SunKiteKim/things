@@ -6,6 +6,7 @@ import { formatDateTime } from "@/lib/utils";
 
 type MaskedMember = {
   id: string;
+  mid: string;
   name: string;
   email: string;
   phone: string;
@@ -30,6 +31,12 @@ export function MemberForm({ user }: { user: MaskedMember }) {
   return (
     <form action={updateMember} className="mt-8 grid max-w-3xl gap-5">
       <input type="hidden" name="id" value={user.id} />
+      <Field label="UID">
+        <DisabledText>{user.id}</DisabledText>
+      </Field>
+      <Field label="MID">
+        <DisabledText>{user.mid}</DisabledText>
+      </Field>
       <Field label="이름">
         <DisabledText>{user.name}</DisabledText>
       </Field>

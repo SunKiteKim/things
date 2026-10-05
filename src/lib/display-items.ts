@@ -27,7 +27,8 @@ export const SHORTCUT_ICON_LABEL: Record<ShortcutIcon, string> = {
 export const HOME_SECTIONS = [
   { slotKey: "section:hero", label: "메인 배너", href: "/category/object", sortOrder: 1 },
   { slotKey: "section:quick", label: "퀵 메뉴", href: "", sortOrder: 2 },
-  { slotKey: "section:best", label: "Best Selling", href: "", sortOrder: 3 },
+  { slotKey: "section:timesale", label: "TIME SALE", href: "", sortOrder: 3 },
+  { slotKey: "section:best", label: "Best Selling", href: "", sortOrder: 4 },
   { slotKey: "section:coupon", label: "쿠폰 배너", href: "/events", sortOrder: 4 },
   { slotKey: "section:promotion", label: "Promotion product2", href: "", sortOrder: 5 },
 ] as const;
@@ -40,6 +41,7 @@ const HOME_LINKS = [
 
 export const ASSIGN_AREAS = {
   "quick-category": { pageKey: "home", kind: "shortcut", slot: (id: string) => `category:${id}` },
+  "home-timesale": { pageKey: "home", kind: "product", slot: (id: string) => `timesale-product:${id}` },
   "home-best": { pageKey: "home", kind: "product", slot: (id: string) => `best-product:${id}` },
   "home-promotion": { pageKey: "home", kind: "product", slot: (id: string) => `promotion-product:${id}` },
   products: { pageKey: "products", kind: "category", slot: (id: string) => `category:${id}` },

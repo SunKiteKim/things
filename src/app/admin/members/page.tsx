@@ -4,10 +4,12 @@ import { LIMITS, formatDate, maskEmail, maskPersonalInfo, maskPhone } from "@/li
 import { AdminCreateModal } from "@/components/admin-create-modal";
 import { AdminMasterDetail } from "@/components/admin-master-detail";
 import { MemberForm } from "@/components/member-form";
+import { memberMids } from "@/lib/member-code";
 
 export default async function MembersAdminPage() {
   const members = await prisma.user.findMany({ orderBy: { createdAt: "desc" } });
   const count = members.filter((user) => user.role === "MEMBER").length;
+  const midById = memberMids(members);
 
   return (
     <div>
@@ -23,11 +25,11 @@ export default async function MembersAdminPage() {
       <AdminMasterDetail
         listTitle="회원 목록"
         detailTitle="회원 상세"
-        columns={["회원 ID", "이름", "이메일", "휴대폰", "가입일", "역할"]}
+        columns={["이메일", "이름", "MID", "UID", "휴대폰", "가입일", "역할"]}
         rows={members.map((user) => ({
           id: user.id,
-          cells: [user.id, maskPersonalInfo(user.name), maskEmail(user.email), maskPhone(user.phone), formatDate(user.createdAt), user.role],
-          detail: <div><MemberForm user={{ id: user.id, name: maskPersonalInfo(user.name), email: maskEmail(user.email), phone: maskPhone(user.phone), zipCode: maskPersonalInfo(user.zipCode), address: maskPersonalInfo(user.address), addressDetail: maskPersonalInfo(user.addressDetail), role: user.role, createdAt: user.createdAt, updatedAt: user.updatedAt }} />{user.role !== "ADMIN" ? <form action={deleteMember} className="mt-4 max-w-3xl border-t border-line pt-4"><input type="hidden" name="id" value={user.id} /><button className="btn btn-ghost">회원 삭제</button></form> : null}</div>,
+          cells: [maskEmail(user.email), maskPersonalInfo(user.name), midById.get(user.id), maskPersonalInfo(user.id), maskPhone(user.phone), formatDate(user.createdAt), user.role],
+          detail: <div><MemberForm user={{ id: user.id, mid: midById.get(user.id) ?? "-", name: maskPersonalInfo(user.name), email: maskEmail(user.email), phone: maskPhone(user.phone), zipCode: maskPersonalInfo(user.zipCode), address: maskPersonalInfo(user.address), addressDetail: maskPersonalInfo(user.addressDetail), role: user.role, createdAt: user.createdAt, updatedAt: user.updatedAt }} />{user.role !== "ADMIN" ? <form action={deleteMember} className="mt-4 max-w-3xl border-t border-line pt-4"><input type="hidden" name="id" value={user.id} /><button className="btn btn-ghost">회원 삭제</button></form> : null}</div>,
         }))}
       />
     </div>

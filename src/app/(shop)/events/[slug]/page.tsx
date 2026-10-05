@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
-import { priceProducts } from "@/lib/exhibition-offers";
+import { presentProducts } from "@/lib/store-price";
 import { ProductCard } from "@/components/product-card";
 import { asExhibitionOffer, exhibitionOfferLabel } from "@/lib/exhibition-price";
 import { formatDate } from "@/lib/utils";
@@ -22,7 +22,7 @@ export default async function EventDetailPage({
   const now = new Date();
   const offer = asExhibitionOffer(exhibition.discountType, exhibition.discountValue);
   const live = exhibition.isActive && exhibition.startAt <= now && exhibition.endAt >= now;
-  const products = await priceProducts(exhibition.products.map((row) => row.product), now);
+  const products = await presentProducts(exhibition.products.map((row) => row.product), now);
 
   return (
     <div>

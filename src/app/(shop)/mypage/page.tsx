@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { ProductImage } from "@/components/product-image";
 import { formatDate, formatPrice, ORDER_STATUS, ORDER_STATUS_LABEL } from "@/lib/utils";
 import { ProductCard } from "@/components/product-card";
-import { priceProducts } from "@/lib/exhibition-offers";
+import { presentProducts } from "@/lib/store-price";
 
 const SUMMARY = [
   { key: "PAID", label: "결제 완료", statuses: [ORDER_STATUS.PAID] },
@@ -33,7 +33,7 @@ export default async function MyPage() {
     },
   });
   if (!user) redirect("/login");
-  const wishlistProducts = await priceProducts(user.wishlistItems.map((item) => item.product));
+  const wishlistProducts = await presentProducts(user.wishlistItems.map((item) => item.product));
   const wishlistById = new Map(wishlistProducts.map((product) => [product.id, product]));
   if (user.provider !== "credentials" && !user.phone) redirect("/mypage/phone");
 

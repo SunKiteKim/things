@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatDateTime, formatPrice, maskPersonalInfo, ORDER_STATUS, ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/utils";
@@ -16,7 +17,7 @@ export default async function AdminOrderDetailPage({
     include: { user: true, items: true },
   });
   if (!order) notFound();
-
+  try {
   const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const statusDates = [
     { label: "주문 접수", date: order.createdAt },
@@ -41,7 +42,8 @@ export default async function AdminOrderDetailPage({
 
   return (
     <div>
-      <h1 className="display text-4xl">주문 상세</h1>
+      <Link href="/admin/orders" className="btn btn-ghost">뒤로가기</Link>
+      <h1 className="display mt-4 text-4xl">주문 상세</h1>
       <p className="mt-3 text-sm text-muted">주문 정보, 상품, 배송지와 처리 이력을 확인합니다.</p>
 
       <section className="mt-8">
@@ -140,4 +142,8 @@ export default async function AdminOrderDetailPage({
       ) : null}
     </div>
   );
+  } catch (error) {
+    const message = error instanceof Error ? `${error.message}\n${error.stack}` : String(error);
+    return <pre className="whitespace-pre-wrap text-sm">{message}</pre>;
+  }
 }

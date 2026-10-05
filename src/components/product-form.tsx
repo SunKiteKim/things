@@ -57,7 +57,7 @@ export function ProductForm({
           required
         />
       </Field>
-      <Field label="할인율">
+      <Field label="회원 할인">
         <div className="flex items-center gap-2">
           <input
             className="field"
@@ -72,7 +72,7 @@ export function ProductForm({
         </div>
       </Field>
       <Field label="1+1 할인"><label><input type="checkbox" name="onePlusOne" defaultChecked={product?.onePlusOne ?? false} /> 같은 상품 1개 증정 옵션 허용</label></Field>
-      <Field label="할인가">
+      <Field label="회원 할인가">
         <DisabledText>{formatPrice(sale)}</DisabledText>
       </Field>
       <Field label="썸네일">

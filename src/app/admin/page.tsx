@@ -20,7 +20,7 @@ export default async function AdminHome() {
 
   return (
     <div>
-      <h1 className="display text-4xl" style={{ letterSpacing: "0.42em" }}>ADMIN</h1>
+      <h1 className="display text-4xl" style={{ letterSpacing: "0.04em" }}>ADMIN</h1>
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {cards.map((card) => (
           <Link key={card.href} href={card.href} className="border border-line bg-surface p-6">

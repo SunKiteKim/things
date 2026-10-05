@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment } from "react";
-import { priceProducts } from "@/lib/exhibition-offers";
+import { presentProducts } from "@/lib/store-price";
 import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/product-card";
 import { QuickMenu } from "@/components/quick-menu";
+import { TimeSaleRail } from "@/components/time-sale-rail";
 import { loadPageDisplay } from "@/lib/display";
 import { HOME_SECTIONS } from "@/lib/display-items";
 import bannerMain from "@/img/banner_main_things_1520_500.png";
@@ -19,7 +20,7 @@ export default async function HomePage() {
     }),
     loadPageDisplay("home"),
   ]);
-  const products = await priceProducts(catalog);
+  const products = await presentProducts(catalog);
 
   const productById = new Map(products.map((product) => [product.id, product]));
   const placedProducts = (prefix: string) =>
@@ -29,6 +30,7 @@ export default async function HomePage() {
         const product = productById.get(item.refId);
         return product ? [product] : [];
       });
+  const timeSale = placedProducts("timesale-product:");
   const bestSelling = placedProducts("best-product:");
   const promotion = placedProducts("promotion-product:");
 
@@ -85,6 +87,23 @@ export default async function HomePage() {
             <section key={section.id} className="mx-auto w-full max-w-[1280px] px-5 py-10 md:px-8 md:py-12">
               <QuickMenu items={quickItems} />
             </section>
+          );
+        }
+        if (section.slotKey === "section:timesale") {
+          return (
+            <TimeSaleRail
+              key={section.id}
+              endsAt={section.href}
+              items={timeSale.map((product) => ({
+                id: product.id,
+                name: product.name,
+                imageUrl: product.imageUrl,
+                price: product.price,
+                originalPrice: product.originalPrice,
+                label: product.exhibitionLabel,
+                stock: product.stock,
+              }))}
+            />
           );
         }
         if (section.slotKey === "section:best") {
