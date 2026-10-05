@@ -83,7 +83,7 @@ export function TimeSaleRail({ items, endsAt }: { items: TimeSaleItem[]; endsAt:
                   {item.originalPrice && item.originalPrice > item.price ? (
                     <p className="text-xs text-neutral-400 line-through">{formatPrice(item.originalPrice)}</p>
                   ) : null}
-                  <p className="mt-1 text-xs text-neutral-500">할인 후 50,000원 이상 무료배송</p>
+                  <p className="mt-1 text-xs text-neutral-500">할인 후 30,000원 이상 무료배송</p>
                 </Link>
               </article>
             ))}

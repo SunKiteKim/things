@@ -31,6 +31,7 @@ export function CouponPicker({ options, selected, subtotal, onApply }: { options
               <button type="button" className="text-2xl leading-none" aria-label="쿠폰 변경 닫기" onClick={() => setOpen(false)}>×</button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-6">
+              <p className="mb-3 text-xs text-muted">할인 후 상품금액은 최소 1원이며, 이를 초과하는 쿠폰 할인은 제한됩니다. 배송비는 별도입니다.</p>
               <div className="divide-y divide-line border border-line">
                 {options.map((option) => (
                   <label key={option.code} className={`grid grid-cols-[auto_1fr_auto] items-start gap-3 px-4 py-4 ${option.eligible ? "cursor-pointer hover:bg-slate-50" : "cursor-not-allowed opacity-45"}`}>

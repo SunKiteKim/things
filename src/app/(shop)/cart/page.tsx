@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import { CartList } from "@/components/cart-list";
 import { requireUser } from "@/lib/auth";
-import { selectedOffers, combinedDiscount, shippingFee } from "@/lib/checkout-pricing";
+import { selectedOffers, combinedDiscount, shippingFee, SHIPPING_NOTICE } from "@/lib/checkout-pricing";
 
 export default async function CartPage() {
   const cart = await getCart();
@@ -57,7 +57,7 @@ export default async function CartPage() {
             <p className="mt-2 text-2xl">{formatPrice(total - discount)}</p>
             <p className="mt-2 text-sm">쿠폰 할인 {formatPrice(discount)}</p>
             <p className="mt-2 text-sm">배송비 {formatPrice(shipping)}</p>
-            <p className="mt-2 text-xs text-muted">쿠폰 할인 후 상품금액 50,000원 이상 무료배송 · 기본 3,000원</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{SHIPPING_NOTICE}</p>
             <p className="mt-4 text-lg font-semibold">예상 결제금액 {formatPrice(total - discount + shipping)}</p>
             <CartCoupon options={options} selected={selectedCode} subtotal={total} />
             <Link href="/checkout" className="btn mt-6 w-full">

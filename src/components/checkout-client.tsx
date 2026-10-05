@@ -8,7 +8,7 @@ import { formatPrice } from "@/lib/utils";
 import { FormField } from "@/components/form-field";
 import { PostcodeAddress } from "@/components/postcode-address";
 import { CouponPicker, type CouponOption } from "@/components/cart-coupon";
-import { shippingFee } from "@/lib/checkout-pricing";
+import { shippingFee, SHIPPING_NOTICE } from "@/lib/checkout-pricing";
 
 type TossWidgets = ReturnType<Awaited<ReturnType<typeof loadTossPayments>>["widgets"]>;
 
@@ -195,7 +195,7 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initi
       <CouponPicker options={couponOptions} selected={appliedCode} subtotal={subtotal} onApply={async (option) => { const result = await selectCartCoupon(option.code || "-"); if ("error" in result && result.error) throw new Error(result.error); setDiscount(option.discount); setAppliedCode(option.code); setMessage(`${option.label} 적용`); }} />
       <p className="mt-4 text-sm">할인 {formatPrice(discount)}</p>
       <p className="mt-2 text-sm">배송비 {formatPrice(shipping)}</p>
-      <p className="mt-1 text-xs text-muted">쿠폰 할인 후 상품금액 50,000원 이상 무료배송 · 기본 3,000원</p>
+      <p className="mt-1 text-sm leading-relaxed text-muted">{SHIPPING_NOTICE}</p>
       <p className="text-lg">결제 금액 {formatPrice(total)}</p>
       {message ? <p className="mt-3 text-sm text-accent">{message}</p> : null}
       {tossClientKey ? (

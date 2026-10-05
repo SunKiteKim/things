@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { couponDiscount } from "@/lib/discounts";
 import { priceProducts } from "@/lib/exhibition-offers";
 import { discountPercentLabel } from "@/lib/exhibition-price";
+import { MINIMUM_MERCHANDISE_AMOUNT } from "@/lib/checkout-pricing";
 
 type OfferCoupon = Coupon & {
   issues: { targetType: string; userId: string | null; categoryId: string | null }[];
@@ -70,7 +71,7 @@ export async function presentProducts<T extends Pick<Product, "id" | "price" | "
       const discount = couponDiscount(coupon, product.price, 1, now);
       if (discount != null && discount > couponOff) couponOff = discount;
     }
-    const price = Math.max(0, product.price - couponOff);
+    const price = Math.max(MINIMUM_MERCHANDISE_AMOUNT, product.price - couponOff);
     if (couponOff === 0 && !product.exhibitionLabel) return { ...product, originalPrice: listPrice };
     return {
       ...product,
