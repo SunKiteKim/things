@@ -4,6 +4,7 @@ import { isDisplayPage, loadPageDisplay } from "@/lib/display";
 import { assignDisplayContent, createDisplayShortcut, removeDisplayItem, saveDisplayItems } from "@/actions/display";
 import { DISPLAY_PAGES, SHORTCUT_ICONS, SHORTCUT_ICON_LABEL, shortcutIcon, type AssignArea } from "@/lib/display-items";
 import { AdminCreateModal } from "@/components/admin-create-modal";
+import { RequiredMark } from "@/components/required-mark";
 import { ProductSearchPicker, type SearchableProduct } from "@/components/product-search-picker";
 
 const PAGE_COPY: Record<(typeof DISPLAY_PAGES)[number]["key"], string> = {
@@ -185,11 +186,11 @@ export default async function DisplayAdminPage({
                         <AssignButton title="카테고리 추가" area="quick-category" options={categoryOptions} />
                         <AdminCreateModal title="퀵메뉴 직접 추가" triggerLabel="직접 추가" action={createDisplayShortcut}>
                           <label className="text-sm font-medium">
-                            이름
+                            이름<RequiredMark />
                             <input className="field mt-2" name="label" required maxLength={40} />
                           </label>
                           <label className="text-sm font-medium">
-                            링크
+                            링크<RequiredMark />
                             <input className="field mt-2" name="href" defaultValue="/" required />
                           </label>
                           <label className="text-sm font-medium">

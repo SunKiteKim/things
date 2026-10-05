@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { updateOrderStatus } from "@/actions/commerce";
+import { RequiredMark } from "@/components/required-mark";
 import { ORDER_STATUS, ORDER_STATUS_LABEL } from "@/lib/utils";
 
 export function AdminOrderStatusForm({ id, currentStatus, trackingNumber }: { id: string; currentStatus: string; trackingNumber: string }) {
@@ -33,7 +34,7 @@ export function AdminOrderStatusForm({ id, currentStatus, trackingNumber }: { id
           {options.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
       </label>
-      <label className="text-sm font-medium">운송장번호 {status === ORDER_STATUS.DELIVERED ? <span className="text-accent">(필수)</span> : null}
+      <label className="text-sm font-medium">운송장번호{status === ORDER_STATUS.DELIVERED ? <RequiredMark /> : null}
         <input className="field mt-2" name="trackingNumber" defaultValue={trackingNumber} required={status === ORDER_STATUS.DELIVERED} placeholder="배송 완료 처리 시 운송장번호 입력" />
       </label>
       {error ? <p className="text-sm text-accent" role="alert">{error}</p> : null}

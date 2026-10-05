@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { createExhibition, deleteExhibition, updateExhibition } from "@/actions/promotions";
 import { AdminCreateModal } from "@/components/admin-create-modal";
+import { RequiredMark } from "@/components/required-mark";
 import { AdminMasterDetail } from "@/components/admin-master-detail";
 import { ProductSearchPicker } from "@/components/product-search-picker";
 import { exhibitionOfferLabel } from "@/lib/exhibition-price";
@@ -50,11 +51,11 @@ export default async function ExhibitionsAdminPage() {
       <div className="flex items-end justify-between gap-4">
         <h1 className="display text-3xl">기획전 관리</h1>
         <AdminCreateModal title="기획전 등록" triggerLabel="기획전 등록" action={createExhibition} wide>
-          <label className="text-sm font-medium">기획전명<input className="field mt-2" name="title" required /></label>
+          <label className="text-sm font-medium">기획전명<RequiredMark /><input className="field mt-2" name="title" required /></label>
           <label className="text-sm font-medium">슬러그<input className="field mt-2" name="slug" /></label>
           <label className="text-sm font-medium">설명<textarea className="field mt-2 min-h-24" name="description" /></label>
-          <label className="text-sm font-medium">이미지 URL<input className="field mt-2" name="imageUrl" required /></label>
-          <div className="grid gap-4 md:grid-cols-2"><label className="text-sm font-medium">시작일<input className="field mt-2" name="startAt" type="datetime-local" required /></label><label className="text-sm font-medium">종료일<input className="field mt-2" name="endAt" type="datetime-local" required /></label></div>
+          <label className="text-sm font-medium">이미지 URL<RequiredMark /><input className="field mt-2" name="imageUrl" required /></label>
+          <div className="grid gap-4 md:grid-cols-2"><label className="text-sm font-medium">시작일<RequiredMark /><input className="field mt-2" name="startAt" type="datetime-local" required /></label><label className="text-sm font-medium">종료일<RequiredMark /><input className="field mt-2" name="endAt" type="datetime-local" required /></label></div>
           <DiscountFields />
           <div>
             <p className="mb-3 text-sm font-medium">적용 상품</p>
@@ -74,11 +75,11 @@ export default async function ExhibitionsAdminPage() {
             cells: [exhibition.title, `${formatDate(exhibition.startAt)} ~ ${formatDate(exhibition.endAt)}`, discountLabel(exhibition.discountType, exhibition.discountValue), `${exhibition.products.length}개`, exhibition.isActive ? "공개" : "비공개"],
             detail: <form key={`${exhibition.id}-${exhibition.discountType}-${exhibition.discountValue}`} action={updateExhibition} className="grid max-w-4xl gap-4">
               <input type="hidden" name="id" value={exhibition.id} />
-              <label className="text-sm font-medium">기획전명<input className="field mt-2" name="title" defaultValue={exhibition.title} /></label>
+              <label className="text-sm font-medium">기획전명<RequiredMark /><input className="field mt-2" name="title" defaultValue={exhibition.title} required /></label>
               <label className="text-sm font-medium">슬러그<input className="field mt-2" name="slug" defaultValue={exhibition.slug} /></label>
               <label className="text-sm font-medium">설명<textarea className="field mt-2 min-h-24" name="description" defaultValue={exhibition.description} /></label>
-              <label className="text-sm font-medium">이미지 URL<input className="field mt-2" name="imageUrl" defaultValue={exhibition.imageUrl} /></label>
-              <div className="grid gap-4 md:grid-cols-2"><label className="text-sm font-medium">시작일<input className="field mt-2" name="startAt" type="datetime-local" defaultValue={localInput(exhibition.startAt)} /></label><label className="text-sm font-medium">종료일<input className="field mt-2" name="endAt" type="datetime-local" defaultValue={localInput(exhibition.endAt)} /></label></div>
+              <label className="text-sm font-medium">이미지 URL<RequiredMark /><input className="field mt-2" name="imageUrl" defaultValue={exhibition.imageUrl} required /></label>
+              <div className="grid gap-4 md:grid-cols-2"><label className="text-sm font-medium">시작일<RequiredMark /><input className="field mt-2" name="startAt" type="datetime-local" defaultValue={localInput(exhibition.startAt)} required /></label><label className="text-sm font-medium">종료일<RequiredMark /><input className="field mt-2" name="endAt" type="datetime-local" defaultValue={localInput(exhibition.endAt)} required /></label></div>
               <DiscountFields discountType={exhibition.discountType} discountValue={exhibition.discountValue} />
               <div>
                 <p className="mb-3 text-sm font-medium">적용 상품</p>

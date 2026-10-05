@@ -3,14 +3,15 @@
 import { useMemo, useState } from "react";
 import { DisabledText } from "@/components/disabled-text";
 import { ProductImagePicker } from "@/components/product-image-picker";
+import { RequiredMark } from "@/components/required-mark";
 import type { Category, Product } from "@prisma/client";
 import { createProduct, updateProduct } from "@/actions/products";
 import { discountedPrice, formatDateTime, formatPrice, maskPersonalInfo } from "@/lib/utils";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, required = false, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div className="admin-row">
-      <span>{label}</span>
+      <span>{label}{required ? <RequiredMark /> : null}</span>
       <div>{children}</div>
     </div>
   );
@@ -34,10 +35,10 @@ export function ProductForm({
       <Field label="상품번호">
         <DisabledText>{product?.id ?? "저장 시 자동 발급 (prd0001)"}</DisabledText>
       </Field>
-      <Field label="상품명">
+      <Field label="상품명" required>
         <input className="field" name="name" defaultValue={product?.name} required />
       </Field>
-      <Field label="카테고리">
+      <Field label="카테고리" required>
         <select className="field" name="categoryId" defaultValue={product?.categoryId ?? categories[0]?.id}>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
@@ -46,7 +47,7 @@ export function ProductForm({
           ))}
         </select>
       </Field>
-      <Field label="판매가">
+      <Field label="판매가" required>
         <input
           className="field"
           name="originalPrice"
@@ -75,7 +76,7 @@ export function ProductForm({
       <Field label="회원 할인가">
         <DisabledText>{formatPrice(sale)}</DisabledText>
       </Field>
-      <Field label="썸네일">
+      <Field label="썸네일" required={!product}>
         <ProductImagePicker initialImage={product?.imageUrl} editing={Boolean(product)} onBusy={setImageBusy} />
       </Field>
       <Field label="설명">

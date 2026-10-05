@@ -5,6 +5,7 @@ import { formatDateTime, formatPrice, maskPersonalInfo, ORDER_STATUS, ORDER_STAT
 import { cancelOrder, completeOrderAfterSale, confirmOrderCollection, requestOrderAfterSale } from "@/actions/commerce";
 import { AdminOrderStatusForm } from "@/components/admin-order-status-form";
 import { ProductImage } from "@/components/product-image";
+import { RequiredMark } from "@/components/required-mark";
 
 export default async function AdminOrderDetailPage({
   params,
@@ -128,7 +129,7 @@ export default async function AdminOrderDetailPage({
           {!order.collectionConfirmedAt ? (
             <form action={confirmOrderCollection} className="mt-4 flex flex-wrap items-center gap-3">
               <input type="hidden" name="id" value={order.id} />
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="collectionConfirmed" required /> 물품 회수 완료 확인</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="collectionConfirmed" required /> 물품 회수 완료 확인<RequiredMark /></label>
               <button className="btn btn-ghost">회수 확인 저장</button>
             </form>
           ) : (

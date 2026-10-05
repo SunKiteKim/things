@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { createCoupon, deleteCoupon, issueCoupon, toggleCouponPause, updateCoupon } from "@/actions/promotions";
 import { DisabledText } from "@/components/disabled-text";
+import { RequiredMark } from "@/components/required-mark";
 import { ProductSearchPicker, type SearchableProduct } from "@/components/product-search-picker";
 import { formatPrice } from "@/lib/utils";
 
@@ -45,10 +46,10 @@ function parseIds(value?: string) {
   }
 }
 
-function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) {
+function Field({ label, htmlFor, required = false, children }: { label: string; htmlFor?: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div className="admin-row">
-      <label htmlFor={htmlFor}>{label}</label>
+      <label htmlFor={htmlFor}>{label}{required ? <RequiredMark /> : null}</label>
       <div>{children}</div>
     </div>
   );
@@ -71,10 +72,10 @@ function CouponFields({ prefix, products, coupon }: { prefix: string; products: 
       ) : (
         <p className="rounded-sm bg-[#f9fafb] px-4 py-3 text-sm text-muted">쿠폰 코드는 등록 시 자동으로 고유 생성됩니다.</p>
       )}
-      <Field label="쿠폰명" htmlFor={`${prefix}-name`}>
+      <Field label="쿠폰명" htmlFor={`${prefix}-name`} required>
         <input id={`${prefix}-name`} className="field" name="name" defaultValue={coupon?.name} required />
       </Field>
-      <Field label="쿠폰 유형">
+      <Field label="쿠폰 유형" required>
         <input type="hidden" name="scope" value={scope} />
         <div className="grid gap-3 sm:grid-cols-2">
           <label className={`flex min-h-14 cursor-pointer items-center gap-3 border px-4 ${isProductCoupon ? "border-ink bg-[#f3f4f6]" : "border-line bg-white"}`}>
@@ -111,13 +112,13 @@ function CouponFields({ prefix, products, coupon }: { prefix: string; products: 
         <ProductSearchPicker products={products} name="excludedProductIds" selected={excluded} idPrefix={prefix} />
         <p className="mt-2 text-xs text-muted">적용 상품과 제외 상품에 함께 선택된 상품은 제외 상품으로 처리됩니다.</p>
       </Field>
-      <Field label="할인 방식" htmlFor={`${prefix}-discountType`}>
+      <Field label="할인 방식" htmlFor={`${prefix}-discountType`} required={scope !== "ONE_PLUS_ONE"}>
         {scope === "ONE_PLUS_ONE" ? <><input type="hidden" name="discountType" value="AMOUNT" /><DisabledText>1+1 자동 할인</DisabledText></> : <select id={`${prefix}-discountType`} className="field" name="discountType" defaultValue={coupon?.discountType ?? "PERCENT"}>
           <option value="PERCENT">정률 할인 (%)</option>
           <option value="AMOUNT">정액 할인 (원)</option>
         </select>}
       </Field>
-      <Field label="할인값" htmlFor={`${prefix}-discountValue`}>
+      <Field label="할인값" htmlFor={`${prefix}-discountValue`} required={scope !== "ONE_PLUS_ONE"}>
         {scope === "ONE_PLUS_ONE" ? <><input type="hidden" name="discountValue" value="0" /><DisabledText>동일 상품 2개당 1개 가격</DisabledText></> : <input id={`${prefix}-discountValue`} className="field" name="discountValue" type="number" min={1} defaultValue={coupon?.discountValue} required />}
       </Field>
       <Field label="최소 주문금액" htmlFor={`${prefix}-minOrderAmount`}>
@@ -143,10 +144,10 @@ function CouponFields({ prefix, products, coupon }: { prefix: string; products: 
           다른 상품·장바구니 쿠폰과 중복 적용 가능
         </label>
       </Field>
-      <Field label="사용 시작일" htmlFor={`${prefix}-startAt`}>
+      <Field label="사용 시작일" htmlFor={`${prefix}-startAt`} required>
         <input id={`${prefix}-startAt`} className="field" name="startAt" type="datetime-local" defaultValue={localInput(coupon?.startAt ?? start)} required />
       </Field>
-      <Field label="사용 종료일" htmlFor={`${prefix}-endAt`}>
+      <Field label="사용 종료일" htmlFor={`${prefix}-endAt`} required>
         <input id={`${prefix}-endAt`} className="field" name="endAt" type="datetime-local" defaultValue={localInput(coupon?.endAt ?? end)} required />
       </Field>
       <Field label="사용 여부" htmlFor={`${prefix}-isActive`}>
@@ -216,7 +217,7 @@ function CouponIssueModal({ coupon, targets }: { coupon: CouponView; targets: { 
           <div className="flex max-h-[82vh] w-full max-w-3xl flex-col rounded-lg bg-white shadow-2xl" role="dialog" aria-modal="true" aria-label="쿠폰 발행">
             <div className="flex items-center justify-between border-b border-line px-6 py-5"><div><h3 className="text-lg font-semibold">쿠폰 발행</h3><p className="mt-1 text-xs text-muted">{coupon.name} · 발행 완료 {coupon.issues.length}건</p></div><button type="button" className="text-2xl text-muted" aria-label="쿠폰 발행 닫기" onClick={() => setOpen(false)}>×</button></div>
             <div className="border-b border-line p-6">
-              <p className="mb-2 text-sm font-medium">발행 대상</p>
+              <p className="mb-2 text-sm font-medium">발행 대상<RequiredMark /></p>
               <div className="grid grid-cols-2 gap-2">
                 <label className={`flex items-center gap-2 rounded-md border px-4 py-3 text-sm ${targetType === "USER" ? "border-slate-700 bg-slate-100" : "border-line"}`}><input type="checkbox" checked={targetType === "USER"} onChange={() => changeTargetType("USER")} /> 특정 회원 ID</label>
                 <label className={`flex items-center gap-2 rounded-md border px-4 py-3 text-sm ${targetType === "CATEGORY" ? "border-slate-700 bg-slate-100" : "border-line"}`}><input type="checkbox" checked={targetType === "CATEGORY"} onChange={() => changeTargetType("CATEGORY")} /> 상품 카테고리</label>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Logo } from "@/components/logo";
+import { RequiredMark } from "@/components/required-mark";
 import { submitAdminRecovery } from "@/actions/admin-recovery";
 import { maskPersonalInfo } from "@/lib/utils";
 
@@ -43,15 +44,15 @@ export default function AdminRecoveryPage() {
                 <label><input type="radio" name="mode" value="account" checked={mode === "account"} onChange={() => { setMode("account"); setError(""); }} /> 계정 찾기</label>
                 <label><input type="radio" name="mode" value="password" checked={mode === "password"} onChange={() => { setMode("password"); setError(""); }} /> 비밀번호 재설정</label>
               </div>
-              <label className="block text-sm">일회용 복구 코드
+              <label className="block text-sm">일회용 복구 코드<RequiredMark />
                 <input className="mt-2 w-full border border-line bg-transparent p-3" name="code" type="password" autoComplete="off" required minLength={64} maxLength={64} spellCheck={false} />
               </label>
               {mode === "password" && <>
-                <label className="block text-sm">새 비밀번호
+                <label className="block text-sm">새 비밀번호<RequiredMark />
                   <input className="mt-2 w-full border border-line bg-transparent p-3" name="password" type="password" autoComplete="new-password" required minLength={10} maxLength={72} aria-describedby="password-help" />
                 </label>
                 <p id="password-help" className="text-xs text-muted">10~72자, 영문 대문자와 숫자를 포함하세요.</p>
-                <label className="block text-sm">새 비밀번호 확인
+                <label className="block text-sm">새 비밀번호 확인<RequiredMark />
                   <input className="mt-2 w-full border border-line bg-transparent p-3" name="confirm" type="password" autoComplete="new-password" required minLength={10} maxLength={72} />
                 </label>
               </>}
