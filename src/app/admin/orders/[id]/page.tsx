@@ -91,6 +91,7 @@ export default async function AdminOrderDetailPage({
             <tfoot className="border-t border-line">
               <tr><th colSpan={5} className="px-4 py-3 text-right">상품 합계</th><td className="px-4 py-3 text-right">{formatPrice(subtotal)}</td></tr>
               <tr><th colSpan={5} className="px-4 py-3 text-right">쿠폰 할인</th><td className="px-4 py-3 text-right">-{formatPrice(order.discountAmount)}</td></tr>
+              <tr><th colSpan={5} className="px-4 py-3 text-right">배송비</th><td className="px-4 py-3 text-right">{formatPrice(Math.max(0, order.totalAmount - Math.max(0, subtotal - order.discountAmount)))}</td></tr>
               <tr className="bg-slate-50"><th colSpan={5} className="px-4 py-3 text-right">최종 결제금액</th><td className="px-4 py-3 text-right font-bold">{formatPrice(order.totalAmount)}</td></tr>
             </tfoot>
           </table>

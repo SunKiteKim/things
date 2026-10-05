@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/utils";
 import { FormField } from "@/components/form-field";
 import { PostcodeAddress } from "@/components/postcode-address";
 import { CouponPicker, type CouponOption } from "@/components/cart-coupon";
+import { shippingFee } from "@/lib/checkout-pricing";
 
 type TossWidgets = ReturnType<Awaited<ReturnType<typeof loadTossPayments>>["widgets"]>;
 
@@ -37,7 +38,8 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initi
   const [widgetsReady, setWidgetsReady] = useState(false);
   const busyRef = useRef(false);
   const widgetsRef = useRef<TossWidgets | null>(null);
-  const total = useMemo(() => Math.max(subtotal - discount, 0), [subtotal, discount]);
+  const shipping = shippingFee(Math.max(subtotal - discount, 0));
+  const total = useMemo(() => Math.max(subtotal - discount, 0) + shipping, [subtotal, discount, shipping]);
   const totalRef = useRef(total);
   totalRef.current = total;
 
@@ -117,7 +119,8 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initi
     await withLock(async () => {
       const created = await createOrder();
       if (!created) return;
-      await completeDemoPayment(created.orderId);
+      const paid = await completeDemoPayment(created.orderId);
+      if (paid.error) { setMessage(paid.error); return; }
       router.push(`/order/complete?orderId=${created.orderId}`);
     });
   }
@@ -189,8 +192,10 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initi
           <textarea id="memo" className="field min-h-24" name="memo" placeholder="배송 메모" />
         </FormField>
       </form>
-      <CouponPicker options={couponOptions} selected={appliedCode} subtotal={subtotal} onApply={async (option) => { const result = await selectCartCoupon(option.code); if ("error" in result && result.error) throw new Error(result.error); setDiscount(option.discount); setAppliedCode(option.code); setMessage(`${option.label} 적용`); }} />
+      <CouponPicker options={couponOptions} selected={appliedCode} subtotal={subtotal} onApply={async (option) => { const result = await selectCartCoupon(option.code || "-"); if ("error" in result && result.error) throw new Error(result.error); setDiscount(option.discount); setAppliedCode(option.code); setMessage(`${option.label} 적용`); }} />
       <p className="mt-4 text-sm">할인 {formatPrice(discount)}</p>
+      <p className="mt-2 text-sm">배송비 {formatPrice(shipping)}</p>
+      <p className="mt-1 text-xs text-muted">쿠폰 할인 후 상품금액 50,000원 이상 무료배송 · 기본 3,000원</p>
       <p className="text-lg">결제 금액 {formatPrice(total)}</p>
       {message ? <p className="mt-3 text-sm text-accent">{message}</p> : null}
       {tossClientKey ? (

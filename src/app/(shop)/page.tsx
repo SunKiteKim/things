@@ -91,20 +91,19 @@ export default async function HomePage() {
           );
         }
         if (section.slotKey === "section:timesale") {
-          const timeSaleRate = Math.min(100, Math.max(0, Math.round(Number(section.icon) || 0)));
           return (
             <TimeSaleRail
               key={section.id}
               endsAt={section.href}
               items={timeSale.map((product) => {
-                const price = timeSaleRate > 0 ? Math.round(product.price * (100 - timeSaleRate) / 100) : product.price;
+                const price = product.price;
                 return {
                   id: product.id,
                   name: product.name,
                   imageUrl: product.imageUrl,
                   price,
-                  originalPrice: timeSaleRate > 0 ? product.price : product.originalPrice,
-                  label: timeSaleRate > 0 ? `${timeSaleRate}%` : product.exhibitionLabel,
+                  originalPrice: product.originalPrice,
+                  label: product.exhibitionLabel,
                   stock: product.stock,
                 };
               })}

@@ -10,6 +10,7 @@ import { ORDER_STATUS, createOrderNumber, orderStatusTimestamp } from "@/lib/uti
 import { requireAdmin, requireUser } from "@/lib/auth";
 import { normalizePhone } from "@/lib/phone";
 import { setAdminFlash } from "@/lib/admin-flash";
+import { couponCodes, combinedDiscount, shippingFee } from "@/lib/checkout-pricing";
 
 export async function buyNow(productId: string, quantity = 1, onePlusOne = false) {
   const result = await addToCart(productId, quantity, onePlusOne);
@@ -84,11 +85,14 @@ export async function applyCoupon(code: string) {
 }
 
 export async function selectCartCoupon(code: string) {
-  if (code) {
-    const result = await applyCoupon(code);
+  const codes = couponCodes(code);
+  const coupons = await prisma.coupon.findMany({ where: { code: { in: codes } } });
+  if (codes.length > 1 && coupons.some(coupon => !coupon.isStackable)) return { error: "중복 불가 쿠폰은 단독으로 적용해 주세요." };
+  for (const selected of codes) {
+    const result = await applyCoupon(selected);
     if (result.error) return result;
   }
-  await setSelectedCoupon(code.trim().toUpperCase());
+  await setSelectedCoupon(codes.join(",") || "-");
   revalidatePath("/cart");
   revalidatePath("/checkout");
   return { ok: true };
@@ -120,8 +124,10 @@ export async function createPendingOrder(formData: FormData) {
   const subtotal = items.reduce((sum, row) => sum + row.product.price * row.quantity, 0);
   const couponCode = String(formData.get("couponCode") ?? await getSelectedCoupon()).trim().toUpperCase();
   let discount = 0;
-  if (couponCode) {
-    const coupon = await prisma.coupon.findUnique({ where: { code: couponCode }, include: { issues: true } });
+  const codes = couponCodes(couponCode);
+  const offers: { code: string; discount: number; isStackable: boolean }[] = [];
+  for (const code of codes) {
+    const coupon = await prisma.coupon.findUnique({ where: { code }, include: { issues: true } });
     const applied = coupon ? couponDiscountForLines(coupon, items.map((row) => ({
       productId: row.product.id,
       categoryId: row.product.categoryId,
@@ -129,12 +135,13 @@ export async function createPendingOrder(formData: FormData) {
       quantity: row.quantity,
     })), new Date(), session.user.id) : null;
     if (applied === null) return { error: "쿠폰의 구매 수량·금액 또는 사용 조건을 확인해 주세요." };
-    discount = applied;
+    offers.push({ code, discount: applied, isStackable: coupon!.isStackable });
   }
+  try { discount = combinedDiscount(offers, subtotal); } catch { return { error: "중복 불가 쿠폰은 단독으로 적용해 주세요." }; }
 
   const payload = {
     status: ORDER_STATUS.PENDING,
-    totalAmount: Math.max(subtotal - discount, 0),
+    totalAmount: Math.max(subtotal - discount, 0) + shippingFee(Math.max(subtotal - discount, 0)),
     discountAmount: discount,
     receiverName: String(formData.get("receiverName") ?? "").trim(),
     receiverPhone: normalizePhone(String(formData.get("receiverPhone") ?? "")),
@@ -142,7 +149,7 @@ export async function createPendingOrder(formData: FormData) {
     address: String(formData.get("address") ?? "").trim(),
     addressDetail: String(formData.get("addressDetail") ?? "").trim(),
     memo: String(formData.get("memo") ?? "").trim(),
-    couponCode: couponCode || null,
+    couponCode: codes.join(",") || null,
     tossOrderId: `toss_${Date.now()}`,
     items: {
       create: items.map((row) => ({
@@ -195,8 +202,9 @@ export async function completeDemoPayment(orderId: string) {
   if (!order) return { error: "주문을 찾을 수 없습니다." };
   if (order.status === ORDER_STATUS.PAID) return { ok: true };
   if (order.couponCode) {
-    const coupon = await prisma.coupon.findUnique({ where: { code: order.couponCode }, select: { isActive: true, isPaused: true } });
-    if (!coupon?.isActive || coupon.isPaused) return { error: "일시중지되었거나 사용할 수 없는 쿠폰입니다." };
+    const codes = couponCodes(order.couponCode);
+    const coupons = await prisma.coupon.findMany({ where: { code: { in: codes } }, select: { isActive: true, isPaused: true } });
+    if (coupons.length !== codes.length || coupons.some(coupon => !coupon.isActive || coupon.isPaused)) return { error: "일시중지되었거나 사용할 수 없는 쿠폰입니다." };
   }
   await prisma.order.update({
     where: { id: orderId },
@@ -204,7 +212,7 @@ export async function completeDemoPayment(orderId: string) {
   });
   if (order.couponCode) {
     await prisma.coupon.updateMany({
-      where: { code: order.couponCode },
+      where: { code: { in: couponCodes(order.couponCode) } },
       data: { usedCount: { increment: 1 } },
     });
   }

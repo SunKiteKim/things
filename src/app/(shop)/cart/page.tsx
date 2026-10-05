@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import { CartList } from "@/components/cart-list";
 import { requireUser } from "@/lib/auth";
+import { selectedOffers, combinedDiscount, shippingFee } from "@/lib/checkout-pricing";
 
 export default async function CartPage() {
   const cart = await getCart();
@@ -36,9 +37,10 @@ export default async function CartPage() {
       ? `[1+1 할인] ${coupon.name} · 동일 상품 2개당 1개 가격 할인${coupon.maxDiscountAmount > 0 ? ` · 최대 ${formatPrice(coupon.maxDiscountAmount)}` : ""}`
       : `[${coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지 할인" : "장바구니"}] ${coupon.name}${coupon.scope === "MULTI_CART" ? " · 서로 다른 상품 2종 이상" : coupon.minQuantity > 0 ? ` · ${coupon.minQuantity}개 이상` : ""} · ${coupon.discountValue}${coupon.discountType === "PERCENT" ? "%" : "원"} 할인${coupon.maxDiscountAmount > 0 ? ` · 최대 ${formatPrice(coupon.maxDiscountAmount)}` : ""}`,
   })).filter((option): option is typeof option & { discount: number } => option.discount !== null).map((option) => ({ ...option, eligible: true }));
-  const selectedOption = options.find((option) => option.code === code) ?? options.reduce<(typeof options)[number] | undefined>((best, option) => !best || option.discount > best.discount ? option : best, undefined);
-  const selectedCode = selectedOption?.code ?? "";
-  const discount = selectedOption?.discount ?? 0;
+  const selected = selectedOffers(options, code, total);
+  const selectedCode = selected.map(option => option.code).join(",");
+  const discount = combinedDiscount(selected, total);
+  const shipping = shippingFee(total - discount);
   return (
     <div>
       <h1 className="display text-5xl">장바구니</h1>
@@ -54,6 +56,9 @@ export default async function CartPage() {
             <p className="text-sm text-muted">합계</p>
             <p className="mt-2 text-2xl">{formatPrice(total - discount)}</p>
             <p className="mt-2 text-sm">쿠폰 할인 {formatPrice(discount)}</p>
+            <p className="mt-2 text-sm">배송비 {formatPrice(shipping)}</p>
+            <p className="mt-2 text-xs text-muted">쿠폰 할인 후 상품금액 50,000원 이상 무료배송 · 기본 3,000원</p>
+            <p className="mt-4 text-lg font-semibold">예상 결제금액 {formatPrice(total - discount + shipping)}</p>
             <CartCoupon options={options} selected={selectedCode} subtotal={total} />
             <Link href="/checkout" className="btn mt-6 w-full">
               주문서 작성

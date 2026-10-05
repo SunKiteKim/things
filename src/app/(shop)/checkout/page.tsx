@@ -6,6 +6,7 @@ import { formatPrice } from "@/lib/utils";
 import { CheckoutClient } from "@/components/checkout-client";
 import { couponDiscountForLines } from "@/lib/discounts";
 import { priceProducts } from "@/lib/exhibition-offers";
+import { selectedOffers, combinedDiscount } from "@/lib/checkout-pricing";
 
 export default async function CheckoutPage() {
   const session = await requireUser();
@@ -39,7 +40,7 @@ export default async function CheckoutPage() {
     }))
     .filter((option): option is typeof option & { discount: number } => option.discount !== null)
     .map((option) => ({ ...option, eligible: true }));
-  const selectedOption = options.find((option) => option.code === code) ?? options.reduce<(typeof options)[number] | undefined>((best, option) => !best || option.discount > best.discount ? option : best, undefined);
+  const selected = selectedOffers(options, code, subtotal);
   return (
     <div>
       <h1 className="display text-5xl">주문서</h1>
@@ -54,7 +55,7 @@ export default async function CheckoutPage() {
             addressDetail: user?.addressDetail ?? "",
             email: user?.email ?? "",
           }}
-          initialCoupon={selectedOption ? { code: selectedOption.code, discount: selectedOption.discount } : undefined}
+          initialCoupon={{ code: selected.map(option => option.code).join(","), discount: combinedDiscount(selected, subtotal) }}
           couponOptions={options}
           subtotal={subtotal}
           orderName={rows[0].product.name + (rows.length > 1 ? ` 외 ${rows.length - 1}건` : "")}

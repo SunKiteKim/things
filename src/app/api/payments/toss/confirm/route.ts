@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ORDER_STATUS, orderStatusTimestamp } from "@/lib/utils";
 import { auth } from "@/lib/auth";
+import { couponCodes } from "@/lib/checkout-pricing";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -33,10 +34,12 @@ export async function POST(request: Request) {
   if (order.totalAmount !== body.amount) {
     return NextResponse.json({ error: "amount mismatch" }, { status: 400 });
   }
+  if (order.status === ORDER_STATUS.PAID) return NextResponse.json({ ok: true, orderId: order.id });
 
   if (order.couponCode) {
-    const coupon = await prisma.coupon.findUnique({ where: { code: order.couponCode }, select: { isActive: true, isPaused: true } });
-    if (!coupon?.isActive || coupon.isPaused) {
+    const codes = couponCodes(order.couponCode);
+    const coupons = await prisma.coupon.findMany({ where: { code: { in: codes } }, select: { isActive: true, isPaused: true } });
+    if (coupons.length !== codes.length || coupons.some(coupon => !coupon.isActive || coupon.isPaused)) {
       return NextResponse.json({ error: "coupon unavailable" }, { status: 400 });
     }
   }
@@ -72,7 +75,7 @@ export async function POST(request: Request) {
 
   if (order.couponCode) {
     await prisma.coupon.updateMany({
-      where: { code: order.couponCode },
+      where: { code: { in: couponCodes(order.couponCode) } },
       data: { usedCount: { increment: 1 } },
     });
   }

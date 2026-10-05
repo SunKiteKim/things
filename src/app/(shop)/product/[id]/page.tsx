@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { priceProducts } from "@/lib/exhibition-offers";
-import { downloadableCoupons, presentProducts, timeSaleRateForProduct } from "@/lib/store-price";
+import { downloadableCoupons, presentProducts } from "@/lib/store-price";
 import { discountPercentLabel } from "@/lib/exhibition-price";
 import { formatPrice, parseGallery } from "@/lib/utils";
 import { requireUser } from "@/lib/auth";
@@ -23,15 +23,14 @@ export default async function ProductPage({
   if (!product || !product.isPublished) notFound();
   if (id !== product.id) redirect(`/product/${product.id}`);
   const session = await requireUser();
-  const [[sale], [purchase], coupons, timeSaleRate] = await Promise.all([
+  const [[sale], [purchase], coupons] = await Promise.all([
     presentProducts([product], new Date(), session?.user.id),
     priceProducts([product]),
     downloadableCoupons(product, session?.user.id),
-    timeSaleRateForProduct(product.id),
   ]);
   if (!sale || !purchase) notFound();
   const listPrice = product.originalPrice ?? product.price;
-  const payment = timeSaleRate > 0 ? Math.round(sale.price * (100 - timeSaleRate) / 100) : sale.price;
+  const payment = sale.price;
   const rateLabel = listPrice > payment ? discountPercentLabel(listPrice, payment) : sale.exhibitionLabel;
 
   const gallery = [product.imageUrl, ...parseGallery(product.gallery)].filter(Boolean);
@@ -59,10 +58,7 @@ export default async function ProductPage({
         </p>
         {payment !== purchase.price ? (
           <p className="mt-2 text-sm text-muted">
-            {`회원 할인가 ${formatPrice(purchase.price)}에 ${[
-              sale.price < purchase.price ? "쿠폰" : "",
-              timeSaleRate > 0 ? `타임세일 ${timeSaleRate}%` : "",
-            ].filter(Boolean).join("과 ")}를 적용한 금액입니다.`}
+            {`행사 적용가 ${formatPrice(purchase.price)}에 쿠폰을 적용한 예상 금액입니다. 주문 시 쿠폰의 적용 조건을 확인해 주세요.`}
           </p>
         ) : null}
         {coupons.length > 0 ? (
