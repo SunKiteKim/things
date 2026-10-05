@@ -10,6 +10,9 @@ export default function MyPageLayout({ children }: { children: React.ReactNode }
         <Link href="/mypage/orders" className="block">
           주문조회
         </Link>
+        <Link href="/mypage/coupons" className="block">
+          쿠폰
+        </Link>
         <Link href="/mypage/profile" className="block">
           회원정보
         </Link>

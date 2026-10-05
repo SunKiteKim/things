@@ -35,7 +35,7 @@ export const HOME_SECTIONS = [
 
 const HOME_LINKS = [
   { slotKey: "link:events", label: "이벤트", href: "/events", icon: "event", sortOrder: 90 },
-  { slotKey: "link:coupons", label: "쿠폰", href: "/events", icon: "coupon", sortOrder: 91 },
+  { slotKey: "link:coupons", label: "쿠폰", href: "/coupons", icon: "coupon", sortOrder: 91 },
   { slotKey: "link:account", label: "마이", href: "/mypage", icon: "account", sortOrder: 92 },
 ] as const;
 
@@ -85,6 +85,10 @@ export async function syncDisplayItems(db: PrismaClient) {
   const productById = new Map(products.map((product) => [product.id, product]));
   const exhibitionById = new Map(exhibitions.map((exhibition) => [exhibition.id, exhibition]));
   const known = new Set(existing.map((item) => `${item.pageKey}:${item.slotKey}`));
+  await db.displayItem.updateMany({
+    where: { pageKey: "home", slotKey: "link:coupons", NOT: { href: "/coupons" } },
+    data: { href: "/coupons" },
+  });
 
   const missingSections = HOME_SECTIONS.filter((section) => !known.has(`home:${section.slotKey}`)).map((section) => ({
     pageKey: "home",

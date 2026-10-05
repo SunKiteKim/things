@@ -293,7 +293,13 @@ export async function cancelOrder(formData: FormData) {
 export async function claimCoupon(formData: FormData) {
   const couponId = String(formData.get("couponId") ?? "");
   const productId = String(formData.get("productId") ?? "");
-  const back = productId ? `/product/${productId}` : "/";
+  const returnTo = String(formData.get("returnTo") ?? "");
+  const couponPage = returnTo === "/coupons" || returnTo.startsWith("/coupons?") || returnTo.startsWith("/mypage/coupons");
+  const back = couponPage && !returnTo.startsWith("//")
+    ? returnTo
+    : productId
+      ? `/product/${productId}`
+      : "/";
   const session = await requireUser();
   if (!session?.user.id) redirect(`/login?callbackUrl=${encodeURIComponent(back)}`);
   const coupon = await prisma.coupon.findUnique({ where: { id: couponId } });
@@ -302,6 +308,9 @@ export async function claimCoupon(formData: FormData) {
       data: { couponId, targetType: "USER", userId: session.user.id },
     }).catch(() => null);
   }
+  revalidatePath("/coupons");
+  revalidatePath("/mypage/coupons");
+  revalidatePath("/mypage/coupons/download");
   revalidatePath(back);
   redirect(back);
 }
