@@ -9,7 +9,7 @@ import { claimCoupon } from "@/actions/commerce";
 import { AddToCart } from "@/components/add-to-cart";
 import { ProductImage } from "@/components/product-image";
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/default-product-image";
-import { SHIPPING_NOTICE, shippingFee } from "@/lib/checkout-pricing";
+import { SHIPPING_FEE, SHIPPING_NOTICE, shippingFee } from "@/lib/checkout-pricing";
 
 export default async function ProductPage({
   params,
@@ -33,7 +33,8 @@ export default async function ProductPage({
   const listPrice = sale.originalPrice ?? product.originalPrice ?? sale.price;
   const salePrice = sale.price;
   const couponPrice = sale.couponPrice;
-  const payable = couponPrice + shippingFee(couponPrice);
+  const delivery = shippingFee(couponPrice);
+  const payable = couponPrice + delivery;
   const rateLabel = listPrice > salePrice ? discountPercentLabel(listPrice, salePrice) : null;
 
   const gallery = [product.imageUrl, ...parseGallery(product.gallery)].filter(Boolean);
@@ -69,6 +70,12 @@ export default async function ProductPage({
             <span>쿠폰 할인가</span>
             <span className="font-bold" data-testid="product-coupon-price">{formatPrice(couponPrice)}</span>
           </div>
+          {delivery > 0 ? (
+            <div className="flex items-center justify-between gap-4">
+              <span>배송비</span>
+              <span data-testid="product-shipping">{formatPrice(SHIPPING_FEE)}</span>
+            </div>
+          ) : null}
           <div className="flex items-center justify-between gap-4 border-t border-line pt-4">
             <span className="font-semibold">예상 결제금액</span>
             <span className="text-lg font-bold" style={{ color: "#e10600" }} data-testid="product-payable">{formatPrice(payable)}</span>
