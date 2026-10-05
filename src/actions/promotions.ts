@@ -70,9 +70,8 @@ function validateCoupon(formData: FormData) {
   const maxUses = num(formData, "maxUses");
   const start = new Date(text(formData, "startAt"));
   const end = new Date(text(formData, "endAt"));
-  const included = productIds(formData, "includedProductIds");
   const onePlusOne = scope === "ONE_PLUS_ONE";
-  if (!name || !["CART", "MULTI_CART", "PRODUCT", "ONE_PLUS_ONE"].includes(scope) || (!onePlusOne && (!["PERCENT", "AMOUNT"].includes(type) || !Number.isSafeInteger(value) || value <= 0 || (type === "PERCENT" && value > 100))) || ![minimum, amount, maxUses].every(n => Number.isSafeInteger(n) && n >= 0) || (["PRODUCT", "ONE_PLUS_ONE"].includes(scope) && included.length === 0) || !Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end < start) throw new Error("쿠폰명, 쿠폰 유형, 적용 상품, 할인값, 최소 수량·금액, 사용 기간을 확인해 주세요.");
+  if (!name || !["CART", "MULTI_CART", "PRODUCT", "ONE_PLUS_ONE"].includes(scope) || (!onePlusOne && (!["PERCENT", "AMOUNT"].includes(type) || !Number.isSafeInteger(value) || value <= 0 || (type === "PERCENT" && value > 100))) || ![minimum, amount, maxUses].every(n => Number.isSafeInteger(n) && n >= 0) || !Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end < start) throw new Error("쿠폰명, 쿠폰 유형, 할인값, 최소 수량·금액, 사용 기간을 확인해 주세요.");
 }
 
 export async function createCoupon(formData: FormData) {
@@ -136,7 +135,7 @@ export async function updateCoupon(formData: FormData) {
     return { ok: true };
   } catch (error) {
     console.error("Failed to update coupon", error);
-    return { ok: false, error: "쿠폰명, 쿠폰 유형, 적용 상품, 할인 조건과 사용 기간을 확인해 주세요." };
+    return { ok: false, error: "쿠폰명, 쿠폰 유형, 할인 조건과 사용 기간을 확인해 주세요." };
   }
 }
 

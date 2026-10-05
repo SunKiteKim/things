@@ -100,12 +100,12 @@ function CouponFields({ prefix, products, coupon }: { prefix: string; products: 
               ? "서로 다른 상품이 2종 이상 담긴 장바구니에 추가 할인이 적용됩니다."
               : scope === "ONE_PLUS_ONE"
                 ? "선택한 동일 상품을 2개 이상 구매하면 2개마다 1개 가격이 할인됩니다."
-                : "선택한 상품의 금액에만 할인이 적용됩니다."}
+                : "선택한 상품의 금액에만 할인이 적용됩니다. 적용 상품을 비우면 전체 상품에 적용됩니다."}
         </p>
       </Field>
       <Field label="적용 상품">
         <ProductSearchPicker products={products} name="includedProductIds" selected={included} idPrefix={prefix} />
-        <p className="mt-2 text-xs text-muted">상품 쿠폰은 적용 상품을 1개 이상 선택해야 합니다. 장바구니 쿠폰은 미선택 시 전체 상품에 적용됩니다.</p>
+        <p className="mt-2 text-xs text-muted">적용 상품을 선택하지 않으면 전체 상품에 적용됩니다.</p>
       </Field>
       <Field label="제외 상품">
         <ProductSearchPicker products={products} name="excludedProductIds" selected={excluded} idPrefix={prefix} />
@@ -270,7 +270,7 @@ export function CouponAdmin({ coupons, products, issueTargets }: { coupons: Coup
         await createCoupon(formData);
         setOpen(false);
       } catch {
-        setError("쿠폰 유형, 적용 상품, 할인 조건과 사용 기간을 확인해 주세요.");
+        setError("쿠폰명, 쿠폰 유형, 할인 조건과 사용 기간을 확인해 주세요.");
       }
     });
   }
