@@ -8,7 +8,24 @@ export function shippingFee(merchandiseAmount: number) {
 }
 
 export function couponCodes(value: string) {
-  return [...new Set(value.split(",").map(code => code.trim().toUpperCase()).filter(code => !!code && code !== "-"))];
+  return [...new Set(value.split(",").map(part => part.split("@")[0].trim().toUpperCase()).filter(code => !!code && code !== "-"))];
+}
+
+export function couponTargets(value: string) {
+  const targets: Record<string, string> = {};
+  for (const part of value.split(",")) {
+    const [rawCode, rawTarget] = part.split("@");
+    const code = rawCode?.trim().toUpperCase();
+    const target = rawTarget?.trim().toLowerCase();
+    if (!code || !target || targets[code]) continue;
+    targets[code] = target;
+  }
+  return targets;
+}
+
+export function couponSelection(value: string) {
+  const targets = couponTargets(value);
+  return couponCodes(value).map((code) => targets[code] ? `${code}@${targets[code]}` : code);
 }
 
 type Offer = { code: string; discount: number; isStackable: boolean };

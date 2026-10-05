@@ -115,7 +115,6 @@ export default async function DisplayAdminPage({
 
   const quickItems = visibleItems.filter((item) => item.kind === "shortcut");
   const homeTimesale = visibleItems.filter((item) => item.slotKey.startsWith("timesale-product:"));
-  const homeBest = visibleItems.filter((item) => item.slotKey.startsWith("best-product:"));
   const homePromotion = visibleItems.filter((item) => item.slotKey.startsWith("promotion-product:"));
   const productFilters = visibleItems.filter((item) => item.kind === "category");
   const bestProducts = visibleItems.filter((item) => item.kind === "product");
@@ -264,10 +263,31 @@ export default async function DisplayAdminPage({
                 );
               }
 
-              if (section.slotKey === "section:best" || section.slotKey === "section:promotion" || section.slotKey === "section:timesale") {
-                const assigned = section.slotKey === "section:best" ? homeBest : section.slotKey === "section:promotion" ? homePromotion : homeTimesale;
-                const area: AssignArea = section.slotKey === "section:best" ? "home-best" : section.slotKey === "section:promotion" ? "home-promotion" : "home-timesale";
-                const heading = section.slotKey === "section:best" ? "Best Selling" : section.slotKey === "section:promotion" ? "Promotion" : "타임세일";
+              if (section.slotKey === "section:best") {
+                return (
+                  <section key={section.id} className="rounded-lg border border-line bg-white p-6">
+                    <div className="flex flex-wrap items-end justify-between gap-4">
+                      <div className="min-w-64 flex-1">
+                        <h2 className="text-base font-semibold">Today&apos;s Pick!</h2>
+                        <p className="mt-1 text-sm text-muted">판매 중인 등록 상품 전체에서 매일 00:00:01(한국시간)에 4개를 다시 뽑습니다. 그날은 같은 상품이 유지됩니다.</p>
+                      </div>
+                      <div className="flex flex-wrap items-end gap-3">
+                        <input type="hidden" name="id" value={section.id} />
+                        <ExposureCheckbox id={section.id} checked={section.isVisible} />
+                        <label className="text-sm">
+                          영역 순서
+                          <SortField id={section.id} value={section.sortOrder} />
+                        </label>
+                      </div>
+                    </div>
+                  </section>
+                );
+              }
+
+              if (section.slotKey === "section:promotion" || section.slotKey === "section:timesale") {
+                const assigned = section.slotKey === "section:promotion" ? homePromotion : homeTimesale;
+                const area: AssignArea = section.slotKey === "section:promotion" ? "home-promotion" : "home-timesale";
+                const heading = section.slotKey === "section:promotion" ? "Promotion" : "타임세일";
                 return (
                   <section key={section.id} className="rounded-lg border border-line bg-white p-6">
                     <div className="flex flex-wrap items-end justify-between gap-4">

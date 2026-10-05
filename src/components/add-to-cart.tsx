@@ -20,9 +20,9 @@ export function AddToCart({ productId, stock, onePlusOne = false }: { productId:
   }
 
   return (
-    <div className="mt-10 max-w-sm">
-      <div className="form-row items-center">
-        <span>수량</span>
+    <div className="mt-10">
+      <div className="flex items-center justify-between gap-16">
+        <span className="text-sm">수량</span>
         <div className="qty-box">
           <button type="button" disabled={soldOut || pending} onClick={() => changeQty(quantity - 1)}>
             −
@@ -46,10 +46,10 @@ export function AddToCart({ productId, stock, onePlusOne = false }: { productId:
           : "현재 적용된 추가 혜택이 없습니다."}
       </p>
       {error ? <p className="mt-4 text-sm text-accent" role="alert">{error}</p> : null}
-      <div className="mt-8 grid grid-cols-2 gap-3">
+      <div className="mt-8 flex justify-center gap-3">
         <button
           type="button"
-          className="btn btn-ghost"
+          className="btn btn-ghost w-44"
           disabled={soldOut || pending}
           onClick={() =>
             start(async () => {
@@ -68,7 +68,7 @@ export function AddToCart({ productId, stock, onePlusOne = false }: { productId:
         </button>
         <button
           type="button"
-          className="btn"
+          className="btn w-44"
           disabled={soldOut || pending}
           onClick={() =>
             start(async () => {

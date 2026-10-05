@@ -14,6 +14,7 @@ export type DownloadableCoupon = {
   name: string;
   label: string;
   owned: boolean;
+  rate: number;
 };
 
 function parseIds(value: string) {
@@ -35,7 +36,6 @@ export function couponFitsProduct(
   const excluded = parseIds(coupon.excludedProductIds);
   if (excluded.includes(product.id)) return false;
   if (included.length > 0 && !included.includes(product.id)) return false;
-  if (coupon.issues.length === 0) return true;
   const userIssued = !!userId && coupon.issues.some((issue) => issue.targetType === "USER" && issue.userId === userId);
   const categoryIssued = coupon.issues.some((issue) => issue.targetType === "CATEGORY" && issue.categoryId === product.categoryId);
   return userIssued || categoryIssued;
@@ -99,8 +99,10 @@ export async function downloadableCoupons(
   now = new Date(),
 ): Promise<DownloadableCoupon[]> {
   const coupons = await liveCoupons(now);
+  const price = product.price ?? 0;
   return coupons.flatMap((coupon) => {
     if (!couponListedForProduct(coupon, product, userId)) return [];
+    const rate = applicableRate(coupon, price, now);
     return [{
       id: coupon.id,
       name: coupon.name,
@@ -108,10 +110,18 @@ export async function downloadableCoupons(
         ? "1+1"
         : coupon.scope === "MULTI_CART"
           ? `${coupon.discountValue}%`
-          : couponLabel(coupon, product.price ?? 0, Math.max(0, (product.price ?? 0) - (coupon.discountType === "AMOUNT" ? coupon.discountValue : 0))),
+          : couponLabel(coupon, price, Math.max(0, price - (coupon.discountType === "AMOUNT" ? coupon.discountValue : 0))),
       owned: !!userId && coupon.issues.some((issue) => issue.targetType === "USER" && issue.userId === userId),
+      rate,
     }];
-  });
+  }).sort((left, right) => right.rate - left.rate || right.label.localeCompare(left.label));
+}
+
+function applicableRate(coupon: OfferCoupon, price: number, now: Date) {
+  if (coupon.scope === "ONE_PLUS_ONE") return 50;
+  const discount = couponDiscount(coupon, price, Math.max(1, coupon.minQuantity || 1), now);
+  if (discount != null && discount > 0 && price > 0) return (discount / price) * 100;
+  return 0;
 }
 
 function couponListedForProduct(
@@ -124,7 +134,7 @@ function couponListedForProduct(
     const excluded = parseIds(coupon.excludedProductIds);
     if (excluded.includes(product.id)) return false;
     if (included.length > 0 && !included.includes(product.id)) return false;
-    if (coupon.issues.length === 0) return true;
+    if (coupon.issues.length === 0) return false;
     const userIssued = !!userId && coupon.issues.some((issue) => issue.targetType === "USER" && issue.userId === userId);
     const categoryIssued = coupon.issues.some((issue) => issue.targetType === "CATEGORY" && issue.categoryId === product.categoryId);
     return userIssued || categoryIssued;
@@ -133,6 +143,6 @@ function couponListedForProduct(
 }
 function publicOrCategoryCoupon(coupon: OfferCoupon, product: { categoryId: string }) {
   if (coupon.scope === "ONE_PLUS_ONE" || coupon.scope === "MULTI_CART") return false;
-  if (coupon.issues.length === 0) return true;
+  if (coupon.issues.length === 0) return false;
   return coupon.issues.some((issue) => issue.targetType === "CATEGORY" && issue.categoryId === product.categoryId);
 }

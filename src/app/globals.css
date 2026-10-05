@@ -46,6 +46,11 @@ a {
   color: inherit;
 }
 
+a.coupon-product:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 button,
 input,
 select,

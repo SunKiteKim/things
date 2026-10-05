@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { claimCoupon } from "@/actions/commerce";
 import { couponToneColor } from "@/components/coupon-ticket";
 import { couponToneLabel, type MemberCouponView } from "@/lib/member-coupons";
@@ -18,6 +19,14 @@ function DownloadMark() {
 function CouponCard({ coupon }: { coupon: MemberCouponView }) {
   const [open, setOpen] = useState(false);
   const color = couponToneColor(coupon.tone);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
   return (
     <article className="relative flex min-h-[176px] bg-white" style={{ boxShadow: `inset 0 0 0 1px ${color}` }}>
       <div className="min-w-0 flex-1 px-5 py-4">
@@ -29,10 +38,9 @@ function CouponCard({ coupon }: { coupon: MemberCouponView }) {
         </div>
         <p className="mt-4 line-clamp-2 text-sm leading-5">{coupon.name}</p>
         <p className="mt-2 text-xs text-muted">{coupon.endsLabel}</p>
-        <button type="button" className="mt-3 text-xs text-muted" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
+        <button type="button" className="mt-3 text-muted" style={{ fontSize: "10px" }} onClick={() => setOpen(true)}>
           상세정보 ›
         </button>
-        {open ? <p className="mt-2 text-xs leading-5 text-muted">{coupon.basis} · {coupon.limit}</p> : null}
       </div>
       <div className="relative flex w-[76px] shrink-0 items-center justify-center">
         <span className="absolute inset-y-4 left-0 border-l border-dashed" style={{ borderColor: color }} />
@@ -55,23 +63,47 @@ function CouponCard({ coupon }: { coupon: MemberCouponView }) {
           style={{ top: `${10 + index * 15}%`, boxShadow: `inset 0 0 0 1px ${color}` }}
         />
       ))}
+      {open ? (
+        <div className="fixed inset-0 z-[130] grid place-items-center bg-black/45 px-5 py-10" role="presentation" onClick={() => setOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-labelledby={`coupon-detail-${coupon.id}`} className="flex max-h-[82vh] w-full max-w-md flex-col bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
+              <h2 id={`coupon-detail-${coupon.id}`} className="text-lg font-semibold">{coupon.name}</h2>
+              <button type="button" className="text-2xl leading-none" aria-label="상세정보 닫기" onClick={() => setOpen(false)}>×</button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 text-sm leading-6 text-muted">
+              <p>{coupon.basis} · {coupon.limit}</p>
+              {coupon.products.length > 0 ? (
+                <ul className="mt-3 space-y-1">
+                  {coupon.products.map((product) => (
+                    <li key={product.id}>
+                      <Link href={`/product/${product.id}`} className="coupon-product">{product.name}</Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3">전 제품 사용 가능</p>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </article>
   );
 }
 
 export function CouponCatalog({ coupons }: { coupons: MemberCouponView[] }) {
-  const [tab, setTab] = useState<"download" | "usable">("download");
+  const [tab, setTab] = useState<"download" | "usable">("usable");
   const usable = coupons.filter((coupon) => coupon.owned);
   const rows = tab === "usable" ? usable : coupons;
 
   return (
     <div>
       <div className="flex gap-8 border-b border-line text-sm">
-        <button type="button" onClick={() => setTab("download")} className={`pb-3 ${tab === "download" ? "border-b-2 border-ink font-bold" : "text-muted"}`}>
-          다운로드 {coupons.length}
-        </button>
         <button type="button" onClick={() => setTab("usable")} className={`pb-3 ${tab === "usable" ? "border-b-2 border-ink font-bold" : "text-muted"}`}>
           사용가능 {usable.length}
+        </button>
+        <button type="button" onClick={() => setTab("download")} className={`pb-3 ${tab === "download" ? "border-b-2 border-ink font-bold" : "text-muted"}`}>
+          다운받기 {coupons.length}
         </button>
       </div>
       {rows.length === 0 ? (

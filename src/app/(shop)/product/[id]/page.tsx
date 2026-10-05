@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { priceProducts } from "@/lib/exhibition-offers";
@@ -30,6 +31,7 @@ export default async function ProductPage({
     downloadableCoupons(product, session?.user.id),
   ]);
   if (!sale || !purchase) notFound();
+  const visibleCoupons = [...coupons].sort((left, right) => right.rate - left.rate).filter((coupon) => coupon.rate > 0).slice(0, 2);
   const listPrice = product.originalPrice ?? product.price;
   const payment = sale.price;
   const rateLabel = listPrice > payment ? discountPercentLabel(listPrice, payment) : sale.exhibitionLabel;
@@ -63,19 +65,24 @@ export default async function ProductPage({
             {`행사 적용가 ${formatPrice(purchase.price)}에 쿠폰을 적용한 예상 금액입니다. 주문 시 쿠폰의 적용 조건을 확인해 주세요.`}
           </p>
         ) : null}
-        {coupons.length > 0 ? (
-          <div className="mt-6 max-w-md space-y-2">
+        <div className="mt-6">
+          <div className="flex items-center justify-between gap-4">
             <p className="text-sm font-semibold">받을 수 있는 쿠폰</p>
-            {coupons.map((coupon) => (
-              <form key={coupon.id} action={claimCoupon} className="flex items-center justify-between gap-3 border border-line px-3 py-2 text-sm">
-                <input type="hidden" name="couponId" value={coupon.id} />
-                <input type="hidden" name="productId" value={product.id} />
-                <span>{coupon.name} · {coupon.label}</span>
-                {coupon.owned ? <span className="text-muted">받은 쿠폰</span> : <button className="btn">쿠폰 다운</button>}
-              </form>
-            ))}
+            <Link href="/coupons" className="shrink-0 text-sm underline underline-offset-4">쿠폰 다운받기</Link>
           </div>
-        ) : null}
+          {visibleCoupons.length > 0 ? (
+            <div className="mt-3 space-y-2">
+              {visibleCoupons.map((coupon) => (
+                <form key={coupon.id} action={claimCoupon} className="flex items-center justify-between gap-3 border border-line px-3 py-2 text-sm">
+                  <input type="hidden" name="couponId" value={coupon.id} />
+                  <input type="hidden" name="productId" value={product.id} />
+                  <span>{coupon.name} · {coupon.label}</span>
+                  {coupon.owned ? <span className="text-muted">받은 쿠폰</span> : <button className="btn">쿠폰 다운</button>}
+                </form>
+              ))}
+            </div>
+          ) : null}
+        </div>
         <p className="mt-8 max-w-md text-sm leading-7 text-muted">{product.description}</p>
         <p className="mt-6 text-sm">재고 {product.stock}개</p>
         <AddToCart productId={product.id} stock={product.stock} onePlusOne={product.onePlusOne} />

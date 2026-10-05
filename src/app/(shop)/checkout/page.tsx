@@ -1,18 +1,17 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { getCart, getSelectedCoupon } from "@/lib/cart";
+import { clearBuyNow, clearCheckoutSelection, getCheckoutLines, getSelectedCoupon } from "@/lib/cart";
 import { prisma } from "@/lib/prisma";
-import { formatPrice } from "@/lib/utils";
 import { CheckoutClient } from "@/components/checkout-client";
 import { couponDiscountForLines } from "@/lib/discounts";
 import { priceProducts } from "@/lib/exhibition-offers";
-import { selectedOffers, combinedDiscount } from "@/lib/checkout-pricing";
+import { selectedOffers, combinedDiscount, couponSelection, couponTargets } from "@/lib/checkout-pricing";
 
 export default async function CheckoutPage() {
   const session = await requireUser();
   if (!session) redirect("/login?callbackUrl=/checkout");
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-  const cart = await getCart();
+  const cart = await getCheckoutLines();
   const found = await prisma.product.findMany({
     where: { id: { in: cart.map((line) => line.productId) } },
   });
@@ -25,16 +24,21 @@ export default async function CheckoutPage() {
     })
     .filter((row): row is NonNullable<typeof row> => !!row);
   const subtotal = rows.reduce((sum, row) => sum + row.product.price * row.quantity, 0);
-  if (!rows.length) redirect("/cart");
+  if (!rows.length) {
+    await clearBuyNow();
+    await clearCheckoutSelection();
+    redirect("/cart");
+  }
 
   const code = await getSelectedCoupon();
-  const couponLines = rows.map((row) => ({ productId: row.product.id, categoryId: row.product.categoryId, amount: row.product.price * row.quantity, quantity: row.quantity }));
+  const targets = couponTargets(code);
+  const couponLines = rows.map((row) => ({ productId: row.product.id, categoryId: row.product.categoryId, amount: row.product.price * row.quantity, quantity: row.quantity, onePlusOne: row.onePlusOne === true }));
   const coupons = await prisma.coupon.findMany({ where: { isActive: true, isPaused: false, startAt: { lte: new Date() }, endAt: { gte: new Date() } }, include: { issues: true } });
   const options = coupons
-    .filter((coupon) => coupon.issues.length === 0 || coupon.issues.some((issue) => issue.targetType === "CATEGORY" || issue.userId === session.user.id))
+    .filter((coupon) => coupon.issues.some((issue) => issue.targetType === "CATEGORY" || (issue.targetType === "USER" && issue.userId === session.user.id)))
     .map((coupon) => ({
       code: coupon.code,
-      discount: couponDiscountForLines(coupon, couponLines, new Date(), session.user.id),
+      discount: couponDiscountForLines(coupon, couponLines, new Date(), session.user.id, targets[coupon.code]),
       isStackable: coupon.isStackable,
       label: `[${coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "ONE_PLUS_ONE" ? "1+1 할인" : coupon.scope === "MULTI_CART" ? "가지가지 할인" : "장바구니"}] ${coupon.name}`,
     }))
@@ -55,29 +59,19 @@ export default async function CheckoutPage() {
             addressDetail: user?.addressDetail ?? "",
             email: user?.email ?? "",
           }}
-          initialCoupon={{ code: selected.map(option => option.code).join(","), discount: combinedDiscount(selected, subtotal) }}
+          initialCoupon={{ code: couponSelection(code).filter((part) => selected.some((option) => option.code === part.split("@")[0])).join(","), discount: combinedDiscount(selected, subtotal) }}
           couponOptions={options}
           subtotal={subtotal}
           orderName={rows[0].product.name + (rows.length > 1 ? ` 외 ${rows.length - 1}건` : "")}
           tossClientKey={process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? ""}
+          items={rows.map((row) => ({
+            id: row.productId + String(!!row.onePlusOne),
+            name: row.product.name,
+            quantity: row.quantity,
+            onePlusOne: row.onePlusOne === true,
+            amount: row.product.price * row.quantity,
+          }))}
         />
-        <aside className="h-fit border border-line bg-surface p-6">
-          <p className="text-sm text-muted">주문 상품</p>
-          <ul className="mt-4 space-y-3 text-sm">
-            {rows.map((row) => (
-              <li key={row.productId + String(!!row.onePlusOne)} className="flex justify-between gap-4">
-                <span>
-                  <span className="product-name">{row.product.name}</span> × {row.quantity}{row.onePlusOne ? ` (1+1 증정 ${row.quantity}개)` : ""}
-                </span>
-                <span>{formatPrice(row.product.price * row.quantity)}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-6 flex justify-between text-base">
-            <span>상품 합계</span>
-            <span>{formatPrice(subtotal)}</span>
-          </p>
-        </aside>
       </div>
     </div>
   );

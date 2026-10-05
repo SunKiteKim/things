@@ -8,7 +8,7 @@ import { formatPrice } from "@/lib/utils";
 import { FormField } from "@/components/form-field";
 import { PostcodeAddress } from "@/components/postcode-address";
 import { CouponPicker, type CouponOption } from "@/components/cart-coupon";
-import { shippingFee, SHIPPING_NOTICE } from "@/lib/checkout-pricing";
+import { couponCodes, shippingFee, SHIPPING_NOTICE } from "@/lib/checkout-pricing";
 
 type TossWidgets = ReturnType<Awaited<ReturnType<typeof loadTossPayments>>["widgets"]>;
 
@@ -27,9 +27,10 @@ type Props = {
   subtotal: number;
   orderName: string;
   tossClientKey: string;
+  items: { id: string; name: string; quantity: number; onePlusOne: boolean; amount: number }[];
 };
 
-export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initialCoupon, couponOptions }: Props) {
+export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initialCoupon, couponOptions, items }: Props) {
   const router = useRouter();
   const [discount, setDiscount] = useState(initialCoupon?.discount ?? 0);
   const [appliedCode, setAppliedCode] = useState(initialCoupon?.code ?? "");
@@ -40,6 +41,17 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initi
   const widgetsRef = useRef<TossWidgets | null>(null);
   const shipping = shippingFee(Math.max(subtotal - discount, 0));
   const total = useMemo(() => Math.max(subtotal - discount, 0) + shipping, [subtotal, discount, shipping]);
+  const discountLines = useMemo(() => {
+    let remaining = discount;
+    return couponOptions
+      .filter((option) => couponCodes(appliedCode).includes(option.code))
+      .map((option) => {
+        const amount = Math.min(Math.max(option.discount, 0), remaining);
+        remaining -= amount;
+        return { code: option.code, label: option.label, amount };
+      })
+      .filter((line) => line.amount > 0);
+  }, [appliedCode, couponOptions, discount]);
   const totalRef = useRef(total);
   totalRef.current = total;
 
@@ -174,6 +186,7 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initi
   }
 
   return (
+    <>
     <div>
       <form id="checkout-form" className="space-y-4">
         <FormField label="받는 분" htmlFor="receiver-name">
@@ -192,15 +205,10 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initi
           <textarea id="memo" className="field min-h-24" name="memo" placeholder="배송 메모" />
         </FormField>
       </form>
-      <CouponPicker options={couponOptions} selected={appliedCode} subtotal={subtotal} onApply={async (option) => { const result = await selectCartCoupon(option.code || "-"); if ("error" in result && result.error) throw new Error(result.error); setDiscount(option.discount); setAppliedCode(option.code); setMessage(`${option.label} 적용`); }} />
-      <p className="mt-4 text-sm">할인 {formatPrice(discount)}</p>
-      <p className="mt-2 text-sm">배송비 {formatPrice(shipping)}</p>
-      <p className="mt-1 text-sm leading-relaxed text-muted">{SHIPPING_NOTICE}</p>
-      <p className="text-lg">결제 금액 {formatPrice(total)}</p>
+      <CouponPicker options={couponOptions} selected={appliedCode} subtotal={subtotal} onApply={async (option) => { const result = await selectCartCoupon(option.code || "-", "checkout"); if ("error" in result && result.error) throw new Error(result.error); setDiscount(option.discount); setAppliedCode(option.code); setMessage(`${option.label} 적용`); }} />
       {message ? <p className="mt-3 text-sm text-accent">{message}</p> : null}
       {tossClientKey ? (
         <div className="mt-8">
-          <p className="mb-3 text-sm text-muted">결제수단을 선택한 뒤 Toss로 결제를 눌러 주세요.</p>
           <div id="toss-method" />
           <div id="toss-agreement" className="mt-3" />
         </div>
@@ -216,5 +224,46 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initi
         </button>
       </div>
     </div>
+    <aside className="h-fit border border-line bg-surface p-6">
+      <p className="text-sm text-muted">주문 상품</p>
+      <ul className="mt-4 space-y-3 text-sm">
+        {items.map((item) => (
+          <li key={item.id} className="flex justify-between gap-4">
+            <span>
+              <span className="product-name">{item.name}</span> × {item.quantity}{item.onePlusOne ? ` (1+1 증정 ${item.quantity}개)` : ""}
+            </span>
+            <span>{formatPrice(item.amount)}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-6 flex justify-between text-base">
+        <span>상품금액 합계</span>
+        <span className="font-bold">{formatPrice(subtotal)}</span>
+      </p>
+      <p className="mt-3 flex justify-between text-base">
+        <span>할인금액 합계</span>
+        <span className="text-[#e10600]">{discount > 0 ? `-${formatPrice(discount)}` : formatPrice(discount)}</span>
+      </p>
+      {discountLines.length > 0 ? (
+        <ul className="mt-2 space-y-1 text-sm text-muted">
+          {discountLines.map((line) => (
+            <li key={line.code} className="flex justify-between gap-4">
+              <span>&gt; {line.label}</span>
+              <span>{formatPrice(line.amount)}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <p className="mt-3 flex justify-between text-base">
+        <span>배송비</span>
+        <span>{formatPrice(shipping)}</span>
+      </p>
+      <p className="mt-1 text-xs leading-relaxed text-muted">{SHIPPING_NOTICE}</p>
+      <p className="mt-5 flex justify-between text-2xl font-bold text-[#e10600]">
+        <span>최종 결제금액</span>
+        <span>{formatPrice(total)}</span>
+      </p>
+    </aside>
+    </>
   );
 }

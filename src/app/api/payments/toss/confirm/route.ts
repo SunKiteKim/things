@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ORDER_STATUS, orderStatusTimestamp } from "@/lib/utils";
 import { auth } from "@/lib/auth";
 import { couponCodes } from "@/lib/checkout-pricing";
+import { paymentCookieUpdates } from "@/lib/cart";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -81,12 +82,14 @@ export async function POST(request: Request) {
   }
 
   const response = NextResponse.json({ ok: true, orderId: order.id });
-  response.cookies.set("things_cart", "[]", {
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 30,
-  });
+  for (const cookie of paymentCookieUpdates(request.headers.get("cookie"))) {
+    response.cookies.set(cookie.name, cookie.value, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: cookie.maxAge,
+    });
+  }
   return response;
 }

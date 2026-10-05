@@ -14,6 +14,7 @@ export type MemberCouponView = {
   period: string;
   endsLabel: string;
   owned: boolean;
+  products: { id: string; name: string }[];
 };
 
 function parseIds(value: string) {
@@ -82,7 +83,7 @@ export function couponEndsLabel(endAt: Date, now = new Date()) {
   return `${end.year}년 ${end.month}월 ${end.day}일 종료 (${relative})`;
 }
 
-export function toMemberCouponView(coupon: Coupon, owned: boolean, now = new Date()): MemberCouponView {
+export function toMemberCouponView(coupon: Coupon, owned: boolean, now = new Date(), names = new Map<string, string>()): MemberCouponView {
   return {
     id: coupon.id,
     name: coupon.name,
@@ -93,7 +94,15 @@ export function toMemberCouponView(coupon: Coupon, owned: boolean, now = new Dat
     period: couponPeriodText(coupon.endAt),
     endsLabel: couponEndsLabel(coupon.endAt, now),
     owned,
+    products: parseIds(coupon.includedProductIds).map((id) => ({ id, name: names.get(id) ?? id })),
   };
+}
+
+async function namesFor(coupons: Pick<Coupon, "includedProductIds">[]) {
+  const ids = [...new Set(coupons.flatMap((coupon) => parseIds(coupon.includedProductIds)))];
+  if (!ids.length) return new Map<string, string>();
+  const products = await prisma.product.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } });
+  return new Map(products.map((product) => [product.id, product.name]));
 }
 
 function isHeldActive(coupon: Coupon, now: Date) {
@@ -108,9 +117,10 @@ export async function memberCoupons(userId: string, now = new Date()) {
     orderBy: { createdAt: "desc" },
   });
   const held = issues.map((issue) => issue.coupon);
+  const names = await namesFor(held);
   return {
-    active: held.filter((coupon) => isHeldActive(coupon, now)).map((coupon) => toMemberCouponView(coupon, true, now)),
-    expired: held.filter((coupon) => !isHeldActive(coupon, now)).map((coupon) => toMemberCouponView(coupon, true, now)),
+    active: held.filter((coupon) => isHeldActive(coupon, now)).map((coupon) => toMemberCouponView(coupon, true, now, names)),
+    expired: held.filter((coupon) => !isHeldActive(coupon, now)).map((coupon) => toMemberCouponView(coupon, true, now, names)),
   };
 }
 
@@ -125,7 +135,7 @@ export async function downloadableMemberCoupons(userId?: string, now = new Date(
     },
     orderBy: { createdAt: "desc" },
   });
-  return coupons
-    .filter((coupon) => coupon.maxUses == null || coupon.usedCount < coupon.maxUses)
-    .map((coupon) => toMemberCouponView(coupon, coupon.issues.length > 0, now));
+  const visible = coupons.filter((coupon) => coupon.maxUses == null || coupon.usedCount < coupon.maxUses);
+  const names = await namesFor(visible);
+  return visible.map((coupon) => toMemberCouponView(coupon, coupon.issues.length > 0, now, names));
 }

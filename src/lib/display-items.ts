@@ -28,7 +28,7 @@ export const HOME_SECTIONS = [
   { slotKey: "section:hero", label: "메인 배너", href: "/category/object", sortOrder: 1 },
   { slotKey: "section:quick", label: "퀵 메뉴", href: "", sortOrder: 2 },
   { slotKey: "section:timesale", label: "TIME SALE", href: "", sortOrder: 3 },
-  { slotKey: "section:best", label: "Best Selling", href: "", sortOrder: 4 },
+  { slotKey: "section:best", label: "Today's Pick!", href: "", sortOrder: 4 },
   { slotKey: "section:coupon", label: "쿠폰 배너", href: "/events", sortOrder: 4 },
   { slotKey: "section:promotion", label: "Promotion product2", href: "", sortOrder: 5 },
 ] as const;
@@ -88,6 +88,10 @@ export async function syncDisplayItems(db: PrismaClient) {
   await db.displayItem.updateMany({
     where: { pageKey: "home", slotKey: "link:coupons", NOT: { href: "/coupons" } },
     data: { href: "/coupons" },
+  });
+  await db.displayItem.updateMany({
+    where: { pageKey: "home", slotKey: "section:best", label: "Best Selling" },
+    data: { label: "Today's Pick!" },
   });
 
   const missingSections = HOME_SECTIONS.filter((section) => !known.has(`home:${section.slotKey}`)).map((section) => ({

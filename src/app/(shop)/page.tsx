@@ -8,6 +8,7 @@ import { QuickMenu } from "@/components/quick-menu";
 import { TimeSaleRail } from "@/components/time-sale-rail";
 import { loadPageDisplay } from "@/lib/display";
 import { HOME_SECTIONS } from "@/lib/display-items";
+import { pickToday } from "@/lib/today-pick";
 import bannerMain from "@/img/banner_main_things_1520_500.png";
 import bannerCoupon from "@/img/banner_coupon_things_1380_180.png";
 
@@ -31,7 +32,7 @@ export default async function HomePage() {
         return product ? [product] : [];
       });
   const timeSale = placedProducts("timesale-product:");
-  const bestSelling = placedProducts("best-product:");
+  const todayPick = pickToday(products);
   const promotion = placedProducts("promotion-product:");
 
   const categoryById = new Map(categories.map((category) => [category.id, category]));
@@ -113,9 +114,9 @@ export default async function HomePage() {
         if (section.slotKey === "section:best") {
           return (
             <section key={section.id} className="mx-auto w-full max-w-[1280px] px-5 pb-14 md:px-8">
-              <h2 className="mb-8 text-[1.75rem] font-bold tracking-tight md:text-[2rem]">{section.label}</h2>
+              <h2 className="mb-8 text-[1.75rem] font-bold tracking-tight md:text-[2rem]">Today&apos;s Pick!</h2>
               <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4 lg:gap-x-8">
-                {bestSelling.map((product) => (
+                {todayPick.map((product) => (
                   <ProductCard key={product.id} product={product} showDiscountRate showProductId />
                 ))}
               </div>

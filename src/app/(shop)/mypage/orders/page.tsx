@@ -18,7 +18,10 @@ export default async function MyOrdersPage() {
     <div>
       <h1 className="display text-5xl">주문조회</h1>
       {orders.length === 0 ? (
-        <p className="mt-10 py-10 text-muted">주문 내역이 없습니다.</p>
+        <div className="flex min-h-[52vh] flex-col items-center justify-center gap-5 text-center">
+          <p>주문 내역이 없습니다.</p>
+          <Link href="/" className="btn">쇼핑하러가기</Link>
+        </div>
       ) : (
         <div className="mt-10 space-y-12">
           {orders.map((order) => (

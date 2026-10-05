@@ -5,16 +5,32 @@ import { priceProducts } from "@/lib/exhibition-offers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getCart, setCart, getSelectedCoupon, setSelectedCoupon } from "@/lib/cart";
+import { getCart, setCart, getBuyNow, setBuyNow, clearBuyNow, getCheckoutLines, getCheckoutSelection, setCheckoutSelection, clearCheckoutSelection, getSelectedCoupon, setSelectedCoupon } from "@/lib/cart";
 import { ORDER_STATUS, createOrderNumber, orderStatusTimestamp } from "@/lib/utils";
 import { requireAdmin, requireUser } from "@/lib/auth";
 import { normalizePhone } from "@/lib/phone";
 import { setAdminFlash } from "@/lib/admin-flash";
-import { couponCodes, combinedDiscount, shippingFee } from "@/lib/checkout-pricing";
+import { couponCodes, couponSelection, couponTargets, combinedDiscount, shippingFee } from "@/lib/checkout-pricing";
 
 export async function buyNow(productId: string, quantity = 1, onePlusOne = false) {
-  const result = await addToCart(productId, quantity, onePlusOne);
-  if (result.error) return result;
+  if (!Number.isSafeInteger(quantity) || quantity < 1) return { error: "수량을 확인해 주세요." };
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product?.isPublished || (onePlusOne && !product.onePlusOne)) return { error: "구매할 수 없는 상품 옵션입니다." };
+  if (quantity * (onePlusOne ? 2 : 1) > product.stock) return { error: "증정품을 포함한 재고가 부족합니다." };
+  await clearCheckoutSelection();
+  await setBuyNow([{ productId, quantity, onePlusOne }]);
+  redirect("/checkout");
+}
+
+export async function checkoutFromCart(formData: FormData) {
+  const keys = new Set(formData.getAll("line").map(String));
+  const chosen = (await getCart()).filter((line) => keys.has(`${line.productId}:${line.onePlusOne ? "1" : "0"}`));
+  await clearBuyNow();
+  if (!chosen.length) {
+    await clearCheckoutSelection();
+    redirect("/cart");
+  }
+  await setCheckoutSelection(chosen);
   redirect("/checkout");
 }
 
@@ -69,30 +85,32 @@ export async function removeCartLines(lines: Array<{ productId: string; onePlusO
   return { ok: true, removed, message: `${removed}개 상품이 장바구니에서 삭제되었습니다.` };
 }
 
-export async function applyCoupon(code: string) {
+export async function applyCoupon(code: string, source: "cart" | "checkout" = "cart", target?: string) {
   const session = await requireUser();
-  const cart = await getCart();
+  const cart = source === "checkout" ? await getCheckoutLines() : await getCart();
   const found = await prisma.product.findMany({ where: { id: { in: cart.map(line => line.productId) } } });
   const products = await priceProducts(found);
   const lines = cart.flatMap((line) => {
     const product = products.find((item) => item.id === line.productId && item.isPublished);
-    return product ? [{ productId: product.id, categoryId: product.categoryId, amount: product.price * line.quantity, quantity: line.quantity }] : [];
+    return product ? [{ productId: product.id, categoryId: product.categoryId, amount: product.price * line.quantity, quantity: line.quantity, onePlusOne: line.onePlusOne === true }] : [];
   });
   const coupon = await prisma.coupon.findUnique({ where: { code: code.trim().toUpperCase() }, include: { issues: true } });
-  const discount = coupon ? couponDiscountForLines(coupon, lines, new Date(), session?.user.id) : null;
+  const discount = coupon ? couponDiscountForLines(coupon, lines, new Date(), session?.user.id, target) : null;
   if (discount === null) return { error: "쿠폰의 구매 수량·금액 또는 사용 조건을 확인해 주세요." };
   return { ok: true, discount, code: coupon!.code, name: coupon!.name };
 }
 
-export async function selectCartCoupon(code: string) {
+export async function selectCartCoupon(code: string, source: "cart" | "checkout" = "cart") {
+  const selection = couponSelection(code);
   const codes = couponCodes(code);
+  const targets = couponTargets(code);
   const coupons = await prisma.coupon.findMany({ where: { code: { in: codes } } });
   if (codes.length > 1 && coupons.some(coupon => !coupon.isStackable)) return { error: "중복 불가 쿠폰은 단독으로 적용해 주세요." };
   for (const selected of codes) {
-    const result = await applyCoupon(selected);
+    const result = await applyCoupon(selected, source, targets[selected]);
     if (result.error) return result;
   }
-  await setSelectedCoupon(codes.join(",") || "-");
+  await setSelectedCoupon(selection.join(",") || "-");
   revalidatePath("/cart");
   revalidatePath("/checkout");
   return { ok: true };
@@ -101,7 +119,7 @@ export async function selectCartCoupon(code: string) {
 export async function createPendingOrder(formData: FormData) {
   const session = await requireUser();
   if (!session) return { error: "로그인이 필요합니다." };
-  const cart = await getCart();
+  const cart = await getCheckoutLines();
   if (!cart.length) return { error: "장바구니가 비어 있습니다." };
 
   const found = await prisma.product.findMany({
@@ -122,9 +140,10 @@ export async function createPendingOrder(formData: FormData) {
     if (count > product.stock) return { error: "증정품을 포함한 재고가 부족합니다." };
   }
   const subtotal = items.reduce((sum, row) => sum + row.product.price * row.quantity, 0);
-  const couponCode = String(formData.get("couponCode") ?? await getSelectedCoupon()).trim().toUpperCase();
+  const couponCode = String(formData.get("couponCode") ?? await getSelectedCoupon()).trim();
   let discount = 0;
   const codes = couponCodes(couponCode);
+  const targets = couponTargets(couponCode);
   const offers: { code: string; discount: number; isStackable: boolean }[] = [];
   for (const code of codes) {
     const coupon = await prisma.coupon.findUnique({ where: { code }, include: { issues: true } });
@@ -133,7 +152,8 @@ export async function createPendingOrder(formData: FormData) {
       categoryId: row.product.categoryId,
       amount: row.product.price * row.quantity,
       quantity: row.quantity,
-    })), new Date(), session.user.id) : null;
+      onePlusOne: row.onePlusOne,
+    })), new Date(), session.user.id, targets[code]) : null;
     if (applied === null) return { error: "쿠폰의 구매 수량·금액 또는 사용 조건을 확인해 주세요." };
     offers.push({ code, discount: applied, isStackable: coupon!.isStackable });
   }
@@ -216,8 +236,21 @@ export async function completeDemoPayment(orderId: string) {
       data: { usedCount: { increment: 1 } },
     });
   }
-  await setCart([]);
+  if (await getBuyNow()) {
+    await clearBuyNow();
+    await clearCheckoutSelection();
+  } else {
+    const selection = await getCheckoutSelection();
+    if (selection) {
+      const keys = new Set(selection.map((line) => `${line.productId}:${line.onePlusOne ? "1" : "0"}`));
+      await setCart((await getCart()).filter((line) => !keys.has(`${line.productId}:${line.onePlusOne ? "1" : "0"}`)));
+      await clearCheckoutSelection();
+    } else {
+      await setCart([]);
+    }
+  }
   revalidatePath("/mypage/orders");
+  revalidatePath("/cart");
   return { ok: true };
 }
 
@@ -321,4 +354,21 @@ export async function claimCoupon(formData: FormData) {
   revalidatePath("/mypage/coupons/download");
   revalidatePath(back);
   redirect(back);
+}
+
+export async function downloadCartCoupon(couponId: string) {
+  const session = await requireUser();
+  if (!session?.user.id) redirect("/login?callbackUrl=%2Fcart");
+  const now = new Date();
+  const coupon = await prisma.coupon.findUnique({ where: { id: couponId } });
+  if (!coupon?.isActive || coupon.isPaused || coupon.startAt > now || coupon.endAt < now) return { error: "받을 수 없는 쿠폰입니다." };
+  if (coupon.maxUses != null && coupon.usedCount >= coupon.maxUses) return { error: "받을 수 없는 쿠폰입니다." };
+  await prisma.couponIssue.create({
+    data: { couponId, targetType: "USER", userId: session.user.id },
+  }).catch(() => null);
+  revalidatePath("/cart");
+  revalidatePath("/coupons");
+  revalidatePath("/mypage/coupons");
+  revalidatePath("/mypage/coupons/download");
+  return { ok: true as const };
 }
