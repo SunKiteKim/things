@@ -67,11 +67,12 @@ function validateCoupon(formData: FormData) {
   const value = num(formData, "discountValue");
   const minimum = num(formData, "minQuantity");
   const amount = num(formData, "minOrderAmount");
+  const maxDiscount = num(formData, "maxDiscountAmount");
   const maxUses = num(formData, "maxUses");
   const start = new Date(text(formData, "startAt"));
   const end = new Date(text(formData, "endAt"));
   const onePlusOne = scope === "ONE_PLUS_ONE";
-  if (!name || !["CART", "MULTI_CART", "PRODUCT", "ONE_PLUS_ONE"].includes(scope) || (!onePlusOne && (!["PERCENT", "AMOUNT"].includes(type) || !Number.isSafeInteger(value) || value <= 0 || (type === "PERCENT" && value > 100))) || ![minimum, amount, maxUses].every(n => Number.isSafeInteger(n) && n >= 0) || !Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end < start) throw new Error("쿠폰명, 쿠폰 유형, 할인값, 최소 수량·금액, 사용 기간을 확인해 주세요.");
+  if (!name || !["CART", "MULTI_CART", "PRODUCT", "ONE_PLUS_ONE"].includes(scope) || (!onePlusOne && (!["PERCENT", "AMOUNT"].includes(type) || !Number.isSafeInteger(value) || value <= 0 || (type === "PERCENT" && value > 100))) || ![minimum, amount, maxUses, maxDiscount].every(n => Number.isSafeInteger(n) && n >= 0) || !Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end < start) throw new Error("쿠폰명, 쿠폰 유형, 할인값, 최소 수량·금액, 사용 기간을 확인해 주세요.");
 }
 
 export async function createCoupon(formData: FormData) {
@@ -90,6 +91,7 @@ export async function createCoupon(formData: FormData) {
       excludedProductIds: JSON.stringify(excluded),
       discountType: scope === "ONE_PLUS_ONE" ? "AMOUNT" : text(formData, "discountType") || "PERCENT",
       discountValue: scope === "ONE_PLUS_ONE" ? 0 : num(formData, "discountValue"),
+      maxDiscountAmount: num(formData, "maxDiscountAmount"),
       minOrderAmount: num(formData, "minOrderAmount"),
       minQuantity: scope === "CART" ? 0 : ["MULTI_CART", "ONE_PLUS_ONE"].includes(scope) ? Math.max(2, num(formData, "minQuantity")) : num(formData, "minQuantity"),
       maxUses: num(formData, "maxUses") || null,
@@ -121,6 +123,7 @@ export async function updateCoupon(formData: FormData) {
         excludedProductIds: JSON.stringify(excluded),
         discountType: scope === "ONE_PLUS_ONE" ? "AMOUNT" : text(formData, "discountType") || "PERCENT",
         discountValue: scope === "ONE_PLUS_ONE" ? 0 : num(formData, "discountValue"),
+      maxDiscountAmount: num(formData, "maxDiscountAmount"),
         minOrderAmount: num(formData, "minOrderAmount"),
         minQuantity: scope === "CART" ? 0 : ["MULTI_CART", "ONE_PLUS_ONE"].includes(scope) ? Math.max(2, num(formData, "minQuantity")) : num(formData, "minQuantity"),
         maxUses: num(formData, "maxUses") || null,

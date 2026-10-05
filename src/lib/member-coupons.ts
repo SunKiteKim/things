@@ -45,7 +45,7 @@ export function couponBasisText(coupon: Pick<Coupon, "scope" | "minOrderAmount" 
   return "금액 제한 없음";
 }
 
-export function couponLimitText(coupon: Pick<Coupon, "scope" | "includedProductIds" | "excludedProductIds" | "maxUses">) {
+export function couponLimitText(coupon: Pick<Coupon, "scope" | "includedProductIds" | "excludedProductIds" | "maxUses" | "maxDiscountAmount">) {
   const included = parseIds(coupon.includedProductIds);
   const excluded = parseIds(coupon.excludedProductIds);
   const bits: string[] = [];
@@ -54,6 +54,7 @@ export function couponLimitText(coupon: Pick<Coupon, "scope" | "includedProductI
   if (included.length > 0) bits.push(`지정 상품 ${included.length}개`);
   if (excluded.length > 0) bits.push(`제외 상품 ${excluded.length}개`);
   if (coupon.maxUses != null) bits.push(`${coupon.maxUses}장 한정`);
+  if (coupon.maxDiscountAmount > 0) bits.push(`최대 ${formatPrice(coupon.maxDiscountAmount)}`);
   return bits.length > 0 ? bits.join(" · ") : "제한 없음";
 }
 

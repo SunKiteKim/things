@@ -16,6 +16,7 @@ type CouponView = {
   excludedProductIds: string;
   discountType: string;
   discountValue: number;
+  maxDiscountAmount: number;
   minOrderAmount: number;
   minQuantity: number;
   maxUses: number | null;
@@ -120,6 +121,10 @@ function CouponFields({ prefix, products, coupon }: { prefix: string; products: 
       </Field>
       <Field label="할인값" htmlFor={`${prefix}-discountValue`} required={scope !== "ONE_PLUS_ONE"}>
         {scope === "ONE_PLUS_ONE" ? <><input type="hidden" name="discountValue" value="0" /><DisabledText>동일 상품 2개당 1개 가격</DisabledText></> : <input id={`${prefix}-discountValue`} className="field" name="discountValue" type="number" min={1} defaultValue={coupon?.discountValue} required />}
+      </Field>
+      <Field label="최대 할인금액" htmlFor={`${prefix}-maxDiscountAmount`}>
+        <input id={`${prefix}-maxDiscountAmount`} className="field" name="maxDiscountAmount" type="number" min={0} defaultValue={coupon?.maxDiscountAmount ?? 0} />
+        <p className="mt-2 text-xs text-muted">0이면 제한이 없습니다. 계산된 할인이 이 금액을 넘지 않습니다.</p>
       </Field>
       <Field label="최소 주문금액" htmlFor={`${prefix}-minOrderAmount`}>
         <input id={`${prefix}-minOrderAmount`} className="field" name="minOrderAmount" type="number" min={0} defaultValue={coupon?.minOrderAmount ?? 0} />
@@ -239,8 +244,9 @@ function CouponIssueModal({ coupon, targets }: { coupon: CouponView; targets: { 
 }
 
 function discountLabel(coupon: CouponView) {
-  if (coupon.scope === "ONE_PLUS_ONE") return "1+1";
-  return coupon.discountType === "PERCENT" ? `${coupon.discountValue}%` : formatPrice(coupon.discountValue);
+  if (coupon.scope === "ONE_PLUS_ONE") return coupon.maxDiscountAmount > 0 ? `1+1 · 최대 ${formatPrice(coupon.maxDiscountAmount)}` : "1+1";
+  const base = coupon.discountType === "PERCENT" ? `${coupon.discountValue}%` : formatPrice(coupon.discountValue);
+  return coupon.maxDiscountAmount > 0 ? `${base} · 최대 ${formatPrice(coupon.maxDiscountAmount)}` : base;
 }
 
 function dateLabel(value: string) {

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { couponDiscount } from "../src/lib/discounts";
 const now = new Date("2026-09-26T00:00:00Z");
-const rule = { isActive: true, startAt: new Date("2026-01-01"), endAt: new Date("2027-01-01"), maxUses: null, usedCount: 0, minOrderAmount: 0, minQuantity: 3, discountType: "PERCENT", discountValue: 10 };
+const rule = { scope: "CART", isActive: true, isPaused: false, startAt: new Date("2026-01-01"), endAt: new Date("2027-01-01"), maxUses: null, usedCount: 0, minOrderAmount: 0, minQuantity: 3, discountType: "PERCENT", discountValue: 10, includedProductIds: "[]", excludedProductIds: "[]" };
 test("quantity threshold and percentage rounding", () => {
  assert.equal(couponDiscount(rule, 10005, 2, now), null);
  assert.equal(couponDiscount(rule, 10005, 3, now), 1000);
@@ -17,4 +17,5 @@ test("date, usage and amount requirements remain enforced", () => {
  assert.equal(couponDiscount({ ...rule, maxUses: 2, usedCount: 2 }, 10000, 3, now), null);
  assert.equal(couponDiscount(rule, 10000, 3, new Date("2028-01-01")), null);
  assert.equal(couponDiscount({ ...rule, discountValue: 101 }, 10000, 3, now), null);
+ assert.equal(couponDiscount({ ...rule, maxDiscountAmount: 500 }, 100000, 3, now), 500);
 });

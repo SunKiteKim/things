@@ -93,6 +93,7 @@ export async function discountBoards(products: ListedProduct[], now = new Date()
           minQuantity: coupon.minQuantity,
           discountType: coupon.discountType,
           discountValue: coupon.discountValue,
+          maxDiscountAmount: coupon.maxDiscountAmount,
           includedProductIds: coupon.includedProductIds,
           excludedProductIds: coupon.excludedProductIds,
         }, memberPrice, 1, now);

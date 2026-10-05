@@ -33,8 +33,8 @@ export default async function CartPage() {
     discount: couponDiscountForLines(coupon, couponLines, new Date(), session?.user.id),
     isStackable: coupon.isStackable,
     label: coupon.scope === "ONE_PLUS_ONE"
-      ? `[1+1 할인] ${coupon.name} · 동일 상품 2개당 1개 가격 할인`
-      : `[${coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지 할인" : "장바구니"}] ${coupon.name}${coupon.scope === "MULTI_CART" ? " · 서로 다른 상품 2종 이상" : coupon.minQuantity > 0 ? ` · ${coupon.minQuantity}개 이상` : ""} · ${coupon.discountValue}${coupon.discountType === "PERCENT" ? "%" : "원"} 할인`,
+      ? `[1+1 할인] ${coupon.name} · 동일 상품 2개당 1개 가격 할인${coupon.maxDiscountAmount > 0 ? ` · 최대 ${formatPrice(coupon.maxDiscountAmount)}` : ""}`
+      : `[${coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지 할인" : "장바구니"}] ${coupon.name}${coupon.scope === "MULTI_CART" ? " · 서로 다른 상품 2종 이상" : coupon.minQuantity > 0 ? ` · ${coupon.minQuantity}개 이상` : ""} · ${coupon.discountValue}${coupon.discountType === "PERCENT" ? "%" : "원"} 할인${coupon.maxDiscountAmount > 0 ? ` · 최대 ${formatPrice(coupon.maxDiscountAmount)}` : ""}`,
   })).filter((option): option is typeof option & { discount: number } => option.discount !== null).map((option) => ({ ...option, eligible: true }));
   const selectedOption = options.find((option) => option.code === code) ?? options.reduce<(typeof options)[number] | undefined>((best, option) => !best || option.discount > best.discount ? option : best, undefined);
   const selectedCode = selectedOption?.code ?? "";
@@ -43,9 +43,10 @@ export default async function CartPage() {
     <div>
       <h1 className="display text-5xl">장바구니</h1>
       {rows.length === 0 ? (
-        <p className="mt-10 text-muted">
-          아직 담긴 사물이 없습니다. <Link href="/category/object">쇼핑하기</Link>
-        </p>
+        <div className="flex min-h-[52vh] flex-col items-center justify-center gap-5 text-center">
+          <p>장바구니에 담긴 상품이 없습니다</p>
+          <Link href="/" className="btn">쇼핑하기</Link>
+        </div>
       ) : (
         <div className="mt-10 grid gap-12 lg:grid-cols-[1.4fr_0.6fr]">
           <CartList rows={rows.map((row) => ({ productId: row.productId, quantity: row.quantity, onePlusOne: row.onePlusOne, product: { id: row.product.id, name: row.product.name, price: row.product.price, imageUrl: row.product.imageUrl } }))} />

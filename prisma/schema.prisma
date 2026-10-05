@@ -127,6 +127,7 @@ model Coupon {
   excludedProductIds String        @default("[]")
   discountType       String
   discountValue      Int
+  maxDiscountAmount  Int               @default(0)
   minOrderAmount     Int           @default(0)
   minQuantity        Int           @default(0)
   maxUses            Int?

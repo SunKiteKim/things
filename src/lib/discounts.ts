@@ -10,6 +10,7 @@ type CouponRule = {
   minQuantity: number;
   discountType: string;
   discountValue: number;
+  maxDiscountAmount?: number | null;
   includedProductIds: string;
   excludedProductIds: string;
   issues?: { targetType: string; userId: string | null; categoryId: string | null }[];
@@ -25,10 +26,17 @@ function parseProductIds(value: string) {
     return [];
   }
 }
+function cappedDiscount(amount: number, discount: number, maxDiscountAmount?: number | null) {
+  const limit = maxDiscountAmount && maxDiscountAmount > 0 ? maxDiscountAmount : discount;
+  return Math.min(amount, discount, limit);
+}
+
 export function couponDiscount(coupon: CouponRule, amount: number, quantity: number, now = new Date()): number | null {
   if (!coupon.isActive || coupon.isPaused || coupon.startAt > now || coupon.endAt < now || (coupon.maxUses !== null && coupon.usedCount >= coupon.maxUses) || amount < coupon.minOrderAmount || quantity < coupon.minQuantity || quantity <= 0) return null;
   if (!Number.isSafeInteger(coupon.discountValue) || coupon.discountValue < 0 || !["PERCENT", "AMOUNT"].includes(coupon.discountType) || (coupon.discountType === "PERCENT" && coupon.discountValue > 100)) return null;
-  return Math.min(amount, coupon.discountType === "PERCENT" ? Math.floor(amount * coupon.discountValue / 100) : coupon.discountValue);
+  if (coupon.maxDiscountAmount != null && (!Number.isSafeInteger(coupon.maxDiscountAmount) || coupon.maxDiscountAmount < 0)) return null;
+  const discount = coupon.discountType === "PERCENT" ? Math.floor(amount * coupon.discountValue / 100) : coupon.discountValue;
+  return cappedDiscount(amount, discount, coupon.maxDiscountAmount);
 }
 
 export function couponDiscountForLines(coupon: CouponRule, lines: CouponLine[], now = new Date(), userId?: string): number | null {
@@ -49,7 +57,7 @@ export function couponDiscountForLines(coupon: CouponRule, lines: CouponLine[], 
   if (coupon.scope === "ONE_PLUS_ONE") {
     if (!coupon.isActive || coupon.isPaused || coupon.startAt > now || coupon.endAt < now || (coupon.maxUses !== null && coupon.usedCount >= coupon.maxUses) || amount < coupon.minOrderAmount || quantity < 2) return null;
     const discount = eligibleLines.reduce((sum, line) => sum + Math.floor(line.quantity / 2) * Math.floor(line.amount / line.quantity), 0);
-    return discount > 0 ? Math.min(amount, discount) : null;
+    return discount > 0 ? cappedDiscount(amount, discount, coupon.maxDiscountAmount) : null;
   }
   return couponDiscount(
     coupon.scope === "CART"

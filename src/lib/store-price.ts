@@ -40,13 +40,9 @@ export function couponFitsProduct(
   return userIssued || categoryIssued;
 }
 
-function extraRate(type: string, value: number, base: number) {
-  if (type === "PERCENT") return value;
-  if (type === "AMOUNT" && base > 0) return (value / base) * 100;
-  return 0;
-}
-
-function couponLabel(coupon: Pick<Coupon, "discountType" | "discountValue">, base = 0, price = 0) {
+function couponLabel(coupon: Pick<Coupon, "discountType" | "discountValue" | "maxDiscountAmount">, base = 0, price = 0) {
+  const raw = coupon.discountType === "PERCENT" ? Math.floor(base * coupon.discountValue / 100) : coupon.discountValue;
+  if (coupon.maxDiscountAmount > 0 && raw > coupon.maxDiscountAmount && base > price) return discountPercentLabel(base, price);
   if (coupon.discountType === "AMOUNT" && base > price) return discountPercentLabel(base, price);
   return coupon.discountType === "PERCENT" ? `${coupon.discountValue}%` : discountPercentLabel(base, Math.max(0, base - coupon.discountValue));
 }
@@ -64,24 +60,36 @@ export async function presentProducts<T extends Pick<Product, "id" | "price" | "
   now = new Date(),
   userId?: string,
 ) {
+  const catalogOriginal = new Map(products.map((product) => [product.id, product.originalPrice]));
   const [priced, coupons] = await Promise.all([priceProducts(products, now), liveCoupons(now)]);
   return priced.map((product) => {
-    const memberPrice = product.exhibitionLabel ? (product.originalPrice ?? product.price) : product.price;
-    const exhibitionRate = memberPrice > product.price ? ((memberPrice - product.price) / memberPrice) * 100 : 0;
-    let best = { rate: exhibitionRate, price: product.price, label: product.exhibitionLabel };
+    const listPrice = catalogOriginal.get(product.id) ?? product.originalPrice ?? product.price;
+    let couponOff = 0;
     for (const coupon of coupons) {
       if (!couponFitsProduct(coupon, product, userId)) continue;
-      const discount = couponDiscount(coupon, memberPrice, 1, now);
-      if (discount == null || discount <= 0) continue;
-      const price = Math.max(0, memberPrice - discount);
-      const rate = extraRate(coupon.discountType, coupon.discountValue, memberPrice);
-      if (rate > best.rate + 0.001 || (Math.abs(rate - best.rate) <= 0.001 && price < best.price)) {
-        best = { rate, price, label: `쿠폰 ${couponLabel(coupon, memberPrice, price)}` };
-      }
+      const discount = couponDiscount(coupon, product.price, 1, now);
+      if (discount != null && discount > couponOff) couponOff = discount;
     }
-    if (!best.label || best.price === product.price) return product;
-    return { ...product, price: best.price, originalPrice: memberPrice, exhibitionLabel: best.label };
+    const price = Math.max(0, product.price - couponOff);
+    if (couponOff === 0 && !product.exhibitionLabel) return { ...product, originalPrice: listPrice };
+    return {
+      ...product,
+      price,
+      originalPrice: listPrice,
+      exhibitionLabel: listPrice > price ? discountPercentLabel(listPrice, price) : product.exhibitionLabel,
+    };
   });
+}
+
+export async function timeSaleRateForProduct(productId: string, now = new Date()) {
+  const [section, placed] = await Promise.all([
+    prisma.displayItem.findFirst({ where: { pageKey: "home", slotKey: "section:timesale", isVisible: true } }),
+    prisma.displayItem.findFirst({ where: { pageKey: "home", slotKey: `timesale-product:${productId}`, kind: "product", isVisible: true } }),
+  ]);
+  if (!section || !placed) return 0;
+  const ends = section.href ? new Date(section.href) : null;
+  if (ends && !Number.isNaN(ends.getTime()) && ends < now) return 0;
+  return Math.min(100, Math.max(0, Math.round(Number(section.icon) || 0)));
 }
 
 export async function downloadableCoupons(
@@ -91,19 +99,37 @@ export async function downloadableCoupons(
 ): Promise<DownloadableCoupon[]> {
   const coupons = await liveCoupons(now);
   return coupons.flatMap((coupon) => {
-    if (!couponFitsProduct(coupon, product, userId) && !publicOrCategoryCoupon(coupon, product)) return [];
-    if (parseIds(coupon.excludedProductIds).includes(product.id)) return [];
-    const included = parseIds(coupon.includedProductIds);
-    if (included.length > 0 && !included.includes(product.id)) return [];
+    if (!couponListedForProduct(coupon, product, userId)) return [];
     return [{
       id: coupon.id,
       name: coupon.name,
-      label: couponLabel(coupon, product.price ?? 0, Math.max(0, (product.price ?? 0) - (coupon.discountType === "AMOUNT" ? coupon.discountValue : 0))),
+      label: coupon.scope === "ONE_PLUS_ONE"
+        ? "1+1"
+        : coupon.scope === "MULTI_CART"
+          ? `${coupon.discountValue}%`
+          : couponLabel(coupon, product.price ?? 0, Math.max(0, (product.price ?? 0) - (coupon.discountType === "AMOUNT" ? coupon.discountValue : 0))),
       owned: !!userId && coupon.issues.some((issue) => issue.targetType === "USER" && issue.userId === userId),
     }];
   });
 }
 
+function couponListedForProduct(
+  coupon: OfferCoupon,
+  product: { id: string; categoryId: string },
+  userId?: string,
+) {
+  if (coupon.scope === "ONE_PLUS_ONE" || coupon.scope === "MULTI_CART") {
+    const included = parseIds(coupon.includedProductIds);
+    const excluded = parseIds(coupon.excludedProductIds);
+    if (excluded.includes(product.id)) return false;
+    if (included.length > 0 && !included.includes(product.id)) return false;
+    if (coupon.issues.length === 0) return true;
+    const userIssued = !!userId && coupon.issues.some((issue) => issue.targetType === "USER" && issue.userId === userId);
+    const categoryIssued = coupon.issues.some((issue) => issue.targetType === "CATEGORY" && issue.categoryId === product.categoryId);
+    return userIssued || categoryIssued;
+  }
+  return couponFitsProduct(coupon, product, userId) || publicOrCategoryCoupon(coupon, product);
+}
 function publicOrCategoryCoupon(coupon: OfferCoupon, product: { categoryId: string }) {
   if (coupon.scope === "ONE_PLUS_ONE" || coupon.scope === "MULTI_CART") return false;
   if (coupon.issues.length === 0) return true;

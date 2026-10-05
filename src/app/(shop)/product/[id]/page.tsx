@@ -1,7 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { priceProducts } from "@/lib/exhibition-offers";
-import { downloadableCoupons, presentProducts } from "@/lib/store-price";
+import { downloadableCoupons, presentProducts, timeSaleRateForProduct } from "@/lib/store-price";
+import { discountPercentLabel } from "@/lib/exhibition-price";
 import { formatPrice, parseGallery } from "@/lib/utils";
 import { requireUser } from "@/lib/auth";
 import { claimCoupon } from "@/actions/commerce";
@@ -22,12 +23,16 @@ export default async function ProductPage({
   if (!product || !product.isPublished) notFound();
   if (id !== product.id) redirect(`/product/${product.id}`);
   const session = await requireUser();
-  const [[sale], [purchase], coupons] = await Promise.all([
+  const [[sale], [purchase], coupons, timeSaleRate] = await Promise.all([
     presentProducts([product], new Date(), session?.user.id),
     priceProducts([product]),
     downloadableCoupons(product, session?.user.id),
+    timeSaleRateForProduct(product.id),
   ]);
   if (!sale || !purchase) notFound();
+  const listPrice = product.originalPrice ?? product.price;
+  const payment = timeSaleRate > 0 ? Math.round(sale.price * (100 - timeSaleRate) / 100) : sale.price;
+  const rateLabel = listPrice > payment ? discountPercentLabel(listPrice, payment) : sale.exhibitionLabel;
 
   const gallery = [product.imageUrl, ...parseGallery(product.gallery)].filter(Boolean);
   const sources = gallery.length ? gallery : [DEFAULT_PRODUCT_IMAGE];
@@ -48,18 +53,17 @@ export default async function ProductPage({
         <p className="mt-3 text-[0.72rem] tracking-wide text-muted">{product.id}</p>
         <h1 className="product-name mt-1 text-5xl leading-snug">{product.name}</h1>
         <p className="mt-5 flex flex-wrap items-baseline gap-x-2 text-xl font-normal text-muted">
-          {sale.exhibitionLabel ? (
-            <span className="text-accent">{sale.exhibitionLabel}</span>
-          ) : (
-            <span className="text-accent">{product.discountRate}%</span>
-          )}
-          <span>{formatPrice(sale.price)}</span>
-          {(sale.originalPrice ?? product.originalPrice) && (sale.originalPrice ?? product.originalPrice) !== sale.price ? (
-            <span className="line-through opacity-60">{formatPrice(sale.originalPrice ?? product.originalPrice ?? sale.price)}</span>
-          ) : null}
+          {rateLabel ? <span className="text-accent">{rateLabel}</span> : null}
+          <span>{formatPrice(payment)}</span>
+          {listPrice !== payment ? <span className="line-through opacity-60">{formatPrice(listPrice)}</span> : null}
         </p>
-        {purchase.price !== sale.price ? (
-          <p className="mt-2 text-sm text-muted">쿠폰 없이 구매하면 {formatPrice(purchase.price)}입니다. 회원 할인과 기획전 할인이 함께 적용됩니다.</p>
+        {payment !== purchase.price ? (
+          <p className="mt-2 text-sm text-muted">
+            {`회원 할인가 ${formatPrice(purchase.price)}에 ${[
+              sale.price < purchase.price ? "쿠폰" : "",
+              timeSaleRate > 0 ? `타임세일 ${timeSaleRate}%` : "",
+            ].filter(Boolean).join("과 ")}를 적용한 금액입니다.`}
+          </p>
         ) : null}
         {coupons.length > 0 ? (
           <div className="mt-6 max-w-md space-y-2">
