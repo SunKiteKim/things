@@ -33,6 +33,7 @@ export default async function ProductPage({
   const listPrice = sale.originalPrice ?? product.originalPrice ?? sale.price;
   const salePrice = sale.price;
   const couponPrice = sale.couponPrice;
+  const appliedCoupon = sale.appliedCoupon;
   const delivery = shippingFee(couponPrice);
   const payable = couponPrice + delivery;
   const rateLabel = listPrice > salePrice ? discountPercentLabel(listPrice, salePrice) : null;
@@ -66,9 +67,23 @@ export default async function ProductPage({
               </p>
             </div>
           </div>
-          <div className="flex items-center justify-between gap-4">
-            <span>쿠폰 할인가</span>
-            <span className="font-bold" data-testid="product-coupon-price">{formatPrice(couponPrice)}</span>
+          <div>
+            <div className="flex items-center justify-between gap-4">
+              <span>쿠폰 할인가</span>
+              <span className="font-bold" data-testid="product-coupon-price">{formatPrice(couponPrice)}</span>
+            </div>
+            {appliedCoupon ? (
+              <div className="mt-2 flex items-start justify-between gap-4 text-xs" data-testid="product-applied-coupon">
+                <p className="flex min-w-0 items-start gap-1.5 leading-5 text-muted">
+                  <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" className="mt-0.5 shrink-0">
+                    <path d="M3 2.5v6.2c0 1.2.8 2 2 2H11" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                    <path d="M8.6 8.2 11 10.7 8.6 13.2" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span>[{appliedCoupon.scope === "PRODUCT" ? "상품" : "장바구니"}] {appliedCoupon.name}</span>
+                </p>
+                <span className="shrink-0 leading-5 text-muted">-{formatPrice(appliedCoupon.discount)}</span>
+              </div>
+            ) : null}
           </div>
           {delivery > 0 ? (
             <div className="flex items-center justify-between gap-4">

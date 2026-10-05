@@ -58,7 +58,7 @@ export function ProductCard({
             <span className="line-through opacity-60">{formatPrice(originalPrice)}</span>
           ) : null}
         </p>
-        {product.couponPrice != null && product.couponPrice < product.price ? <p className="mt-1 text-xs text-muted">쿠폰 적용 예상가 {formatPrice(product.couponPrice)}</p> : null}
+        {product.couponPrice != null && product.couponPrice >= 100 && product.couponPrice < product.price ? <p className="mt-1 text-xs text-muted">쿠폰 적용 예상가 {formatPrice(product.couponPrice)}</p> : null}
       </Link>
     </div>
   );

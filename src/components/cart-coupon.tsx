@@ -314,7 +314,22 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
                 ))}
               </div>
               ) : <p className="border border-line py-10 text-center text-sm text-muted">{signedIn ? "적용 가능한 쿠폰이 없습니다." : "로그인 후 다운받은 쿠폰을 적용할 수 있습니다."}</p>}
-              <div className="mt-5 bg-slate-50 px-4 py-4 text-sm"><p className="flex justify-between"><span>예상 할인</span><strong>-{formatPrice(previewTotal)}</strong></p><p className="mt-2 flex justify-between"><span>배송비</span><strong>{formatPrice(shippingFee(previewSubtotal - previewTotal))}</strong></p><p className="mt-2 flex justify-between text-base"><span>예상 결제금액</span><strong>{formatPrice(previewSubtotal - previewTotal + shippingFee(previewSubtotal - previewTotal))}</strong></p></div>
+              <div className="mt-5 bg-slate-50 px-4 py-4 text-sm">
+                <p className="flex justify-between"><span>상품 금액 합계</span><span>{formatPrice(previewSubtotal)}</span></p>
+                <p className="mt-2 flex justify-between"><span>예상 할인</span><strong>-{formatPrice(previewTotal)}</strong></p>
+                {allocated.some((option) => option.amount > 0) ? (
+                  <ul className="mt-1 space-y-0.5 text-[11px] leading-relaxed text-muted">
+                    {allocated.filter((option) => option.amount > 0).map((option) => (
+                      <li key={option.code} className="flex justify-between gap-4">
+                        <span>{option.summary ?? option.label}</span>
+                        <span className="shrink-0">-{formatPrice(option.amount)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                <p className="mt-2 flex justify-between"><span>배송비</span><span>{formatPrice(shippingFee(previewSubtotal - previewTotal))}</span></p>
+                <p className="mt-2 flex justify-between text-base"><span className="font-bold">예상 결제금액</span><span className="font-bold" style={{ color: "#e10600" }}>{formatPrice(previewSubtotal - previewTotal + shippingFee(previewSubtotal - previewTotal))}</span></p>
+              </div>
               <DownloadableCoupons coupons={downloads} />
               {error ? <p className="mt-3 text-sm text-accent" role="alert">{error}</p> : null}
               {selectionError ? <p className="mt-3 text-sm text-accent" role="alert">{selectionError}</p> : null}

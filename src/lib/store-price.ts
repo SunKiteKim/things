@@ -66,15 +66,21 @@ export async function presentProducts<T extends Pick<Product, "id" | "price" | "
   return priced.map((product) => {
     const listPrice = catalogOriginal.get(product.id) ?? product.originalPrice ?? product.price;
     let couponOff = 0;
+    let appliedCoupon: { name: string; scope: string } | null = null;
     for (const coupon of coupons) {
       if (!couponFitsProduct(coupon, product, userId)) continue;
       const discount = couponDiscount(coupon, product.price, 1, now);
-      if (discount != null && discount > couponOff) couponOff = discount;
+      if (discount != null && discount > couponOff) {
+        couponOff = discount;
+        appliedCoupon = { name: coupon.name, scope: coupon.scope };
+      }
     }
     const price = Math.max(MINIMUM_MERCHANDISE_AMOUNT, product.price - couponOff);
+    const appliedDiscount = product.price - price;
     return {
       ...product,
       couponPrice: price,
+      appliedCoupon: appliedCoupon && appliedDiscount > 0 ? { ...appliedCoupon, discount: appliedDiscount } : null,
       originalPrice: listPrice,
       exhibitionLabel: listPrice > product.price ? discountPercentLabel(listPrice, product.price) : product.exhibitionLabel,
     };
