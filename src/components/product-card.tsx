@@ -49,9 +49,9 @@ export function ProductCard({
         </p>
         <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm font-normal text-muted">
           {product.exhibitionLabel ? (
-            <span className="font-medium text-accent">{product.exhibitionLabel}</span>
+            <span className="text-accent">{product.exhibitionLabel}</span>
           ) : showDiscountRate ? (
-            <span className="font-medium text-accent">{product.discountRate}%</span>
+            <span className="text-accent">{product.discountRate}%</span>
           ) : null}
           <span>{formatPrice(product.price)}</span>
           {showOriginalPrice && originalPrice ? (

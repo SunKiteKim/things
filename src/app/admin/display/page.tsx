@@ -277,10 +277,16 @@ export default async function DisplayAdminPage({
                           <input className="field mt-2" name={`label:${section.id}`} defaultValue={section.label} maxLength={40} />
                         </label>
                         {section.slotKey === "section:timesale" ? (
-                          <label className="mt-3 block text-sm font-medium">
-                            종료 시각
-                            <input className="field mt-2" type="datetime-local" name={`href:${section.id}`} defaultValue={section.href} />
-                          </label>
+                          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                            <label className="block text-sm font-medium">
+                              종료 시각
+                              <input className="field mt-2" type="datetime-local" name={`href:${section.id}`} defaultValue={section.href} />
+                            </label>
+                            <label className="block text-sm font-medium">
+                              타임세일 할인율
+                              <input className="field mt-2" type="number" name={`rate:${section.id}`} min={0} max={100} defaultValue={Number(section.icon) || 0} />
+                            </label>
+                          </div>
                         ) : null}
                         {section.slotKey === "section:timesale" ? <p className="mt-2 text-xs text-muted">메인에서는 상품 3개씩 넘겨 보여 줍니다.</p> : null}
                       </div>

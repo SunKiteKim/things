@@ -1,6 +1,6 @@
 import type { Product } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { asExhibitionOffer, bestExhibitionOffer, exhibitionOfferLabel, type ExhibitionOffer } from "@/lib/exhibition-price";
+import { asExhibitionOffer, bestExhibitionOffer, discountPercentLabel, type ExhibitionOffer } from "@/lib/exhibition-price";
 
 export type PricedProduct<T> = T & { exhibitionLabel: string | null };
 
@@ -41,7 +41,7 @@ export async function priceProducts<T extends Pick<Product, "id" | "price" | "or
       ...product,
       price: best.price,
       originalPrice: product.price,
-      exhibitionLabel: `기획전 ${exhibitionOfferLabel(best.offer)}`,
+      exhibitionLabel: `기획전 ${best.offer.discountType === "PERCENT" ? `${best.offer.discountValue}%` : discountPercentLabel(product.price, best.price)}`,
     };
   });
 }

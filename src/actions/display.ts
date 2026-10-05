@@ -174,6 +174,10 @@ export async function saveDisplayItems(formData: FormData) {
         const icon = text(formData, `icon:${item.id}`);
         if (icon) data.icon = shortcutIcon(icon);
       }
+      if (item.slotKey === "section:timesale") {
+        const rate = Math.min(100, Math.max(0, Math.round(Number(text(formData, `rate:${item.id}`)) || 0)));
+        data.icon = String(rate);
+      }
 
       return prisma.displayItem.update({ where: { id: item.id }, data });
     }),

@@ -2,7 +2,7 @@ import type { Coupon, Product } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { couponDiscount } from "@/lib/discounts";
 import { priceProducts } from "@/lib/exhibition-offers";
-import { formatPrice } from "@/lib/utils";
+import { discountPercentLabel } from "@/lib/exhibition-price";
 
 type OfferCoupon = Coupon & {
   issues: { targetType: string; userId: string | null; categoryId: string | null }[];
@@ -46,8 +46,9 @@ function extraRate(type: string, value: number, base: number) {
   return 0;
 }
 
-function couponLabel(coupon: Pick<Coupon, "discountType" | "discountValue">) {
-  return coupon.discountType === "PERCENT" ? `${coupon.discountValue}%` : formatPrice(coupon.discountValue);
+function couponLabel(coupon: Pick<Coupon, "discountType" | "discountValue">, base = 0, price = 0) {
+  if (coupon.discountType === "AMOUNT" && base > price) return discountPercentLabel(base, price);
+  return coupon.discountType === "PERCENT" ? `${coupon.discountValue}%` : discountPercentLabel(base, Math.max(0, base - coupon.discountValue));
 }
 
 async function liveCoupons(now: Date) {
@@ -75,7 +76,7 @@ export async function presentProducts<T extends Pick<Product, "id" | "price" | "
       const price = Math.max(0, memberPrice - discount);
       const rate = extraRate(coupon.discountType, coupon.discountValue, memberPrice);
       if (rate > best.rate + 0.001 || (Math.abs(rate - best.rate) <= 0.001 && price < best.price)) {
-        best = { rate, price, label: `쿠폰 ${couponLabel(coupon)}` };
+        best = { rate, price, label: `쿠폰 ${couponLabel(coupon, memberPrice, price)}` };
       }
     }
     if (!best.label || best.price === product.price) return product;
@@ -84,7 +85,7 @@ export async function presentProducts<T extends Pick<Product, "id" | "price" | "
 }
 
 export async function downloadableCoupons(
-  product: { id: string; categoryId: string },
+  product: { id: string; categoryId: string; price?: number },
   userId?: string,
   now = new Date(),
 ): Promise<DownloadableCoupon[]> {
@@ -97,7 +98,7 @@ export async function downloadableCoupons(
     return [{
       id: coupon.id,
       name: coupon.name,
-      label: couponLabel(coupon),
+      label: couponLabel(coupon, product.price ?? 0, Math.max(0, (product.price ?? 0) - (coupon.discountType === "AMOUNT" ? coupon.discountValue : 0))),
       owned: !!userId && coupon.issues.some((issue) => issue.targetType === "USER" && issue.userId === userId),
     }];
   });

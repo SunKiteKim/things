@@ -22,6 +22,11 @@ export function bestExhibitionOffer(basePrice: number, offers: ExhibitionOffer[]
   }, { offer: null, price: basePrice });
 }
 
+export function discountPercentLabel(base: number, price: number) {
+  if (!Number.isFinite(base) || base <= 0 || price >= base) return "0%";
+  return `${Math.max(1, Math.round(((base - price) / base) * 100))}%`;
+}
+
 export function exhibitionOfferLabel(offer: Pick<ExhibitionOffer, "discountType" | "discountValue">) {
   if (offer.discountType === "PERCENT") return `${offer.discountValue}%`;
   if (offer.discountType === "AMOUNT") return formatPrice(offer.discountValue);

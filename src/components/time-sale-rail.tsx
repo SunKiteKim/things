@@ -77,7 +77,7 @@ export function TimeSaleRail({ items, endsAt }: { items: TimeSaleItem[]; endsAt:
                 <Link href={`/product/${item.id}`} className="mt-3 block">
                   <p className="truncate text-sm">{item.name}</p>
                   <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm">
-                    {item.label ? <span className="font-bold text-[#e10600]">{item.label.replace("쿠폰 ", "").replace("기획전 ", "")}</span> : null}
+                    {item.label ? <span className="text-[#e10600]">{item.label.replace("쿠폰 ", "").replace("기획전 ", "")}</span> : null}
                     <span className="font-bold text-[#e10600]">{formatPrice(item.price)}</span>
                   </p>
                   {item.originalPrice && item.originalPrice > item.price ? (

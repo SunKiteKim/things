@@ -49,9 +49,9 @@ export default async function ProductPage({
         <h1 className="product-name mt-1 text-5xl leading-snug">{product.name}</h1>
         <p className="mt-5 flex flex-wrap items-baseline gap-x-2 text-xl font-normal text-muted">
           {sale.exhibitionLabel ? (
-            <span className="font-medium text-accent">{sale.exhibitionLabel}</span>
+            <span className="text-accent">{sale.exhibitionLabel}</span>
           ) : (
-            <span className="font-medium text-accent">{product.discountRate}%</span>
+            <span className="text-accent">{product.discountRate}%</span>
           )}
           <span>{formatPrice(sale.price)}</span>
           {(sale.originalPrice ?? product.originalPrice) && (sale.originalPrice ?? product.originalPrice) !== sale.price ? (
