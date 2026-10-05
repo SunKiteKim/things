@@ -8,11 +8,15 @@ import { QuickMenu } from "@/components/quick-menu";
 import { TimeSaleRail } from "@/components/time-sale-rail";
 import { loadPageDisplay } from "@/lib/display";
 import { HOME_SECTIONS } from "@/lib/display-items";
-import { pickToday } from "@/lib/today-pick";
+import { pickToday, todayPickKey } from "@/lib/today-pick";
+import { requireUser } from "@/lib/auth";
+import { TodayPickRecord } from "@/components/today-pick-record";
 import bannerMain from "@/img/banner_main_things_1520_500.png";
 import bannerCoupon from "@/img/banner_coupon_things_1380_180.png";
 
 export default async function HomePage() {
+  const now = new Date();
+  const session = await requireUser();
   const [categories, catalog, display] = await Promise.all([
     prisma.category.findMany(),
     prisma.product.findMany({
@@ -21,7 +25,7 @@ export default async function HomePage() {
     }),
     loadPageDisplay("home"),
   ]);
-  const products = await presentProducts(catalog);
+  const products = await presentProducts(catalog, now, session?.user.id);
 
   const productById = new Map(products.map((product) => [product.id, product]));
   const placedProducts = (prefix: string) =>
@@ -32,7 +36,7 @@ export default async function HomePage() {
         return product ? [product] : [];
       });
   const timeSale = placedProducts("timesale-product:");
-  const todayPick = pickToday(products);
+  const todayPick = pickToday(products, 4, now);
   const promotion = placedProducts("promotion-product:");
 
   const categoryById = new Map(categories.map((category) => [category.id, category]));
@@ -113,8 +117,10 @@ export default async function HomePage() {
         }
         if (section.slotKey === "section:best") {
           return (
-            <section key={section.id} className="mx-auto w-full max-w-[1280px] px-5 pb-14 md:px-8">
-              <h2 className="mb-8 text-[1.75rem] font-bold tracking-tight md:text-[2rem]">Today&apos;s Pick!</h2>
+            <section key={section.id} data-testid="today-pick" data-pick-date={todayPickKey(now)} className="mx-auto w-full max-w-[1280px] px-5 pb-14 md:px-8">
+              <h2 className="mb-2 text-[1.75rem] font-bold tracking-tight md:text-[2rem]">Today&apos;s Pick!</h2>
+              <p className="mb-6 text-sm text-muted">{todayPickKey(now)} · KST · 재고가 있는 오늘의 {todayPick.length}개 상품</p>
+              <TodayPickRecord date={todayPickKey(now)} products={todayPick.map(product => ({ id: product.id, name: product.name, price: product.price, originalPrice: product.originalPrice, couponPrice: product.couponPrice, stock: product.stock }))} />
               <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4 lg:gap-x-8">
                 {todayPick.map((product) => (
                   <ProductCard key={product.id} product={product} showDiscountRate showProductId />

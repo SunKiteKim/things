@@ -72,12 +72,11 @@ export async function presentProducts<T extends Pick<Product, "id" | "price" | "
       if (discount != null && discount > couponOff) couponOff = discount;
     }
     const price = Math.max(MINIMUM_MERCHANDISE_AMOUNT, product.price - couponOff);
-    if (couponOff === 0 && !product.exhibitionLabel) return { ...product, originalPrice: listPrice };
     return {
       ...product,
-      price,
+      couponPrice: price,
       originalPrice: listPrice,
-      exhibitionLabel: listPrice > price ? discountPercentLabel(listPrice, price) : product.exhibitionLabel,
+      exhibitionLabel: listPrice > product.price ? discountPercentLabel(listPrice, product.price) : product.exhibitionLabel,
     };
   });
 }

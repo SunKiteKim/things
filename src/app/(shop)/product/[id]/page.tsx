@@ -56,13 +56,14 @@ export default async function ProductPage({
         <h1 className="product-name mt-1 text-5xl leading-snug">{product.name}</h1>
         <p className="mt-5 flex flex-wrap items-baseline gap-x-2 text-xl font-normal text-muted">
           {rateLabel ? <span className="text-accent">{rateLabel}</span> : null}
-          <span>{formatPrice(payment)}</span>
+          <span data-testid="product-sale-price">{formatPrice(payment)}</span>
           {listPrice !== payment ? <span className="line-through opacity-60">{formatPrice(listPrice)}</span> : null}
         </p>
+        <p className="mt-1 text-xs text-muted">행사 적용가 · 쿠폰 적용 전</p>
         <p className="mt-3 text-sm leading-relaxed text-muted">{SHIPPING_NOTICE}</p>
-        {payment !== purchase.price ? (
+        {sale.couponPrice < purchase.price ? (
           <p className="mt-2 text-sm text-muted">
-            {`행사 적용가 ${formatPrice(purchase.price)}에 쿠폰을 적용한 예상 금액입니다. 주문 시 쿠폰의 적용 조건을 확인해 주세요.`}
+            {`쿠폰 적용 예상가 ${formatPrice(sale.couponPrice)} · 주문 시 쿠폰의 적용 조건을 확인해 주세요.`}
           </p>
         ) : null}
         <div className="mt-6">

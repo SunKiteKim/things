@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { downloadCartCoupon, selectCartCoupon } from "@/actions/commerce";
 import { formatPrice } from "@/lib/utils";
 import { ProductImage } from "@/components/product-image";
-import { couponCodes, couponSelection, couponTargets, combinedDiscount, shippingFee } from "@/lib/checkout-pricing";
+import { couponCodes, couponSelection, couponTargets, allocateCouponDiscounts, bestSingleProductCoupon, shippingFee } from "@/lib/checkout-pricing";
 
 export type CouponProductDiscount = { productId: string; onePlusOne?: boolean; discount: number; rate: number };
-export type CouponOption = { code: string; label: string; eligible: boolean; discount: number; isStackable: boolean; scope?: string; summary?: string; productDiscounts?: CouponProductDiscount[] };
+export type CouponOption = { code: string; selection?: string; label: string; eligible: boolean; discount: number; isStackable: boolean; scope?: string; summary?: string; productDiscounts?: CouponProductDiscount[] };
 export type CouponProductRow = { key: string; productId: string; onePlusOne?: boolean; name: string; price: number; quantity?: number; imageUrl: string };
 export type CouponNotice = { key: string; summary: string; reason: string };
 export type DownloadableCoupon = { id: string; name: string; discount: string; endsLabel: string };
@@ -113,9 +113,9 @@ function dealFor(option: CouponOption, row: CouponProductRow) {
 function toggleToken(current: string, option: CouponOption, allOptions: CouponOption[]) {
   const parts = couponSelection(current);
   if (couponCodes(current).includes(option.code)) return parts.filter((part) => part.split("@")[0] !== option.code).join(",");
-  if (!option.isStackable) return option.code;
+  if (!option.isStackable) return option.selection ?? option.code;
   const kept = parts.filter((part) => allOptions.find((candidate) => candidate.code === part.split("@")[0])?.isStackable);
-  return [...kept, option.code].join(",");
+  return [...kept, option.selection ?? option.code].join(",");
 }
 
 function assignProductCoupon(current: string, option: CouponOption, target: string, allOptions: CouponOption[]) {
@@ -138,23 +138,6 @@ function assignedCode(current: string, target: string) {
   return Object.entries(couponTargets(current)).find(([, value]) => value === target)?.[0] ?? "";
 }
 
-function maxDiscountAssignment(products: CouponProductRow[], options: CouponOption[]) {
-  let best: { code: string; target: string; rate: number; price: number } | null = null;
-  for (const option of options) {
-    let expensive: { row: CouponProductRow; rate: number } | null = null;
-    for (const row of products) {
-      const deal = dealFor(option, row);
-      if (!deal) continue;
-      if (!expensive || row.price > expensive.row.price) expensive = { row, rate: deal.rate };
-    }
-    if (!expensive) continue;
-    if (!best || expensive.rate > best.rate || (expensive.rate === best.rate && expensive.row.price > best.price)) {
-      best = { code: option.code, target: rowTarget(expensive.row), rate: expensive.rate, price: expensive.row.price };
-    }
-  }
-  return best;
-}
-
 export function CouponPicker({ options, selected, subtotal, onApply, showApplied = true, opened, onOpenedChange, title = "쿠폰 변경", groups, initialGroup, products, notices = [], signedIn = true, downloads = [] }: { options: CouponOption[]; selected: string; subtotal: number; onApply: (option: CouponOption) => Promise<void>; showApplied?: boolean; opened?: boolean; onOpenedChange?: (open: boolean) => void; title?: string; groups?: { id: string; label: string; options: CouponOption[] }[]; initialGroup?: string; products?: CouponProductRow[]; notices?: CouponNotice[]; signedIn?: boolean; downloads?: DownloadableCoupon[] }) {
   const [localOpen, setLocalOpen] = useState(false);
   const open = opened ?? localOpen;
@@ -174,10 +157,13 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
     return matched ? { ...option, discount: matched.discount } : option;
   });
   let previewTotal = 0;
+  let selectionError = "";
+  let allocated: (CouponOption & { amount: number })[] = [];
   try {
-    previewTotal = previews.length ? combinedDiscount(previews, subtotal) : 0;
+    allocated = allocateCouponDiscounts(previews, subtotal);
+    previewTotal = allocated.reduce((sum, option) => sum + option.amount, 0);
   } catch {
-    previewTotal = previews.reduce((sum, option) => sum + option.discount, 0);
+    selectionError = "중복 불가 쿠폰은 단독으로 적용해 주세요.";
   }
   const preview = previews.length ? { ...previews[0], code: couponSelection(code).filter((part) => previews.some((option) => option.code === part.split("@")[0])).join(","), label: previews.map(option => option.label).join(" + "), discount: previewTotal } : undefined;
   const showProductMatcher = !!products && groupId === "product";
@@ -224,20 +210,10 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
               {showProductMatcher ? (
                 <div>
                   <button type="button" className="btn btn-ghost mb-4 w-full" onClick={() => {
-                    const best = maxDiscountAssignment(products, allOptions.filter((option) => isProductCoupon(option.scope)));
-                    if (!best) {
-                      setError("적용 가능한 상품 쿠폰이 없습니다.");
-                      return;
-                    }
-                    const option = allOptions.find((item) => item.code === best.code);
-                    if (!option) return;
                     setError("");
-                    const kept = option.isStackable ? couponSelection(code).filter((part) => {
-                      const candidate = allOptions.find((item) => item.code === part.split("@")[0]);
-                      return !!candidate && !isProductCoupon(candidate.scope) && candidate.isStackable;
-                    }) : [];
-                    setCode([...kept, `${option.code}@${best.target}`].join(","));
-                  }}>최대할인 적용하기</button>
+                    setCode(bestSingleProductCoupon(allOptions, code, subtotal).selection);
+                  }}>상품쿠폰 1장 최적 적용</button>
+                  <p className="mb-3 text-xs text-muted">선택한 장바구니 쿠폰과 배송비를 고려해 결제금액이 가장 낮은 상품쿠폰 1장을 선택합니다. 미적용이 더 저렴하면 상품쿠폰을 해제합니다.</p>
                   {!signedIn ? <p className="mb-3 text-sm text-muted">로그인 후 다운받은 쿠폰을 적용할 수 있습니다.</p> : null}
                   <div className="divide-y divide-line border border-line">
                     {products.map((row) => {
@@ -246,7 +222,8 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
                       const chosen = fits.find((option) => option.code === selectedCode);
                       const deal = chosen ? dealFor(chosen, row) : undefined;
                       const quantity = row.quantity && row.quantity > 0 ? row.quantity : 1;
-                      const appliedPrice = deal ? Math.max(0, Math.floor((row.price * quantity - deal.discount) / quantity)) : row.price;
+                      const appliedDiscount = chosen ? allocated.find(option => option.code === chosen.code)?.amount ?? 0 : 0;
+                      const appliedPrice = Math.max(0, row.price * quantity - appliedDiscount);
                       return (
                         <div key={row.key} className="flex gap-3 px-4 py-4">
                           <div className="relative h-16 w-16 shrink-0 overflow-hidden bg-surface"><ProductImage src={row.imageUrl} alt={row.name} fill /></div>
@@ -259,8 +236,9 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
                               <div className="shrink-0 text-right">
                                 {deal ? (
                                   <>
-                                    <p className="text-sm line-through" style={{ fontWeight: 400, color: "#c5c0b8" }}>{formatPrice(row.price)}</p>
+                                    <p className="text-sm line-through" style={{ fontWeight: 400, color: "#c5c0b8" }}>{formatPrice(row.price * quantity)}</p>
                                     <p className="text-sm" style={{ fontWeight: 700, color: "#3f3b37" }}>{formatPrice(appliedPrice)}</p>
+                                    <p className="text-xs text-muted">{quantity}개 합계 · 상품쿠폰 할인 {formatPrice(appliedDiscount)}</p>
                                   </>
                                 ) : <p className="text-sm font-bold">{formatPrice(row.price)}</p>}
                               </div>
@@ -307,10 +285,11 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
               <div className="mt-5 bg-slate-50 px-4 py-4 text-sm"><p className="flex justify-between"><span>예상 할인</span><strong>-{formatPrice(previewTotal)}</strong></p><p className="mt-2 flex justify-between"><span>배송비</span><strong>{formatPrice(shippingFee(subtotal - previewTotal))}</strong></p><p className="mt-2 flex justify-between text-base"><span>예상 결제금액</span><strong>{formatPrice(subtotal - previewTotal + shippingFee(subtotal - previewTotal))}</strong></p></div>
               <DownloadableCoupons coupons={downloads} />
               {error ? <p className="mt-3 text-sm text-accent" role="alert">{error}</p> : null}
+              {selectionError ? <p className="mt-3 text-sm text-accent" role="alert">{selectionError}</p> : null}
             </div>
             <div className="flex justify-end gap-3 border-t border-line px-6 py-4">
               <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>취소</button>
-              <button type="button" className="btn" disabled={pending} onClick={() => startTransition(async () => { setError(""); try { await onApply(preview ?? { code: "", label: "쿠폰 미적용", discount: 0, eligible: true, isStackable: false }); setOpen(false); } catch (cause) { setError(cause instanceof Error ? cause.message : "쿠폰을 변경하지 못했습니다."); } })}>{pending ? "적용 중…" : "적용하기"}</button>
+              <button type="button" className="btn" disabled={pending || !!selectionError} onClick={() => startTransition(async () => { setError(""); try { await onApply(preview ?? { code: "", label: "쿠폰 미적용", discount: 0, eligible: true, isStackable: false }); setOpen(false); } catch (cause) { setError(cause instanceof Error ? cause.message : "쿠폰을 변경하지 못했습니다."); } })}>{pending ? "적용 중…" : "적용하기"}</button>
             </div>
           </div>
         </div>

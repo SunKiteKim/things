@@ -158,10 +158,14 @@ export async function createPendingOrder(formData: FormData) {
     offers.push({ code, discount: applied, isStackable: coupon!.isStackable });
   }
   try { discount = combinedDiscount(offers, subtotal); } catch { return { error: "중복 불가 쿠폰은 단독으로 적용해 주세요." }; }
+  const totalAmount = Math.max(subtotal - discount, 0) + shippingFee(Math.max(subtotal - discount, 0));
+  if (formData.has("expectedAmount") && Number(formData.get("expectedAmount")) !== totalAmount) {
+    return { error: "상품 가격 또는 할인 조건이 변경되었습니다. 갱신된 금액을 확인한 뒤 다시 결제해 주세요." };
+  }
 
   const payload = {
     status: ORDER_STATUS.PENDING,
-    totalAmount: Math.max(subtotal - discount, 0) + shippingFee(Math.max(subtotal - discount, 0)),
+    totalAmount,
     discountAmount: discount,
     receiverName: String(formData.get("receiverName") ?? "").trim(),
     receiverPhone: normalizePhone(String(formData.get("receiverPhone") ?? "")),
@@ -169,7 +173,7 @@ export async function createPendingOrder(formData: FormData) {
     address: String(formData.get("address") ?? "").trim(),
     addressDetail: String(formData.get("addressDetail") ?? "").trim(),
     memo: String(formData.get("memo") ?? "").trim(),
-    couponCode: codes.join(",") || null,
+    couponCode: couponSelection(couponCode).join(",") || null,
     tossOrderId: `toss_${Date.now()}`,
     items: {
       create: items.map((row) => ({

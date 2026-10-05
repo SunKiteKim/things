@@ -29,6 +29,55 @@ export function couponSelection(value: string) {
 }
 
 type Offer = { code: string; discount: number; isStackable: boolean };
+export function resolvedCouponSelection(offers: Offer[], original: string) {
+  const targets = couponTargets(original);
+  return offers.map(offer => targets[offer.code] ? `${offer.code}@${targets[offer.code]}` : offer.code).join(",");
+}
+
+export function allocateCouponDiscounts<T extends Offer>(offers: T[], subtotal: number) {
+  let remaining = combinedDiscount(offers, subtotal);
+  return [...offers].sort((a, b) => a.code.localeCompare(b.code)).map(offer => {
+    const amount = Math.min(Math.max(0, offer.discount), remaining);
+    remaining -= amount;
+    return { ...offer, amount };
+  });
+}
+
+// Largest remainder allocation preserves exact integer totals without negative last rows.
+export function allocateAmount(amount: number, weights: number[]) {
+  const base = weights.reduce((sum, weight) => sum + weight, 0);
+  if (base <= 0) return weights.map(() => 0);
+  const capped = Math.min(Math.max(0, Math.floor(amount)), base);
+  const shares = weights.map(weight => Math.floor(capped * weight / base));
+  let remaining = capped - shares.reduce((sum, share) => sum + share, 0);
+  const order = weights.map((weight, index) => ({ index, remainder: (capped * weight) % base })).sort((a, b) => b.remainder - a.remainder || a.index - b.index);
+  for (const { index } of order) {
+    if (remaining-- <= 0) break;
+    shares[index] += 1;
+  }
+  return shares;
+}
+
+type ProductOffer = Offer & { scope?: string; productDiscounts?: { productId: string; onePlusOne?: boolean; discount: number }[] };
+export function bestSingleProductCoupon(options: ProductOffer[], current: string, subtotal: number) {
+  const isProduct = (offer: ProductOffer) => offer.scope === "PRODUCT" || offer.scope === "ONE_PLUS_ONE";
+  const cart = options.filter(offer => !isProduct(offer) && couponCodes(current).includes(offer.code));
+  const validCart = cart.length > 1 && cart.some(offer => !offer.isStackable) ? [] : cart;
+  const amount = (offers: Offer[]) => {
+    const merchandise = subtotal - combinedDiscount(offers, subtotal);
+    return merchandise + shippingFee(merchandise);
+  };
+  let best = { selection: resolvedCouponSelection(validCart, current), payable: amount(validCart) };
+  for (const option of options.filter(isProduct)) {
+    for (const deal of option.productDiscounts ?? []) {
+      const kept = option.isStackable ? validCart.filter(offer => offer.isStackable) : [];
+      const payable = amount([...kept, { ...option, discount: deal.discount }]);
+      const selection = [...kept.map(offer => offer.code), `${option.code}@${deal.productId}:${deal.onePlusOne ? "1" : "0"}`].join(",");
+      if (payable < best.payable || (payable === best.payable && selection < best.selection)) best = { selection, payable };
+    }
+  }
+  return best;
+}
 export function combinedDiscount(offers: Offer[], subtotal: number) {
   if (offers.length > 1 && offers.some(offer => !offer.isStackable)) throw new Error("중복 불가 쿠폰은 단독으로 적용해 주세요.");
   const limit = Math.max(0, subtotal - MINIMUM_MERCHANDISE_AMOUNT);

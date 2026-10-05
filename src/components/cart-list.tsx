@@ -22,7 +22,6 @@ export type CartRow = {
   quantity: number;
   onePlusOne?: boolean;
   product: { id: string; name: string; price: number; imageUrl: string; categoryId: string };
-  coupons: AppliedCoupon[];
 };
 
 export function cartRowKey(row: Pick<CartRow, "productId" | "onePlusOne">) {

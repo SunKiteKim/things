@@ -25,7 +25,6 @@ export default async function BestPage() {
     <div>
       <p className="text-[0.72rem] uppercase tracking-[0.28em] text-muted">Best</p>
       <h1 className="display mt-3 text-5xl">Best</h1>
-      <p className="mt-3 text-muted">전시에 등록한 제품 {ranked.length}개</p>
       {ranked.length === 0 ? (
         <p className="mt-16 text-muted">등록된 제품이 없습니다.</p>
       ) : (

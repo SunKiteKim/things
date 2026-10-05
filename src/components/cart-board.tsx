@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { checkoutFromCart } from "@/actions/commerce";
 import { CartList, cartRowKey, type CartRow } from "@/components/cart-list";
 import type { CouponNotice, CouponOption, DownloadableCoupon } from "@/components/cart-coupon";
-import { couponCodes, couponTargets, combinedDiscount, shippingFee, SHIPPING_NOTICE } from "@/lib/checkout-pricing";
+import { couponCodes, couponTargets, allocateCouponDiscounts, allocateAmount, shippingFee, SHIPPING_NOTICE } from "@/lib/checkout-pricing";
 import { couponDiscountForLines, couponEligibleProductIds } from "@/lib/discounts";
 import { formatPrice } from "@/lib/utils";
 
@@ -63,18 +63,15 @@ function summarize(rows: CartRow[], selected: string[], coupons: CartCouponRule[
     return offer ? [offer] : [];
   });
   const offers = [...productOffers, ...cartOffers];
-  let discount = 0;
+  let error = "";
+  let allocatedOffers: (typeof offers[number] & { amount: number })[] = [];
   try {
-    discount = combinedDiscount(offers, subtotal);
+    allocatedOffers = allocateCouponDiscounts(offers, subtotal);
   } catch {
-    discount = offers.reduce((sum, offer) => sum + offer.discount, 0);
+    error = "쿠폰 중복 적용 조건이 변경되었습니다. 쿠폰을 다시 선택해 주세요.";
   }
-  let remaining = discount;
-  const discountLines = offers.flatMap((offer) => {
-    const amount = Math.min(Math.max(offer.discount, 0), remaining);
-    remaining -= amount;
-    return amount > 0 ? [{ code: offer.code, label: offer.label, amount, scope: offer.scope }] : [];
-  });
+  const discount = allocatedOffers.reduce((sum, offer) => sum + offer.amount, 0);
+  const discountLines = allocatedOffers.filter(offer => offer.amount > 0);
   const shipping = shippingFee(Math.max(subtotal - discount, 0));
   const items = chosen.map((row) => ({
     key: cartRowKey(row),
@@ -84,26 +81,24 @@ function summarize(rows: CartRow[], selected: string[], coupons: CartCouponRule[
     amount: row.product.price * row.quantity,
   }));
   const appliedCoupons: Record<string, { code: string; label: string; amount: number; scope: string }[]> = {};
-  const everyLine = couponLines(rows);
+  const everyLine = chosenLines;
   for (const coupon of productCoupons) {
-    const offer = offerFor(coupon, everyLine, userId, targets[coupon.code.toUpperCase()]);
+    const offer = allocatedOffers.find(offer => offer.code === coupon.code);
     if (!offer) continue;
     const rule = { ...coupon, startAt: new Date(coupon.startAt), endAt: new Date(coupon.endAt) };
     const target = targets[coupon.code.toUpperCase()];
     const productIds = couponEligibleProductIds(rule, everyLine, new Date(), userId, target);
     const flag = target?.split(":")[1];
-    const matched = rows.filter((row) => productIds.includes(row.product.id) && (flag === "0" || flag === "1" ? !!row.onePlusOne === (flag === "1") : true));
-    const base = matched.reduce((sum, row) => sum + row.product.price * row.quantity, 0);
-    let allocated = 0;
+    const matched = chosen.filter((row) => productIds.includes(row.product.id) && (flag === "0" || flag === "1" ? !!row.onePlusOne === (flag === "1") : true));
+    const shares = allocateAmount(offer.amount, matched.map(row => row.product.price * row.quantity));
     matched.forEach((row, index) => {
-      const share = index === matched.length - 1 ? offer.discount - allocated : base > 0 ? Math.round((offer.discount * row.product.price * row.quantity) / base) : 0;
-      allocated += share;
+      const share = shares[index];
       const key = cartRowKey(row);
       appliedCoupons[key] = [...(appliedCoupons[key] ?? []), { code: offer.code, label: offer.label, amount: share, scope: coupon.scope }];
     });
   }
   const orderQuantity = chosen.reduce((sum, row) => sum + row.quantity, 0);
-  return { subtotal, discount, shipping, payable: Math.max(subtotal - discount, 0) + shipping, discountLines, items, appliedCoupons, orderQuantity };
+  return { subtotal, discount, shipping, payable: Math.max(subtotal - discount, 0) + shipping, discountLines, items, appliedCoupons, orderQuantity, error };
 }
 
 export function CartBoard({
@@ -190,8 +185,9 @@ export function CartBoard({
           <span>{formatPrice(summary.payable)}</span>
         </p>
         <form action={checkoutFromCart}>
+          {summary.error ? <p role="alert" className="mt-3 text-sm text-accent">{summary.error}</p> : null}
           {selected.map((key) => <input key={key} type="hidden" name="line" value={key} />)}
-          <button className="btn mt-6 w-full" type="submit" disabled={selected.length === 0}>총 {summary.orderQuantity}개 주문하기</button>
+          <button className="btn mt-6 w-full" type="submit" disabled={selected.length === 0 || !!summary.error}>총 {summary.orderQuantity}개 주문하기</button>
         </form>
       </aside>
     </div>

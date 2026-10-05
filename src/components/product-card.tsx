@@ -10,7 +10,7 @@ export function ProductCard({
   showProductId = false,
   rank,
 }: {
-  product: Product & { exhibitionLabel?: string | null };
+  product: Product & { exhibitionLabel?: string | null; couponPrice?: number };
   showDiscountRate?: boolean;
   showProductId?: boolean;
   rank?: number;
@@ -53,11 +53,13 @@ export function ProductCard({
           ) : showDiscountRate ? (
             <span className="text-accent">{product.discountRate}%</span>
           ) : null}
-          <span>{formatPrice(product.price)}</span>
+          <span data-testid="product-sale-price">{formatPrice(product.price)}</span>
           {showOriginalPrice && originalPrice ? (
             <span className="line-through opacity-60">{formatPrice(originalPrice)}</span>
           ) : null}
         </p>
+        <p className="mt-1 text-xs text-muted">행사 적용가 · 쿠폰 적용 전</p>
+        {product.couponPrice != null && product.couponPrice < product.price ? <p className="mt-1 text-xs text-muted">쿠폰 적용 예상가 {formatPrice(product.couponPrice)}</p> : null}
       </Link>
     </div>
   );

@@ -46,8 +46,8 @@ function isAffordable(product: { price?: number }) {
   return typeof product.price === "number" && product.price <= AFFORDABLE_MAX;
 }
 
-export function pickToday<T extends { id: string; price?: number }>(products: T[], count = 4, now = new Date()) {
-  const pool = [...products].sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
+export function pickToday<T extends { id: string; price?: number; stock?: number }>(products: T[], count = 4, now = new Date()) {
+  const pool = products.filter(product => product.stock === undefined || product.stock > 0).sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
   const random = mulberry32(hashSeed(`today-pick:${todayPickKey(now)}`));
   shuffle(pool, random);
   const size = Math.max(0, count);

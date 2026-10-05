@@ -4,6 +4,14 @@ import { pickToday, todayPickKey } from "../src/lib/today-pick";
 
 const products = Array.from({ length: 20 }, (_, index) => ({ id: `prd${String(index + 1).padStart(4, "0")}` }));
 
+test("sold-out products are excluded and small catalogs do not duplicate picks", () => {
+  const catalog = [{ id: "soldout", stock: 0, price: 1000 }, { id: "a", stock: 2, price: 5000 }, { id: "b", stock: 1, price: 100000 }];
+  const result = pickToday(catalog, 4, new Date("2026-10-05T06:00:00Z"));
+  assert.equal(result.length, 2);
+  assert.equal(new Set(result.map(product => product.id)).size, 2);
+  assert.ok(result.every(product => product.stock > 0));
+});
+
 test("the daily pick stays the same until 00:00:01 in Seoul", () => {
   const before = new Date("2026-10-05T14:59:59.000Z");
   const atMidnight = new Date("2026-10-05T15:00:00.500Z");

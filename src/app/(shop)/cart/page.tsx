@@ -7,7 +7,7 @@ import { formatPrice } from "@/lib/utils";
 import { CartBoard } from "@/components/cart-board";
 import { requireUser } from "@/lib/auth";
 import { downloadableMemberCoupons } from "@/lib/member-coupons";
-import { selectedOffers, combinedDiscount, couponSelection, couponTargets } from "@/lib/checkout-pricing";
+import { selectedOffers, resolvedCouponSelection, couponSelection, couponTargets } from "@/lib/checkout-pricing";
 
 function listedIds(value: string) {
   try {
@@ -89,7 +89,7 @@ export default async function CartPage() {
     };
   }).filter((option): option is typeof option & { discount: number } => option.discount !== null).map((option) => ({ ...option, eligible: true }));
   const selected = selectedOffers(options, code, total);
-  const selectedCode = couponSelection(code)
+  const selectedCode = couponSelection(resolvedCouponSelection(selected, code))
     .filter((part) => selected.some((option) => option.code === part.split("@")[0]))
     .map((part) => {
       if (part.includes("@")) return part;
@@ -114,13 +114,6 @@ export default async function CartPage() {
       return [{ key, summary: `[${scope}] ${coupon.name}`, reason: couponBlockReason(coupon, line, now) }];
     });
   }) : [];
-  const discount = combinedDiscount(selected, total);
-  let remainingDiscount = discount;
-  const discountLines = selected.flatMap((option) => {
-    const amount = Math.min(Math.max(option.discount, 0), remainingDiscount);
-    remainingDiscount -= amount;
-    return amount > 0 ? [{ code: option.code, label: option.summary, amount, productIds: option.productIds }] : [];
-  });
   return (
     <div>
       <h1 className="display text-5xl">장바구니</h1>
@@ -136,12 +129,6 @@ export default async function CartPage() {
             quantity: row.quantity,
             onePlusOne: row.onePlusOne,
             product: { id: row.product.id, name: row.product.name, price: row.product.price, imageUrl: row.product.imageUrl, categoryId: row.product.categoryId },
-            coupons: discountLines.flatMap((line) => {
-              if (!line.productIds.includes(row.product.id)) return [];
-              const base = rows.filter((item) => line.productIds.includes(item.product.id)).reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-              const share = base > 0 ? Math.round(line.amount * (row.product.price * row.quantity) / base) : 0;
-              return [{ code: line.code, label: line.label, amount: share }];
-            }),
           }))}
           couponOptions={options}
           couponNotices={couponNotices}

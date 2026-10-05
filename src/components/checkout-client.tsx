@@ -8,7 +8,7 @@ import { formatPrice } from "@/lib/utils";
 import { FormField } from "@/components/form-field";
 import { PostcodeAddress } from "@/components/postcode-address";
 import { CouponPicker, type CouponOption } from "@/components/cart-coupon";
-import { couponCodes, shippingFee, SHIPPING_NOTICE } from "@/lib/checkout-pricing";
+import { couponCodes, allocateCouponDiscounts, shippingFee, SHIPPING_NOTICE } from "@/lib/checkout-pricing";
 
 type TossWidgets = ReturnType<Awaited<ReturnType<typeof loadTossPayments>>["widgets"]>;
 
@@ -34,6 +34,10 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initi
   const router = useRouter();
   const [discount, setDiscount] = useState(initialCoupon?.discount ?? 0);
   const [appliedCode, setAppliedCode] = useState(initialCoupon?.code ?? "");
+  useEffect(() => {
+    setDiscount(initialCoupon?.discount ?? 0);
+    setAppliedCode(initialCoupon?.code ?? "");
+  }, [initialCoupon?.code, initialCoupon?.discount]);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [widgetsReady, setWidgetsReady] = useState(false);
@@ -42,16 +46,10 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initi
   const shipping = shippingFee(Math.max(subtotal - discount, 0));
   const total = useMemo(() => Math.max(subtotal - discount, 0) + shipping, [subtotal, discount, shipping]);
   const discountLines = useMemo(() => {
-    let remaining = discount;
-    return couponOptions
-      .filter((option) => couponCodes(appliedCode).includes(option.code))
-      .map((option) => {
-        const amount = Math.min(Math.max(option.discount, 0), remaining);
-        remaining -= amount;
-        return { code: option.code, label: option.label, amount };
-      })
-      .filter((line) => line.amount > 0);
-  }, [appliedCode, couponOptions, discount]);
+    try {
+      return allocateCouponDiscounts(couponOptions.filter(option => couponCodes(appliedCode).includes(option.code)), subtotal).filter(line => line.amount > 0);
+    } catch { return []; }
+  }, [appliedCode, couponOptions, subtotal]);
   const totalRef = useRef(total);
   totalRef.current = total;
 
@@ -106,9 +104,11 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initi
     const form = document.getElementById("checkout-form") as HTMLFormElement;
     const formData = new FormData(form);
     formData.set("couponCode", appliedCode);
+    formData.set("expectedAmount", String(total));
     const created = await createPendingOrder(formData);
     if ("error" in created && created.error) {
       setMessage(created.error);
+      router.refresh();
       return null;
     }
     if (!created.ok || !created.orderId) return null;

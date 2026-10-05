@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { clearBuyNow, clearCheckoutSelection, getCheckoutLines, getSelectedCoupon } from "@/lib/cart";
+import { getCheckoutLines, getSelectedCoupon } from "@/lib/cart";
 import { prisma } from "@/lib/prisma";
 import { CheckoutClient } from "@/components/checkout-client";
 import { couponDiscountForLines } from "@/lib/discounts";
 import { priceProducts } from "@/lib/exhibition-offers";
-import { selectedOffers, combinedDiscount, couponSelection, couponTargets } from "@/lib/checkout-pricing";
+import { selectedOffers, combinedDiscount, resolvedCouponSelection, couponTargets } from "@/lib/checkout-pricing";
 
 export default async function CheckoutPage() {
   const session = await requireUser();
@@ -25,8 +25,6 @@ export default async function CheckoutPage() {
     .filter((row): row is NonNullable<typeof row> => !!row);
   const subtotal = rows.reduce((sum, row) => sum + row.product.price * row.quantity, 0);
   if (!rows.length) {
-    await clearBuyNow();
-    await clearCheckoutSelection();
     redirect("/cart");
   }
 
@@ -38,6 +36,7 @@ export default async function CheckoutPage() {
     .filter((coupon) => coupon.issues.some((issue) => issue.targetType === "CATEGORY" || (issue.targetType === "USER" && issue.userId === session.user.id)))
     .map((coupon) => ({
       code: coupon.code,
+      selection: targets[coupon.code] ? `${coupon.code}@${targets[coupon.code]}` : coupon.code,
       discount: couponDiscountForLines(coupon, couponLines, new Date(), session.user.id, targets[coupon.code]),
       isStackable: coupon.isStackable,
       label: `[${coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "ONE_PLUS_ONE" ? "1+1 할인" : coupon.scope === "MULTI_CART" ? "가지가지 할인" : "장바구니"}] ${coupon.name}`,
@@ -59,7 +58,7 @@ export default async function CheckoutPage() {
             addressDetail: user?.addressDetail ?? "",
             email: user?.email ?? "",
           }}
-          initialCoupon={{ code: couponSelection(code).filter((part) => selected.some((option) => option.code === part.split("@")[0])).join(","), discount: combinedDiscount(selected, subtotal) }}
+          initialCoupon={{ code: resolvedCouponSelection(selected, code), discount: combinedDiscount(selected, subtotal) }}
           couponOptions={options}
           subtotal={subtotal}
           orderName={rows[0].product.name + (rows.length > 1 ? ` 외 ${rows.length - 1}건` : "")}
