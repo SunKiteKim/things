@@ -56,6 +56,7 @@ export default async function HomePage() {
           slotKey: section.slotKey,
           label: section.label,
           href: section.href,
+          icon: "",
           isVisible: true,
           sortOrder: section.sortOrder,
         }));
