@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment } from "react";
+import { priceProducts } from "@/lib/exhibition-offers";
 import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/product-card";
 import { QuickMenu } from "@/components/quick-menu";
@@ -10,7 +11,7 @@ import bannerMain from "@/img/banner_main_things_1520_500.png";
 import bannerCoupon from "@/img/banner_coupon_things_1380_180.png";
 
 export default async function HomePage() {
-  const [categories, products, display] = await Promise.all([
+  const [categories, catalog, display] = await Promise.all([
     prisma.category.findMany(),
     prisma.product.findMany({
       where: { isPublished: true },
@@ -18,6 +19,7 @@ export default async function HomePage() {
     }),
     loadPageDisplay("home"),
   ]);
+  const products = await priceProducts(catalog);
 
   const productById = new Map(products.map((product) => [product.id, product]));
   const placedProducts = (prefix: string) =>

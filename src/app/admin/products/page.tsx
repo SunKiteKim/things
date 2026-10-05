@@ -25,10 +25,23 @@ export default async function ProductsAdminPage() {
       <AdminMasterDetail
         listTitle="상품 목록"
         detailTitle="상품 상세"
-        columns={["상품번호", "상품명", "카테고리", "판매가", "할인율", "등록일"]}
+        columns={["이미지", "상품번호", "상품명", "카테고리", "판매가", "할인율", "등록일"]}
         rows={products.map((product) => ({
           id: product.id,
-          cells: [product.id, product.name, product.category.name, formatPrice(discountedPrice(product.originalPrice ?? product.price, product.discountRate)), `${product.discountRate}%`, formatDate(product.registeredAt)],
+          cells: [
+            product.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={product.id} src={product.imageUrl} alt="" className="h-12 w-12 object-cover" />
+            ) : (
+              <span key={product.id} className="grid h-12 w-12 place-items-center bg-slate-100 text-[0.65rem] text-muted">없음</span>
+            ),
+            product.id,
+            product.name,
+            product.category.name,
+            formatPrice(discountedPrice(product.originalPrice ?? product.price, product.discountRate)),
+            `${product.discountRate}%`,
+            formatDate(product.registeredAt),
+          ],
           detail: <div><ProductForm product={product} categories={categories} /><form action={deleteProduct} className="mt-4 max-w-3xl border-t border-line pt-4"><input type="hidden" name="id" value={product.id} /><button className="btn btn-ghost">상품 삭제</button></form></div>,
         }))}
       />

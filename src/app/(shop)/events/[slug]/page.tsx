@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import { priceProducts } from "@/lib/exhibition-offers";
 import { ProductCard } from "@/components/product-card";
+import { asExhibitionOffer, exhibitionOfferLabel } from "@/lib/exhibition-price";
 import { formatDate } from "@/lib/utils";
 
 export default async function EventDetailPage({
@@ -17,6 +19,10 @@ export default async function EventDetailPage({
     },
   });
   if (!exhibition) notFound();
+  const now = new Date();
+  const offer = asExhibitionOffer(exhibition.discountType, exhibition.discountValue);
+  const live = exhibition.isActive && exhibition.startAt <= now && exhibition.endAt >= now;
+  const products = await priceProducts(exhibition.products.map((row) => row.product), now);
 
   return (
     <div>
@@ -30,9 +36,15 @@ export default async function EventDetailPage({
         </div>
       </div>
       <p className="max-w-2xl text-muted">{exhibition.description}</p>
+      {offer ? (
+        <p className="mt-4 text-sm">
+          기획전 할인 {exhibitionOfferLabel(offer)}
+          {live ? " · 등록 상품 판매가에 적용 중" : " · 진행 기간에 판매가에 적용됩니다"}
+        </p>
+      ) : null}
       <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        {exhibition.products.map((row) => (
-          <ProductCard key={row.productId} product={row.product} />
+        {products.map((product) => (
+          <ProductCard key={product.id} product={product} />
         ))}
       </div>
     </div>

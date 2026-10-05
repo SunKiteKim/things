@@ -23,6 +23,35 @@ function productIds(formData: FormData, key: string) {
   return [...new Set(formData.getAll(key).map(String).filter(Boolean))];
 }
 
+function exhibitionDiscount(formData: FormData) {
+  const discountType = text(formData, "discountType") || "NONE";
+  const discountValue = num(formData, "discountValue");
+  if (discountType === "NONE") return { discountType: "NONE", discountValue: 0 };
+  if (discountValue <= 0) return null;
+  if (discountType === "PERCENT" && Number.isSafeInteger(discountValue) && discountValue >= 1 && discountValue <= 100) return { discountType, discountValue };
+  if (discountType === "AMOUNT" && Number.isSafeInteger(discountValue) && discountValue > 0) return { discountType, discountValue };
+  return null;
+}
+
+async function existingProductIds(ids: string[]) {
+  if (!ids.length) return [];
+  const rows = await prisma.product.findMany({ where: { id: { in: ids } }, select: { id: true } });
+  const found = new Set(rows.map((row) => row.id));
+  return ids.filter((id) => found.has(id));
+}
+
+function revalidateExhibitionStore(productIds: string[]) {
+  revalidatePath("/admin/promotions/exhibitions");
+  revalidatePath("/events");
+  revalidatePath("/");
+  revalidatePath("/products");
+  revalidatePath("/best");
+  revalidatePath("/search");
+  revalidatePath("/cart");
+  revalidatePath("/checkout");
+  for (const productId of productIds) revalidatePath(`/product/${productId}`);
+}
+
 async function uniqueCouponCode() {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const code = `CPN-${randomBytes(6).toString("hex").toUpperCase()}`;
@@ -158,8 +187,12 @@ export async function issueCoupon(formData: FormData) {
 export async function createExhibition(formData: FormData) {
   if (!(await requireAdmin())) return;
   const title = text(formData, "title");
-  if (!title) return;
-  const productIds = formData.getAll("productIds").map(String);
+  const discount = exhibitionDiscount(formData);
+  if (!title || !discount) {
+    await setAdminFlash("기획전명과 할인 방식, 할인값을 확인해 주세요.");
+    return;
+  }
+  const linkedProductIds = await existingProductIds(productIds(formData, "productIds"));
   await prisma.exhibition.create({
     data: {
       title,
@@ -169,21 +202,28 @@ export async function createExhibition(formData: FormData) {
       startAt: new Date(text(formData, "startAt") || Date.now()),
       endAt: new Date(text(formData, "endAt") || Date.now()),
       isActive: bool(formData, "isActive"),
+      discountType: discount.discountType,
+      discountValue: discount.discountValue,
       products: {
-        create: productIds.map((productId) => ({ productId })),
+        create: linkedProductIds.map((productId) => ({ productId })),
       },
     },
   });
   await setAdminFlash("기획전이 등록되었습니다.");
-  revalidatePath("/admin/promotions/exhibitions");
-  revalidatePath("/events");
+  revalidateExhibitionStore(linkedProductIds);
   return;
 }
 
 export async function updateExhibition(formData: FormData) {
   if (!(await requireAdmin())) return;
   const id = text(formData, "id");
-  const productIds = formData.getAll("productIds").map(String);
+  const discount = exhibitionDiscount(formData);
+  if (!id || !discount) {
+    await setAdminFlash("할인 방식과 할인값을 확인해 주세요. 정률은 1~100, 정액은 1원 이상입니다.");
+    return;
+  }
+  const previous = await prisma.exhibitionProduct.findMany({ where: { exhibitionId: id }, select: { productId: true } });
+  const linkedProductIds = await existingProductIds(productIds(formData, "productIds"));
   await prisma.exhibitionProduct.deleteMany({ where: { exhibitionId: id } });
   await prisma.exhibition.update({
     where: { id },
@@ -195,22 +235,24 @@ export async function updateExhibition(formData: FormData) {
       startAt: new Date(text(formData, "startAt")),
       endAt: new Date(text(formData, "endAt")),
       isActive: bool(formData, "isActive"),
+      discountType: discount.discountType,
+      discountValue: discount.discountValue,
       products: {
-        create: productIds.map((productId) => ({ productId })),
+        create: linkedProductIds.map((productId) => ({ productId })),
       },
     },
   });
   await setAdminFlash("기획전이 수정되었습니다.");
-  revalidatePath("/admin/promotions/exhibitions");
-  revalidatePath("/events");
+  revalidateExhibitionStore([...previous.map((row) => row.productId), ...linkedProductIds]);
   return;
 }
 
 export async function deleteExhibition(formData: FormData) {
   if (!(await requireAdmin())) return;
-  await prisma.exhibition.delete({ where: { id: text(formData, "id") } });
+  const id = text(formData, "id");
+  const previous = await prisma.exhibitionProduct.findMany({ where: { exhibitionId: id }, select: { productId: true } });
+  await prisma.exhibition.delete({ where: { id } });
   await setAdminFlash("기획전이 삭제되었습니다.");
-  revalidatePath("/admin/promotions/exhibitions");
-  revalidatePath("/events");
+  revalidateExhibitionStore(previous.map((row) => row.productId));
   return;
 }

@@ -5,15 +5,17 @@ import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import { CheckoutClient } from "@/components/checkout-client";
 import { couponDiscountForLines } from "@/lib/discounts";
+import { priceProducts } from "@/lib/exhibition-offers";
 
 export default async function CheckoutPage() {
   const session = await requireUser();
   if (!session) redirect("/login?callbackUrl=/checkout");
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
   const cart = await getCart();
-  const products = await prisma.product.findMany({
+  const found = await prisma.product.findMany({
     where: { id: { in: cart.map((line) => line.productId) } },
   });
+  const products = await priceProducts(found);
   const rows = cart
     .map((line) => {
       const product = products.find((item) => item.id === line.productId);

@@ -5,7 +5,7 @@ import { maskEmail, maskPersonalInfo } from "@/lib/utils";
 export default async function CouponsAdminPage() {
   const [coupons, products, members, categories] = await Promise.all([
     prisma.coupon.findMany({ include: { issues: true }, orderBy: { createdAt: "desc" } }),
-    prisma.product.findMany({ select: { id: true, name: true }, orderBy: { createdAt: "desc" } }),
+    prisma.product.findMany({ select: { id: true, name: true, imageUrl: true }, orderBy: { createdAt: "desc" } }),
     prisma.user.findMany({ where: { role: "MEMBER" }, select: { id: true, name: true, email: true }, orderBy: { createdAt: "desc" } }),
     prisma.category.findMany({ select: { id: true, name: true }, orderBy: { sortOrder: "asc" } }),
   ]);

@@ -368,6 +368,8 @@ async function main() {
       startAt: now,
       endAt: later,
       isActive: true,
+      discountType: "PERCENT",
+      discountValue: 10,
     },
   });
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { authUsesSecureCookie, sessionCookieName } from "@/lib/auth-cookies";
 import { ADMIN_HOST, SITE_HOST } from "@/lib/site";
 
 function hostname(request: NextRequest) {
@@ -56,7 +57,11 @@ export async function middleware(request: NextRequest) {
   const onAdminHost = process.env.VERCEL_ENV === "production" && host === ADMIN_HOST;
   const pathname = onAdminHost ? adminInternalPath(request.nextUrl.pathname) : request.nextUrl.pathname;
 
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  const secureCookie = authUsesSecureCookie();
+  const [shopToken, adminToken] = await Promise.all([
+    getToken({ req: request, secret: process.env.NEXTAUTH_SECRET, cookieName: sessionCookieName("shop"), secureCookie }),
+    getToken({ req: request, secret: process.env.NEXTAUTH_SECRET, cookieName: sessionCookieName("admin"), secureCookie }),
+  ]);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-pathname", pathname);
 
@@ -69,18 +74,14 @@ export async function middleware(request: NextRequest) {
       }
       return NextResponse.next({ request: { headers: requestHeaders } });
     }
-    if (token && ((token.portal ?? "shop") === "shop" || token.role !== "ADMIN")) {
-      const shop = process.env.VERCEL_ENV === "production" ? `https://${SITE_HOST}/` : "/";
-      return NextResponse.redirect(new URL(shop, request.url));
-    }
-    if (!token || token.role !== "ADMIN" || token.portal !== "admin") {
+    if (!adminToken || adminToken.role !== "ADMIN" || adminToken.portal !== "admin") {
       const login = onAdminHost ? new URL("/login", request.url) : new URL("/admin/login", request.url);
       return NextResponse.redirect(login);
     }
   }
 
   if (pathname.startsWith("/mypage") || pathname.startsWith("/checkout")) {
-    const shopUser = token && (token.portal ?? "shop") !== "admin" && token.role !== "ADMIN";
+    const shopUser = shopToken && (shopToken.portal ?? "shop") !== "admin" && shopToken.role !== "ADMIN";
     if (!shopUser) {
       const url = new URL("/login", request.url);
       url.searchParams.set("callbackUrl", pathname);

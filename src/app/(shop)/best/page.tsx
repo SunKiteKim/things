@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { priceProducts } from "@/lib/exhibition-offers";
 import { ORDER_STATUS } from "@/lib/utils";
 import { ProductCard } from "@/components/product-card";
 import { loadPageDisplay } from "@/lib/display";
@@ -11,7 +12,7 @@ const SOLD_STATUSES = [
 ];
 
 export default async function BestPage() {
-  const [products, sold, display] = await Promise.all([
+  const [catalog, sold, display] = await Promise.all([
     prisma.product.findMany({
       where: { isPublished: true },
     }),
@@ -25,6 +26,7 @@ export default async function BestPage() {
     loadPageDisplay("best"),
   ]);
 
+  const products = await priceProducts(catalog);
   const productById = new Map(products.map((product) => [product.id, product]));
   const soldMap = new Map(sold.map((row) => [row.productId, row._sum.quantity ?? 0]));
   const ranked = display

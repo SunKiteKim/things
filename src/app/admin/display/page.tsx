@@ -4,6 +4,7 @@ import { isDisplayPage, loadPageDisplay } from "@/lib/display";
 import { assignDisplayContent, createDisplayShortcut, removeDisplayItem, saveDisplayItems } from "@/actions/display";
 import { DISPLAY_PAGES, SHORTCUT_ICONS, SHORTCUT_ICON_LABEL, shortcutIcon, type AssignArea } from "@/lib/display-items";
 import { AdminCreateModal } from "@/components/admin-create-modal";
+import { ProductSearchPicker, type SearchableProduct } from "@/components/product-search-picker";
 
 const PAGE_COPY: Record<(typeof DISPLAY_PAGES)[number]["key"], string> = {
   home: "홈의 영역을 먼저 고르고, 각 영역에 올릴 컨텐츠를 추가합니다.",
@@ -43,6 +44,16 @@ function IconField({ id, value }: { id: string; value: string }) {
         ))}
       </select>
     </div>
+  );
+}
+
+function ProductAssignButton({ title, area, products }: { title: string; area: AssignArea; products: SearchableProduct[] }) {
+  if (products.length === 0) return <p className="text-sm text-muted">추가할 항목이 없습니다.</p>;
+  return (
+    <AdminCreateModal title={title} triggerLabel={title} action={assignDisplayContent} wide>
+      <input type="hidden" name="area" value={area} />
+      <ProductSearchPicker products={products} name="refId" selected={[]} idPrefix={`${area}-products`} />
+    </AdminCreateModal>
   );
 }
 
@@ -115,7 +126,7 @@ export default async function DisplayAdminPage({
   const productOptions = (assigned: DisplayRow[]) =>
     products
       .filter((product) => !taken(assigned).has(product.id))
-      .map((product) => ({ id: product.id, label: `${product.name} · ${product.category.name}` }));
+      .map((product) => ({ id: product.id, name: `${product.name} · ${product.category.name}`, imageUrl: product.imageUrl }));
   const exhibitionOptions = exhibitions
     .filter((exhibition) => !taken(eventItems).has(exhibition.id))
     .map((exhibition) => ({ id: exhibition.id, label: exhibition.title }));
@@ -271,7 +282,7 @@ export default async function DisplayAdminPage({
                           영역 순서
                           <SortField id={section.id} value={section.sortOrder} />
                         </label>
-                        <AssignButton title="제품 추가" area={area} options={productOptions(assigned)} />
+                        <ProductAssignButton title="제품 추가" area={area} products={productOptions(assigned)} />
                       </div>
                     </div>
                     <ProductRows products={assigned} productById={productById} />
@@ -360,7 +371,7 @@ export default async function DisplayAdminPage({
                 <h2 className="text-base font-semibold">베스트 상품</h2>
                 <p className="mt-1 text-sm text-muted">베스트 페이지에 올릴 상품입니다.</p>
               </div>
-              <AssignButton title="제품 추가" area="best" options={productOptions(bestProducts)} />
+              <ProductAssignButton title="제품 추가" area="best" products={productOptions(bestProducts)} />
             </div>
             <ProductRows products={bestProducts} productById={productById} showSort={false} />
           </section>

@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate, formatPrice, ORDER_STATUS, ORDER_STATUS_LABEL } from "@/lib/utils";
 import { ProductCard } from "@/components/product-card";
+import { priceProducts } from "@/lib/exhibition-offers";
 
 const SUMMARY = [
   { key: "PAID", label: "결제 완료", statuses: [ORDER_STATUS.PAID] },
@@ -32,6 +33,8 @@ export default async function MyPage() {
     },
   });
   if (!user) redirect("/login");
+  const wishlistProducts = await priceProducts(user.wishlistItems.map((item) => item.product));
+  const wishlistById = new Map(wishlistProducts.map((product) => [product.id, product]));
   if (user.provider !== "credentials" && !user.phone) redirect("/mypage/phone");
 
   const counts = await prisma.order.groupBy({
@@ -72,7 +75,7 @@ export default async function MyPage() {
       </div>
       {user.wishlistItems.length ? (
         <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4">
-          {user.wishlistItems.map((item) => <ProductCard key={item.id} product={item.product} showDiscountRate showProductId />)}
+          {user.wishlistItems.map((item) => <ProductCard key={item.id} product={wishlistById.get(item.productId) ?? item.product} showDiscountRate showProductId />)}
         </div>
       ) : (
         <div className="mt-6 rounded-2xl bg-[#f6f6f4] px-6 py-10 text-center text-sm text-muted">위시리스트에 담긴 상품이 없습니다.</div>

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { priceProducts } from "@/lib/exhibition-offers";
 import { formatPrice, parseGallery } from "@/lib/utils";
 import { AddToCart } from "@/components/add-to-cart";
 
@@ -16,6 +17,8 @@ export default async function ProductPage({
   });
   if (!product || !product.isPublished) notFound();
   if (id !== product.id) redirect(`/product/${product.id}`);
+  const [sale] = await priceProducts([product]);
+  if (!sale) notFound();
 
   const gallery = [product.imageUrl, ...parseGallery(product.gallery)].filter(Boolean);
 
@@ -35,10 +38,14 @@ export default async function ProductPage({
         <p className="mt-3 text-[0.72rem] tracking-wide text-muted">{product.id}</p>
         <h1 className="product-name mt-1 text-5xl leading-snug">{product.name}</h1>
         <p className="mt-5 flex flex-wrap items-baseline gap-x-2 text-xl font-normal text-muted">
-          <span className="font-medium text-accent">{product.discountRate}%</span>
-          <span>{formatPrice(product.price)}</span>
-          {product.originalPrice && product.originalPrice !== product.price ? (
-            <span className="line-through opacity-60">{formatPrice(product.originalPrice)}</span>
+          {sale.exhibitionLabel ? (
+            <span className="font-medium text-accent">{sale.exhibitionLabel}</span>
+          ) : (
+            <span className="font-medium text-accent">{product.discountRate}%</span>
+          )}
+          <span>{formatPrice(sale.price)}</span>
+          {(sale.originalPrice ?? product.originalPrice) && (sale.originalPrice ?? product.originalPrice) !== sale.price ? (
+            <span className="line-through opacity-60">{formatPrice(sale.originalPrice ?? product.originalPrice ?? sale.price)}</span>
           ) : null}
         </p>
         <p className="mt-8 max-w-md text-sm leading-7 text-muted">{product.description}</p>

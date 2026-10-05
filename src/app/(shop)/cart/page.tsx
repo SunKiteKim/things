@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CartCoupon } from "@/components/cart-coupon";
 import { couponDiscountForLines } from "@/lib/discounts";
+import { priceProducts } from "@/lib/exhibition-offers";
 import { getCart, getSelectedCoupon } from "@/lib/cart";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
@@ -9,9 +10,10 @@ import { requireUser } from "@/lib/auth";
 
 export default async function CartPage() {
   const cart = await getCart();
-  const products = await prisma.product.findMany({
+  const found = await prisma.product.findMany({
     where: { id: { in: cart.map((line) => line.productId) } },
   });
+  const products = await priceProducts(found);
   const rows = cart
     .map((line) => {
       const product = products.find((item) => item.id === line.productId);

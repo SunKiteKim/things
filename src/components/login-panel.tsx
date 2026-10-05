@@ -10,6 +10,28 @@ import { ADMIN_HOST, SITE_URL } from "@/lib/site";
 
 type Portal = "shop" | "admin";
 
+async function signInAdmin(email: string, password: string) {
+  const csrfResponse = await fetch("/api/admin-auth/csrf", { credentials: "same-origin" });
+  if (!csrfResponse.ok) return false;
+  const csrf = (await csrfResponse.json()) as { csrfToken?: string };
+  if (!csrf.csrfToken) return false;
+  const response = await fetch("/api/admin-auth/callback/credentials", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      csrfToken: csrf.csrfToken,
+      email,
+      password,
+      portal: "admin",
+      json: "true",
+      callbackUrl: "/admin",
+    }),
+  });
+  const data = (await response.json().catch(() => null)) as { url?: string } | null;
+  return response.ok && !!data?.url && !data.url.includes("error=");
+}
+
 type LoginPanelProps = {
   initialPortal?: Portal;
   demoAdminEmail?: string;
@@ -31,22 +53,33 @@ export function LoginPanel({ initialPortal = "shop", demoAdminEmail = "", demoAd
     persistRememberedLogin(portal, formData);
 
     try {
-      const result = await signIn("credentials", {
-        email: String(formData.get("email")),
-        password: String(formData.get("password")),
-        portal,
-        redirect: false,
-        callbackUrl: portal === "admin" ? "/admin" : callbackUrl,
-      });
-
-      if (!result?.ok) {
-        setError(portal === "admin" ? "관리자 ID 또는 비밀번호를 확인해 주세요." : "ID 또는 비밀번호를 확인해 주세요.");
+      const email = String(formData.get("email"));
+      const password = String(formData.get("password"));
+      if (portal === "admin") {
+        const ok = await signInAdmin(email, password);
+        if (!ok) {
+          setError("관리자 ID 또는 비밀번호를 확인해 주세요.");
+          return;
+        }
+        const host = window.location.hostname;
+        window.location.assign(host === ADMIN_HOST || host === "localhost" || host === "127.0.0.1" ? "/admin" : `https://${ADMIN_HOST}/`);
         return;
       }
 
-      if (portal === "admin") {
-        window.location.assign("/admin");
-      } else if (window.location.hostname === ADMIN_HOST) {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        portal: "shop",
+        redirect: false,
+        callbackUrl,
+      });
+
+      if (!result?.ok) {
+        setError("ID 또는 비밀번호를 확인해 주세요.");
+        return;
+      }
+
+      if (window.location.hostname === ADMIN_HOST) {
         window.location.assign(`${SITE_URL}${callbackUrl.startsWith("/") ? callbackUrl : "/"}`);
       } else {
         window.location.assign(callbackUrl.startsWith("/") ? callbackUrl : "/");

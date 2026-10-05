@@ -5,39 +5,39 @@ import GoogleProvider from "next-auth/providers/google";
 import { compare } from "bcryptjs";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
-import { SITE_HOST } from "@/lib/site";
+import { portalAuthCookies } from "@/lib/auth-cookies";
 import { LIMITS } from "@/lib/utils";
 
-const providers: NextAuthOptions["providers"] = [
-  CredentialsProvider({
-    name: "credentials",
-    credentials: {
-      email: { label: "이메일", type: "email" },
-      password: { label: "비밀번호", type: "password" },
-      portal: { label: "portal", type: "text" },
-    },
-    async authorize(credentials) {
-      const email = credentials?.email?.trim().toLowerCase();
-      const password = credentials?.password;
-      const portal = credentials?.portal === "admin" ? "admin" : "shop";
-      if (!email || !password) return null;
-      const user = await prisma.user.findUnique({ where: { email } });
-      if (!user?.passwordHash) return null;
-      const ok = await compare(password, user.passwordHash);
-      if (!ok) return null;
-      if (portal === "admin" && user.role !== "ADMIN") return null;
-      if (portal === "shop" && user.role === "ADMIN") return null;
-      return {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        portal,
-        passwordVersion: createHash("sha256").update(user.passwordHash).digest("hex"),
-      };
-    },
-  }),
-];
+const credentials = CredentialsProvider({
+  name: "credentials",
+  credentials: {
+    email: { label: "이메일", type: "email" },
+    password: { label: "비밀번호", type: "password" },
+    portal: { label: "portal", type: "text" },
+  },
+  async authorize(credentials) {
+    const email = credentials?.email?.trim().toLowerCase();
+    const password = credentials?.password;
+    const portal = credentials?.portal === "admin" ? "admin" : "shop";
+    if (!email || !password) return null;
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user?.passwordHash) return null;
+    const ok = await compare(password, user.passwordHash);
+    if (!ok) return null;
+    if (portal === "admin" && user.role !== "ADMIN") return null;
+    if (portal === "shop" && user.role === "ADMIN") return null;
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      portal,
+      passwordVersion: createHash("sha256").update(user.passwordHash).digest("hex"),
+    };
+  },
+});
+
+const providers: NextAuthOptions["providers"] = [credentials];
 
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   providers.push(
@@ -48,27 +48,8 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   );
 }
 
-export const authOptions: NextAuthOptions = {
-  session: { strategy: "jwt" },
-  secret: process.env.NEXTAUTH_SECRET,
-  cookies: process.env.VERCEL_ENV === "production" ? {
-    sessionToken: {
-      name: "__Secure-next-auth.session-token",
-      options: {
-        domain: `.${SITE_HOST}`,
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: true,
-      },
-    },
-  } : undefined,
-  pages: {
-    signIn: "/login",
-  },
-  providers,
-  callbacks: {
-    async signIn({ user, account }) {
+const callbacks: NextAuthOptions["callbacks"] = {
+  async signIn({ user, account }) {
       if (!account || account.provider === "credentials") return true;
       const email = user.email?.toLowerCase();
       if (!email) return "/signup?error=email";
@@ -127,7 +108,24 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-  },
+};
+
+export const authOptions: NextAuthOptions = {
+  session: { strategy: "jwt" },
+  secret: process.env.NEXTAUTH_SECRET,
+  cookies: portalAuthCookies("shop"),
+  pages: { signIn: "/login" },
+  providers,
+  callbacks,
+};
+
+export const adminAuthOptions: NextAuthOptions = {
+  session: { strategy: "jwt" },
+  secret: process.env.NEXTAUTH_SECRET,
+  cookies: portalAuthCookies("admin"),
+  pages: { signIn: "/admin/login" },
+  providers: [credentials],
+  callbacks,
 };
 
 export function auth() {
@@ -143,7 +141,7 @@ export async function requireUser() {
 }
 
 export async function requireAdmin() {
-  const session = await auth();
+  const session = await getServerSession(adminAuthOptions);
   if (!session?.user?.id || session.user.role !== "ADMIN" || session.user.portal !== "admin") {
     return null;
   }

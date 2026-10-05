@@ -1,6 +1,7 @@
 "use server";
 
 import { couponDiscountForLines } from "@/lib/discounts";
+import { priceProducts } from "@/lib/exhibition-offers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -70,7 +71,8 @@ export async function removeCartLines(lines: Array<{ productId: string; onePlusO
 export async function applyCoupon(code: string) {
   const session = await requireUser();
   const cart = await getCart();
-  const products = await prisma.product.findMany({ where: { id: { in: cart.map(line => line.productId) } } });
+  const found = await prisma.product.findMany({ where: { id: { in: cart.map(line => line.productId) } } });
+  const products = await priceProducts(found);
   const lines = cart.flatMap((line) => {
     const product = products.find((item) => item.id === line.productId && item.isPublished);
     return product ? [{ productId: product.id, categoryId: product.categoryId, amount: product.price * line.quantity, quantity: line.quantity }] : [];
@@ -98,9 +100,10 @@ export async function createPendingOrder(formData: FormData) {
   const cart = await getCart();
   if (!cart.length) return { error: "장바구니가 비어 있습니다." };
 
-  const products = await prisma.product.findMany({
+  const found = await prisma.product.findMany({
     where: { id: { in: cart.map((line) => line.productId) } },
   });
+  const products = await priceProducts(found);
   const items = cart
     .map((line) => {
       const product = products.find((p) => p.id === line.productId);

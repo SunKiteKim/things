@@ -9,14 +9,14 @@ export function ProductCard({
   showDiscountRate = false,
   showProductId = false,
 }: {
-  product: Product;
+  product: Product & { exhibitionLabel?: string | null };
   showDiscountRate?: boolean;
   showProductId?: boolean;
 }) {
   const originalPrice = product.originalPrice;
   const hasDiscount = product.discountRate > 0 && Boolean(originalPrice);
   const showOriginalPrice = Boolean(
-    originalPrice && (showDiscountRate ? originalPrice !== product.price : hasDiscount),
+    originalPrice && (product.exhibitionLabel || showDiscountRate ? originalPrice !== product.price : hasDiscount),
   );
 
   return (
@@ -50,7 +50,9 @@ export function ProductCard({
           {product.name}
         </p>
         <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm font-normal text-muted">
-          {showDiscountRate ? (
+          {product.exhibitionLabel ? (
+            <span className="font-medium text-accent">{product.exhibitionLabel}</span>
+          ) : showDiscountRate ? (
             <span className="font-medium text-accent">{product.discountRate}%</span>
           ) : null}
           <span>{formatPrice(product.price)}</span>

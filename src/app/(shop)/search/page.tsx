@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { priceProducts } from "@/lib/exhibition-offers";
 import { ProductCard } from "@/components/product-card";
 
 export default async function SearchPage({
@@ -8,7 +9,7 @@ export default async function SearchPage({
 }) {
   const { q = "" } = await searchParams;
   const keyword = q.trim();
-  const products = keyword
+  const catalog = keyword
     ? await prisma.product.findMany({
         where: {
           isPublished: true,
@@ -20,6 +21,7 @@ export default async function SearchPage({
         orderBy: { sortOrder: "asc" },
       })
     : [];
+  const products = await priceProducts(catalog);
 
   return (
     <div>

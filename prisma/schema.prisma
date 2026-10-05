@@ -101,10 +101,12 @@ model Exhibition {
   slug        String              @unique
   description String              @default("")
   imageUrl    String
-  startAt     DateTime
-  endAt       DateTime
-  isActive    Boolean             @default(true)
-  products    ExhibitionProduct[]
+  startAt       DateTime
+  endAt         DateTime
+  isActive      Boolean             @default(true)
+  discountType  String              @default("NONE")
+  discountValue Int                 @default(0)
+  products      ExhibitionProduct[]
 }
 
 model ExhibitionProduct {
