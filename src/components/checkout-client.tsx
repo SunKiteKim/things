@@ -259,9 +259,9 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initi
         <span>{formatPrice(shipping)}</span>
       </p>
       <p className="mt-1 text-xs leading-relaxed text-muted">{SHIPPING_NOTICE}</p>
-      <p className="mt-5 flex justify-between text-2xl font-bold text-[#e10600]">
+      <p className="mt-5 flex justify-between text-2xl font-bold">
         <span>최종 결제금액</span>
-        <span>{formatPrice(total)}</span>
+        <span style={{ color: "#e10600" }}>{formatPrice(total)}</span>
       </p>
     </aside>
     </>

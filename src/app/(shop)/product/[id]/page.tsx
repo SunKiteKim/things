@@ -99,7 +99,7 @@ export default async function ProductPage({
         </div>
         <div className="mt-6">
           <div className="flex items-center justify-between gap-4">
-            <p className="text-sm font-semibold">받을 수 있는 쿠폰</p>
+            <p className="text-sm font-semibold">적용 가능한 쿠폰</p>
             <Link href="/coupons" className="shrink-0 text-sm underline underline-offset-4">쿠폰 다운받기</Link>
           </div>
           {visibleCoupons.length > 0 ? (

@@ -105,6 +105,7 @@ export async function selectCartCoupon(code: string, source: "cart" | "checkout"
   const codes = couponCodes(code);
   const targets = couponTargets(code);
   const coupons = await prisma.coupon.findMany({ where: { code: { in: codes } } });
+  if (source === "checkout" && await getBuyNow() && coupons.some((coupon) => coupon.scope === "CART" || coupon.scope === "MULTI_CART")) return { error: "바로구매에서는 장바구니 쿠폰을 적용할 수 없습니다." };
   if (codes.length > 1 && coupons.some(coupon => !coupon.isStackable)) return { error: "중복 불가 쿠폰은 단독으로 적용해 주세요." };
   for (const selected of codes) {
     const result = await applyCoupon(selected, source, targets[selected]);
@@ -141,12 +142,14 @@ export async function createPendingOrder(formData: FormData) {
   }
   const subtotal = items.reduce((sum, row) => sum + row.product.price * row.quantity, 0);
   const couponCode = String(formData.get("couponCode") ?? await getSelectedCoupon()).trim();
+  const buyNowOrder = await getBuyNow();
   let discount = 0;
   const codes = couponCodes(couponCode);
   const targets = couponTargets(couponCode);
   const offers: { code: string; discount: number; isStackable: boolean }[] = [];
   for (const code of codes) {
     const coupon = await prisma.coupon.findUnique({ where: { code }, include: { issues: true } });
+    if (buyNowOrder && coupon && (coupon.scope === "CART" || coupon.scope === "MULTI_CART")) return { error: "바로구매에서는 장바구니 쿠폰을 적용할 수 없습니다." };
     const applied = coupon ? couponDiscountForLines(coupon, items.map((row) => ({
       productId: row.product.id,
       categoryId: row.product.categoryId,

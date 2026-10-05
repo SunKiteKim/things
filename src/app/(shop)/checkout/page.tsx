@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { getCheckoutLines, getSelectedCoupon } from "@/lib/cart";
+import { getBuyNow, getCheckoutLines, getSelectedCoupon } from "@/lib/cart";
 import { prisma } from "@/lib/prisma";
 import { CheckoutClient } from "@/components/checkout-client";
 import { couponDiscountForLines } from "@/lib/discounts";
 import { priceProducts } from "@/lib/exhibition-offers";
-import { selectedOffers, combinedDiscount, resolvedCouponSelection, couponTargets } from "@/lib/checkout-pricing";
+import { selectedOffers, combinedDiscount, resolvedCouponSelection, couponTargets, couponSelection } from "@/lib/checkout-pricing";
 
 export default async function CheckoutPage() {
   const session = await requireUser();
@@ -28,6 +28,7 @@ export default async function CheckoutPage() {
     redirect("/cart");
   }
 
+  const buyNow = await getBuyNow();
   const code = await getSelectedCoupon();
   const targets = couponTargets(code);
   const couponLines = rows.map((row) => ({ productId: row.product.id, categoryId: row.product.categoryId, amount: row.product.price * row.quantity, quantity: row.quantity, onePlusOne: row.onePlusOne === true }));
@@ -36,6 +37,7 @@ export default async function CheckoutPage() {
     .filter((coupon) => coupon.issues.some((issue) => issue.targetType === "CATEGORY" || (issue.targetType === "USER" && issue.userId === session.user.id)))
     .map((coupon) => ({
       code: coupon.code,
+      scope: coupon.scope,
       selection: targets[coupon.code] ? `${coupon.code}@${targets[coupon.code]}` : coupon.code,
       discount: couponDiscountForLines(coupon, couponLines, new Date(), session.user.id, targets[coupon.code]),
       isStackable: coupon.isStackable,
@@ -43,7 +45,11 @@ export default async function CheckoutPage() {
     }))
     .filter((option): option is typeof option & { discount: number } => option.discount !== null)
     .map((option) => ({ ...option, eligible: true }));
-  const selected = selectedOffers(options, code, subtotal);
+  const checkoutOptions = buyNow ? options.filter((option) => option.scope !== "CART" && option.scope !== "MULTI_CART") : options;
+  const checkoutCode = buyNow
+    ? couponSelection(code).filter((part) => checkoutOptions.some((option) => option.code.toUpperCase() === part.split("@")[0].toUpperCase())).join(",") || "-"
+    : code;
+  const selected = selectedOffers(checkoutOptions, checkoutCode, subtotal);
   return (
     <div>
       <h1 className="display text-5xl">주문서</h1>
@@ -58,8 +64,8 @@ export default async function CheckoutPage() {
             addressDetail: user?.addressDetail ?? "",
             email: user?.email ?? "",
           }}
-          initialCoupon={{ code: resolvedCouponSelection(selected, code), discount: combinedDiscount(selected, subtotal) }}
-          couponOptions={options}
+          initialCoupon={{ code: resolvedCouponSelection(selected, checkoutCode), discount: combinedDiscount(selected, subtotal) }}
+          couponOptions={checkoutOptions}
           subtotal={subtotal}
           orderName={rows[0].product.name + (rows.length > 1 ? ` 외 ${rows.length - 1}건` : "")}
           tossClientKey={process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? ""}

@@ -186,7 +186,7 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
   const preview = previews.length ? { ...previews[0], code: couponSelection(code).filter((part) => previews.some((option) => option.code === part.split("@")[0])).join(","), label: previews.map(option => option.label).join(" + "), discount: previewTotal } : undefined;
   const productRows = products ?? [];
   const showProductMatcher = productRows.length > 0 && groupId === "product";
-  const applied = options.filter(option => couponCodes(selected).includes(option.code)).map(option => option.label).join(" + ");
+  const appliedLabels = options.filter(option => couponCodes(selected).includes(option.code)).map(option => option.label);
 
   const productKeys = (products ?? []).map((row) => row.key).join(",");
   useEffect(() => {
@@ -201,7 +201,14 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
     <div className={showApplied ? "mt-5" : undefined}>
       {showApplied ? (
         <div className="flex items-center justify-between gap-3">
-          <div><p className="text-sm font-medium">적용 쿠폰</p><p className="mt-1 text-xs text-muted">{applied || "적용 가능한 쿠폰 없음"}</p></div>
+          <div>
+            <p className="text-sm font-medium">적용 쿠폰</p>
+            {appliedLabels.length ? (
+              <div className="mt-1 space-y-0.5 text-xs text-muted">
+                {appliedLabels.map((label, index) => <p key={`${label}-${index}`}>{index === 0 ? label : `+ ${label}`}</p>)}
+              </div>
+            ) : <p className="mt-1 text-xs text-muted">적용 가능한 쿠폰 없음</p>}
+          </div>
           <button type="button" className="btn btn-ghost shrink-0" onClick={() => setOpen(true)} disabled={!options.length}>쿠폰변경</button>
         </div>
       ) : null}
