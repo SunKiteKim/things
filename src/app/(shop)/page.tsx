@@ -10,7 +10,6 @@ import { loadPageDisplay } from "@/lib/display";
 import { HOME_SECTIONS } from "@/lib/display-items";
 import { pickToday, todayPickKey } from "@/lib/today-pick";
 import { requireUser } from "@/lib/auth";
-import { TodayPickRecord } from "@/components/today-pick-record";
 import bannerMain from "@/img/banner_main_things_1520_500.png";
 import bannerCoupon from "@/img/banner_coupon_things_1380_180.png";
 
@@ -118,9 +117,7 @@ export default async function HomePage() {
         if (section.slotKey === "section:best") {
           return (
             <section key={section.id} data-testid="today-pick" data-pick-date={todayPickKey(now)} className="mx-auto w-full max-w-[1280px] px-5 pb-14 md:px-8">
-              <h2 className="mb-2 text-[1.75rem] font-bold tracking-tight md:text-[2rem]">Today&apos;s Pick!</h2>
-              <p className="mb-6 text-sm text-muted">{todayPickKey(now)} · KST · 재고가 있는 오늘의 {todayPick.length}개 상품</p>
-              <TodayPickRecord date={todayPickKey(now)} products={todayPick.map(product => ({ id: product.id, name: product.name, price: product.price, originalPrice: product.originalPrice, couponPrice: product.couponPrice, stock: product.stock }))} />
+              <h2 className="mb-8 text-[1.75rem] font-bold tracking-tight md:text-[2rem]">Today&apos;s Pick!</h2>
               <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4 lg:gap-x-8">
                 {todayPick.map((product) => (
                   <ProductCard key={product.id} product={product} showDiscountRate showProductId />

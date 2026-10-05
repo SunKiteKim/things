@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ProductImage } from "@/components/product-image";
 import { ProductQuickActions } from "@/components/product-quick-actions";
 import { formatPrice } from "@/lib/utils";
+import { SHIPPING_NOTICE } from "@/lib/checkout-pricing";
 
 export type TimeSaleItem = {
   id: string;
@@ -83,7 +84,7 @@ export function TimeSaleRail({ items, endsAt }: { items: TimeSaleItem[]; endsAt:
                   {item.originalPrice && item.originalPrice > item.price ? (
                     <p className="text-xs text-neutral-400 line-through">{formatPrice(item.originalPrice)}</p>
                   ) : null}
-                  <p className="mt-1 text-xs text-neutral-500">할인 후 30,000원 이상 무료배송</p>
+                  <p className="mt-1 text-xs text-neutral-500">{SHIPPING_NOTICE}</p>
                 </Link>
               </article>
             ))}

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { priceProducts } from "@/lib/exhibition-offers";
 import { downloadableCoupons, presentProducts } from "@/lib/store-price";
 import { discountPercentLabel } from "@/lib/exhibition-price";
 import { formatPrice, parseGallery } from "@/lib/utils";
@@ -10,7 +9,7 @@ import { claimCoupon } from "@/actions/commerce";
 import { AddToCart } from "@/components/add-to-cart";
 import { ProductImage } from "@/components/product-image";
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/default-product-image";
-import { SHIPPING_NOTICE } from "@/lib/checkout-pricing";
+import { SHIPPING_NOTICE, shippingFee } from "@/lib/checkout-pricing";
 
 export default async function ProductPage({
   params,
@@ -25,16 +24,17 @@ export default async function ProductPage({
   if (!product || !product.isPublished) notFound();
   if (id !== product.id) redirect(`/product/${product.id}`);
   const session = await requireUser();
-  const [[sale], [purchase], coupons] = await Promise.all([
+  const [[sale], coupons] = await Promise.all([
     presentProducts([product], new Date(), session?.user.id),
-    priceProducts([product]),
     downloadableCoupons(product, session?.user.id),
   ]);
-  if (!sale || !purchase) notFound();
+  if (!sale) notFound();
   const visibleCoupons = [...coupons].sort((left, right) => right.rate - left.rate).filter((coupon) => coupon.rate > 0).slice(0, 2);
-  const listPrice = product.originalPrice ?? product.price;
-  const payment = sale.price;
-  const rateLabel = listPrice > payment ? discountPercentLabel(listPrice, payment) : sale.exhibitionLabel;
+  const listPrice = sale.originalPrice ?? product.originalPrice ?? sale.price;
+  const salePrice = sale.price;
+  const couponPrice = sale.couponPrice;
+  const payable = couponPrice + shippingFee(couponPrice);
+  const rateLabel = listPrice > salePrice ? discountPercentLabel(listPrice, salePrice) : null;
 
   const gallery = [product.imageUrl, ...parseGallery(product.gallery)].filter(Boolean);
   const sources = gallery.length ? gallery : [DEFAULT_PRODUCT_IMAGE];
@@ -54,18 +54,27 @@ export default async function ProductPage({
         </p>
         <p className="mt-3 text-[0.72rem] tracking-wide text-muted">{product.id}</p>
         <h1 className="product-name mt-1 text-5xl leading-snug">{product.name}</h1>
-        <p className="mt-5 flex flex-wrap items-baseline gap-x-2 text-xl font-normal text-muted">
-          {rateLabel ? <span className="text-accent">{rateLabel}</span> : null}
-          <span data-testid="product-sale-price">{formatPrice(payment)}</span>
-          {listPrice !== payment ? <span className="line-through opacity-60">{formatPrice(listPrice)}</span> : null}
-        </p>
-        <p className="mt-1 text-xs text-muted">행사 적용가 · 쿠폰 적용 전</p>
-        <p className="mt-3 text-sm leading-relaxed text-muted">{SHIPPING_NOTICE}</p>
-        {sale.couponPrice < purchase.price ? (
-          <p className="mt-2 text-sm text-muted">
-            {`쿠폰 적용 예상가 ${formatPrice(sale.couponPrice)} · 주문 시 쿠폰의 적용 조건을 확인해 주세요.`}
-          </p>
-        ) : null}
+        <div className="mt-6 space-y-4 border-b border-line pb-5 text-sm">
+          <div>
+            {listPrice > salePrice ? <p className="text-right text-xs line-through" style={{ fontWeight: 400, color: "#c5c0b8" }}>{formatPrice(listPrice)}</p> : null}
+            <div className="mt-1 flex items-start justify-between gap-4">
+              <span>할인가</span>
+              <p data-testid="product-sale-price">
+                {rateLabel ? <span className="mr-2" style={{ color: "#e10600", fontWeight: 400 }}>{rateLabel}</span> : null}
+                <span className="font-bold">{formatPrice(salePrice)}</span>
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span>쿠폰 할인가</span>
+            <span className="font-bold" data-testid="product-coupon-price">{formatPrice(couponPrice)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4 border-t border-line pt-4">
+            <span className="font-semibold">예상 결제금액</span>
+            <span className="text-lg font-bold" style={{ color: "#e10600" }} data-testid="product-payable">{formatPrice(payable)}</span>
+          </div>
+          <p className="text-xs leading-relaxed text-muted">{SHIPPING_NOTICE}</p>
+        </div>
         <div className="mt-6">
           <div className="flex items-center justify-between gap-4">
             <p className="text-sm font-semibold">받을 수 있는 쿠폰</p>

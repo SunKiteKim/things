@@ -58,7 +58,6 @@ export function ProductCard({
             <span className="line-through opacity-60">{formatPrice(originalPrice)}</span>
           ) : null}
         </p>
-        <p className="mt-1 text-xs text-muted">행사 적용가 · 쿠폰 적용 전</p>
         {product.couponPrice != null && product.couponPrice < product.price ? <p className="mt-1 text-xs text-muted">쿠폰 적용 예상가 {formatPrice(product.couponPrice)}</p> : null}
       </Link>
     </div>

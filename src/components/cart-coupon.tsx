@@ -8,7 +8,7 @@ import { ProductImage } from "@/components/product-image";
 import { couponCodes, couponSelection, couponTargets, allocateCouponDiscounts, bestSingleProductCoupon, shippingFee } from "@/lib/checkout-pricing";
 
 export type CouponProductDiscount = { productId: string; onePlusOne?: boolean; discount: number; rate: number };
-export type CouponOption = { code: string; selection?: string; label: string; eligible: boolean; discount: number; isStackable: boolean; scope?: string; summary?: string; productDiscounts?: CouponProductDiscount[] };
+export type CouponOption = { code: string; selection?: string; label: string; eligible: boolean; discount: number; isStackable: boolean; scope?: string; summary?: string; discountType?: string; discountValue?: number; productDiscounts?: CouponProductDiscount[] };
 export type CouponProductRow = { key: string; productId: string; onePlusOne?: boolean; name: string; price: number; quantity?: number; imageUrl: string };
 export type CouponNotice = { key: string; summary: string; reason: string };
 export type DownloadableCoupon = { id: string; name: string; discount: string; endsLabel: string };
@@ -147,34 +147,55 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
   }
   const [groupId, setGroupId] = useState(initialGroup ?? groups?.[0]?.id ?? "");
   const [code, setCode] = useState(selected);
+  const [checked, setChecked] = useState<string[]>([]);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const allOptions = groups ? groups.flatMap((group) => group.options) : options;
   const visibleOptions = groups ? groups.find((group) => group.id === groupId)?.options ?? [] : options;
-  const previews = allOptions.filter(option => couponCodes(code).includes(option.code)).map((option) => {
+  const checkedRows = products?.length ? products.filter((row) => checked.includes(row.key)) : null;
+  const previewSubtotal = checkedRows ? checkedRows.reduce((sum, row) => sum + row.price * (row.quantity && row.quantity > 0 ? row.quantity : 1), 0) : subtotal;
+  const previews = allOptions.filter(option => couponCodes(code).includes(option.code)).flatMap((option) => {
+    if (checkedRows && isProductCoupon(option.scope)) {
+      const target = couponTargets(code)[option.code];
+      const row = target ? checkedRows.find((item) => rowTarget(item) === target) : undefined;
+      const deal = row ? dealFor(option, row) : undefined;
+      return deal ? [{ ...option, discount: deal.discount }] : [];
+    }
+    if (checkedRows && option.scope === "MULTI_CART" && new Set(checkedRows.map((row) => row.productId)).size < 2) return [];
+    if (checkedRows && !isProductCoupon(option.scope)) {
+      const discount = option.discountType === "PERCENT" && typeof option.discountValue === "number"
+        ? Math.floor(previewSubtotal * option.discountValue / 100)
+        : option.discountType === "AMOUNT" && typeof option.discountValue === "number"
+          ? Math.min(option.discountValue, previewSubtotal)
+          : subtotal > 0 ? Math.round(option.discount * previewSubtotal / subtotal) : 0;
+      return discount > 0 ? [{ ...option, discount }] : [];
+    }
     const target = couponTargets(code)[option.code];
     const matched = target ? option.productDiscounts?.find((item) => `${item.productId}:${item.onePlusOne ? "1" : "0"}`.toLowerCase() === target) : undefined;
-    return matched ? { ...option, discount: matched.discount } : option;
+    return [matched ? { ...option, discount: matched.discount } : option];
   });
   let previewTotal = 0;
   let selectionError = "";
   let allocated: (CouponOption & { amount: number })[] = [];
   try {
-    allocated = allocateCouponDiscounts(previews, subtotal);
+    allocated = allocateCouponDiscounts(previews, previewSubtotal);
     previewTotal = allocated.reduce((sum, option) => sum + option.amount, 0);
   } catch {
     selectionError = "중복 불가 쿠폰은 단독으로 적용해 주세요.";
   }
   const preview = previews.length ? { ...previews[0], code: couponSelection(code).filter((part) => previews.some((option) => option.code === part.split("@")[0])).join(","), label: previews.map(option => option.label).join(" + "), discount: previewTotal } : undefined;
-  const showProductMatcher = !!products && groupId === "product";
+  const productRows = products ?? [];
+  const showProductMatcher = productRows.length > 0 && groupId === "product";
   const applied = options.filter(option => couponCodes(selected).includes(option.code)).map(option => option.label).join(" + ");
 
+  const productKeys = (products ?? []).map((row) => row.key).join(",");
   useEffect(() => {
     if (!open) return;
     setCode(selected);
     setError("");
+    setChecked(productKeys ? productKeys.split(",") : []);
     if (initialGroup) setGroupId(initialGroup);
-  }, [open, selected, initialGroup]);
+  }, [open, selected, initialGroup, productKeys]);
 
   return (
     <div className={showApplied ? "mt-5" : undefined}>
@@ -206,39 +227,50 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
                   })}
                 </div>
               ) : null}
-              <p className="mb-3 text-xs text-muted">할인 후 상품금액은 최소 1원이며, 이를 초과하는 쿠폰 할인은 제한됩니다. 배송비는 별도입니다.</p>
               {showProductMatcher ? (
                 <div>
-                  <button type="button" className="btn btn-ghost mb-4 w-full" onClick={() => {
+                  <button type="button" className="btn mb-4 w-full" style={{ minHeight: "2.25rem", background: "#161412", color: "#fff", borderColor: "#161412" }} onClick={() => {
+                    const rows = productRows.filter((row) => checked.includes(row.key));
+                    if (!rows.length) {
+                      setError("상품을 선택해 주세요.");
+                      return;
+                    }
+                    const scoped = allOptions.map((option) => {
+                      if (!isProductCoupon(option.scope)) return option;
+                      const deals = option.productDiscounts?.filter((deal) => rows.some((row) => row.productId === deal.productId && !!row.onePlusOne === !!deal.onePlusOne)) ?? [];
+                      return { ...option, productDiscounts: deals, discount: deals[0]?.discount ?? 0 };
+                    });
+                    const merchandise = rows.reduce((sum, row) => sum + row.price * (row.quantity && row.quantity > 0 ? row.quantity : 1), 0);
                     setError("");
-                    setCode(bestSingleProductCoupon(allOptions, code, subtotal).selection);
-                  }}>상품쿠폰 1장 최적 적용</button>
-                  <p className="mb-3 text-xs text-muted">선택한 장바구니 쿠폰과 배송비를 고려해 결제금액이 가장 낮은 상품쿠폰 1장을 선택합니다. 미적용이 더 저렴하면 상품쿠폰을 해제합니다.</p>
+                    setCode(bestSingleProductCoupon(scoped, code, merchandise).selection);
+                  }}>최대 할인 적용</button>
                   {!signedIn ? <p className="mb-3 text-sm text-muted">로그인 후 다운받은 쿠폰을 적용할 수 있습니다.</p> : null}
                   <div className="divide-y divide-line border border-line">
-                    {products.map((row) => {
+                    {productRows.map((row) => {
                       const fits = allOptions.filter((option) => isProductCoupon(option.scope) && dealFor(option, row));
                       const selectedCode = assignedCode(code, rowTarget(row));
                       const chosen = fits.find((option) => option.code === selectedCode);
                       const deal = chosen ? dealFor(chosen, row) : undefined;
                       const quantity = row.quantity && row.quantity > 0 ? row.quantity : 1;
-                      const appliedDiscount = chosen ? allocated.find(option => option.code === chosen.code)?.amount ?? 0 : 0;
+                      const rowChecked = checked.includes(row.key);
+                      const appliedDiscount = rowChecked && chosen ? allocated.find(option => option.code === chosen.code)?.amount ?? 0 : 0;
                       const appliedPrice = Math.max(0, row.price * quantity - appliedDiscount);
                       return (
-                        <div key={row.key} className="flex gap-3 px-4 py-4">
+                        <div key={row.key} className="flex items-start gap-3 px-4 py-4">
+                          <input className="mt-1" type="checkbox" aria-label={`${row.name} 선택`} checked={checked.includes(row.key)} onChange={() => setChecked((current) => current.includes(row.key) ? current.filter((key) => key !== row.key) : [...current, row.key])} />
                           <div className="relative h-16 w-16 shrink-0 overflow-hidden bg-surface"><ProductImage src={row.imageUrl} alt={row.name} fill /></div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <p className="text-sm font-bold">{row.name}{row.onePlusOne ? " · 1+1" : ""}</p>
                                 <p className="mt-0.5 text-xs text-muted">{row.productId}</p>
+                                <p className="mt-0.5 text-xs text-muted">수량 {quantity}</p>
                               </div>
                               <div className="shrink-0 text-right">
-                                {deal ? (
+                                {deal && rowChecked ? (
                                   <>
-                                    <p className="text-sm line-through" style={{ fontWeight: 400, color: "#c5c0b8" }}>{formatPrice(row.price * quantity)}</p>
-                                    <p className="text-sm" style={{ fontWeight: 700, color: "#3f3b37" }}>{formatPrice(appliedPrice)}</p>
-                                    <p className="text-xs text-muted">{quantity}개 합계 · 상품쿠폰 할인 {formatPrice(appliedDiscount)}</p>
+                                    <p className="text-sm line-through" style={{ fontWeight: 400, color: "#c5c0b8" }}>{formatPrice(row.price)}</p>
+                                    <p className="text-sm" style={{ fontWeight: 700, color: "#3f3b37" }}>{formatPrice(Math.max(0, Math.floor(appliedPrice / quantity)))}</p>
                                   </>
                                 ) : <p className="text-sm font-bold">{formatPrice(row.price)}</p>}
                               </div>
@@ -282,7 +314,7 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
                 ))}
               </div>
               ) : <p className="border border-line py-10 text-center text-sm text-muted">{signedIn ? "적용 가능한 쿠폰이 없습니다." : "로그인 후 다운받은 쿠폰을 적용할 수 있습니다."}</p>}
-              <div className="mt-5 bg-slate-50 px-4 py-4 text-sm"><p className="flex justify-between"><span>예상 할인</span><strong>-{formatPrice(previewTotal)}</strong></p><p className="mt-2 flex justify-between"><span>배송비</span><strong>{formatPrice(shippingFee(subtotal - previewTotal))}</strong></p><p className="mt-2 flex justify-between text-base"><span>예상 결제금액</span><strong>{formatPrice(subtotal - previewTotal + shippingFee(subtotal - previewTotal))}</strong></p></div>
+              <div className="mt-5 bg-slate-50 px-4 py-4 text-sm"><p className="flex justify-between"><span>예상 할인</span><strong>-{formatPrice(previewTotal)}</strong></p><p className="mt-2 flex justify-between"><span>배송비</span><strong>{formatPrice(shippingFee(previewSubtotal - previewTotal))}</strong></p><p className="mt-2 flex justify-between text-base"><span>예상 결제금액</span><strong>{formatPrice(previewSubtotal - previewTotal + shippingFee(previewSubtotal - previewTotal))}</strong></p></div>
               <DownloadableCoupons coupons={downloads} />
               {error ? <p className="mt-3 text-sm text-accent" role="alert">{error}</p> : null}
               {selectionError ? <p className="mt-3 text-sm text-accent" role="alert">{selectionError}</p> : null}
