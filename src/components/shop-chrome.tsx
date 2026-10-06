@@ -20,8 +20,8 @@ export async function ShopHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-paper">
-      <div className="mx-auto grid h-[72px] w-full max-w-[1280px] grid-cols-[auto_1fr_auto] items-center gap-6 px-5 md:px-8">
-        <Logo className="text-[1.7rem]" />
+      <div className="mx-auto flex h-14 w-full max-w-[1280px] items-center justify-between gap-2 px-3 sm:h-16 sm:gap-4 sm:px-5 md:grid md:h-[72px] md:grid-cols-[auto_1fr_auto] md:gap-6 md:px-8">
+        <Logo className="shrink-0 text-[1.35rem] sm:text-[1.55rem] md:text-[1.7rem]" />
         <nav className="hidden items-center justify-center gap-16 text-[0.92rem] font-bold md:flex">
           <Link href="/products" className="whitespace-nowrap hover:opacity-60">
             All Products
@@ -33,8 +33,8 @@ export async function ShopHeader() {
             Events
           </Link>
         </nav>
-        <div className="flex items-center gap-5">
-          <div className="flex min-w-10 items-center justify-end gap-4">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3 md:gap-5">
+          <div className="flex items-center justify-end gap-2 sm:gap-4">
             {member ? (
               <Link href="/mypage" className="hidden whitespace-nowrap text-sm font-normal hover:opacity-60 sm:block">
                 {member.name} 님
@@ -42,21 +42,21 @@ export async function ShopHeader() {
             ) : null}
             <SearchOverlay />
           </div>
-          <div className="utility-links -mt-1 flex items-center text-[0.78rem] font-normal">
+          <div className="utility-links flex items-center whitespace-nowrap text-[0.7rem] font-normal leading-none sm:text-[0.78rem]">
             {shopUser ? (
               <>
                 <LogoutButton />
-                <span className="px-2 text-muted">|</span>
+                <span className="px-1 text-muted sm:px-2">|</span>
                 <Link href="/mypage">마이페이지</Link>
-                <span className="px-2 text-muted">|</span>
+                <span className="px-1 text-muted sm:px-2">|</span>
               </>
             ) : (
               <>
                 <Link href="/login">로그인</Link>
-                <span className="px-2 text-muted">|</span>
+                <span className="px-1 text-muted sm:px-2">|</span>
               </>
             )}
-            <Link href="/cart" className="relative">
+            <Link href="/cart" className="relative whitespace-nowrap">
               장바구니
               {count > 0 && <span className="ml-1 text-accent">{count}</span>}
             </Link>

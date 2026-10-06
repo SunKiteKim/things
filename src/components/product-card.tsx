@@ -30,7 +30,7 @@ export function ProductCard({
               src={product.imageUrl}
               alt={product.name}
               fill
-              className="object-cover transition duration-500 group-hover:scale-[1.03]"
+              className="object-cover transition duration-500 md:group-hover:scale-[1.03]"
             />
             {rank ? (
               <span className="absolute left-3 top-3 z-20 grid h-8 min-w-8 place-items-center bg-ink px-2 text-sm font-semibold text-white">{rank}</span>

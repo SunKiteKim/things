@@ -65,7 +65,7 @@ export function TimeSaleRail({ items, endsAt }: { items: TimeSaleItem[]; endsAt:
           <button type="button" aria-label="이전 타임세일" className="absolute left-0 top-[28%] z-10 grid h-10 w-10 -translate-x-1/2 place-items-center rounded-full border border-neutral-200 bg-white shadow" onClick={() => setPage((current) => (current - 1 + pages) % pages)}>‹</button>
           <div className="grid grid-cols-3 gap-4 md:gap-6">
             {visible.map((item) => (
-              <article key={item.id} className="min-w-0">
+              <article key={item.id} className="group min-w-0">
                 <div className="relative">
                   <Link href={`/product/${item.id}`} className="block">
                     <div className="relative aspect-square overflow-hidden bg-[#f6f6f4]">
