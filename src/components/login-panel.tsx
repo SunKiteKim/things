@@ -36,9 +36,17 @@ type LoginPanelProps = {
   initialPortal?: Portal;
   demoAdminEmail?: string;
   demoAdminPassword?: string;
+  demoMemberEmail?: string;
+  demoMemberPassword?: string;
 };
 
-export function LoginPanel({ initialPortal = "shop", demoAdminEmail = "", demoAdminPassword = "" }: LoginPanelProps) {
+export function LoginPanel({
+  initialPortal = "shop",
+  demoAdminEmail = "",
+  demoAdminPassword = "",
+  demoMemberEmail = "",
+  demoMemberPassword = "",
+}: LoginPanelProps) {
   const params = useSearchParams();
   const [portal, setPortal] = useState<Portal>(initialPortal);
   const [error, setError] = useState("");
@@ -139,6 +147,13 @@ export function LoginPanel({ initialPortal = "shop", demoAdminEmail = "", demoAd
           <p className="mt-7 text-center text-sm text-muted">
             계정이 없다면 <Link href="/signup" className="text-ink">회원가입</Link>
           </p>
+          {demoMemberEmail && demoMemberPassword ? (
+            <div className="mt-7 border border-line bg-[#f7f7f5] px-4 py-3 text-left text-xs leading-5 text-ink">
+              <p className="font-bold">테스트 계정</p>
+              <p className="mt-2 break-all"><span className="text-muted">ID</span> {demoMemberEmail}</p>
+              <p className="mt-1 break-all"><span className="text-muted">PW</span> {demoMemberPassword}</p>
+            </div>
+          ) : null}
         </>
       ) : (
         <div className="mt-7 text-center text-xs leading-5 text-muted">

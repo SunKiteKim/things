@@ -4,7 +4,12 @@ import { LoginPanel } from "@/components/login-panel";
 export default function LoginPage() {
   return (
     <Suspense fallback={<div className="h-[520px] w-full max-w-[380px]" />}>
-      <LoginPanel demoAdminEmail="admin@admin.com" demoAdminPassword="admin" />
+      <LoginPanel
+        demoAdminEmail="admin@admin.com"
+        demoAdminPassword="admin"
+        demoMemberEmail="test@things.store"
+        demoMemberPassword="password1!"
+      />
     </Suspense>
   );
 }
