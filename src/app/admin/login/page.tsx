@@ -9,8 +9,8 @@ export default function AdminLoginPage() {
           initialPortal="admin"
           demoAdminEmail="admin@admin.com"
           demoAdminPassword="admin"
-          demoMemberEmail="test@things.store"
-          demoMemberPassword="password1!"
+          demoMemberEmail="member@things.store"
+          demoMemberPassword="password"
         />
       </Suspense>
     </main>

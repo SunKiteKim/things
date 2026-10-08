@@ -7,8 +7,8 @@ export default function LoginPage() {
       <LoginPanel
         demoAdminEmail="admin@admin.com"
         demoAdminPassword="admin"
-        demoMemberEmail="test@things.store"
-        demoMemberPassword="password1!"
+        demoMemberEmail="member@things.store"
+        demoMemberPassword="password"
       />
     </Suspense>
   );

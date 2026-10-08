@@ -149,7 +149,7 @@ export function LoginPanel({
           </p>
           {demoMemberEmail && demoMemberPassword ? (
             <div className="mt-7 border border-line bg-[#f7f7f5] px-4 py-3 text-left text-xs leading-5 text-ink">
-              <p className="font-bold">테스트 계정</p>
+              <p className="font-bold">데모 회원 계정</p>
               <p className="mt-2 break-all"><span className="text-muted">ID</span> {demoMemberEmail}</p>
               <p className="mt-1 break-all"><span className="text-muted">PW</span> {demoMemberPassword}</p>
             </div>
