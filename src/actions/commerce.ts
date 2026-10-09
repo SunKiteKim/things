@@ -90,7 +90,7 @@ export async function applyCoupon(code: string, source: "cart" | "checkout" = "c
   if (!session) return { error: "로그인 후 쿠폰 적용할 수 있습니다." };
   const cart = source === "checkout" ? await getCheckoutLines() : await getCart();
   const found = await prisma.product.findMany({ where: { id: { in: cart.map(line => line.productId) } } });
-  const products = await priceProducts(found, new Date(), session.user.id);
+  const products = await priceProducts(found);
   const lines = cart.flatMap((line) => {
     const product = products.find((item) => item.id === line.productId && item.isPublished);
     return product ? [{ productId: product.id, categoryId: product.categoryId, amount: product.price * line.quantity, quantity: line.quantity, onePlusOne: line.onePlusOne === true }] : [];
@@ -127,7 +127,7 @@ export async function createPendingOrder(formData: FormData) {
   const found = await prisma.product.findMany({
     where: { id: { in: cart.map((line) => line.productId) } },
   });
-  const products = await priceProducts(found, new Date(), session.user.id);
+  const products = await priceProducts(found);
   const items = cart
     .map((line) => {
       const product = products.find((p) => p.id === line.productId);

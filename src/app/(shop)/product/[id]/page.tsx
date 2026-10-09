@@ -58,7 +58,7 @@ export default async function ProductPage({
         <h1 className="product-name mt-1 text-5xl leading-snug" data-testid="상품명">{product.name}</h1>
         <p className="mt-6 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-sm" data-testid="가격줄">
           {listPrice > salePrice ? <s className="basis-full text-right text-xs line-through" data-testid="정가" data-price={listPrice} style={{ fontWeight: 400, color: "#c5c0b8" }}>{formatPrice(listPrice)}</s> : null}
-          <b className="font-normal">{session ? "할인가" : "판매가"}</b>
+          <b className="font-normal">할인가</b>
           <span data-testid="할인율" className={rateLabel ? "ml-auto mr-2" : "ml-auto"} style={rateLabel ? { color: "#e10600", fontWeight: 400 } : undefined}>{rateLabel ?? ""}</span>
           <span className="font-bold" data-testid="판매가" data-price={salePrice}>{formatPrice(salePrice)}</span>
         </p>

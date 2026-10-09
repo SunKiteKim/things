@@ -33,15 +33,7 @@ export async function activeOffersByProduct(productIds: string[], now = new Date
   return grouped;
 }
 
-export async function priceProducts<T extends Pick<Product, "id" | "price" | "originalPrice">>(products: T[], now = new Date(), userId?: string): Promise<PricedProduct<T>[]> {
-  if (!userId) {
-    return products.map((product) => ({
-      ...product,
-      price: product.originalPrice ?? product.price,
-      discountRate: 0,
-      exhibitionLabel: null,
-    }));
-  }
+export async function priceProducts<T extends Pick<Product, "id" | "price" | "originalPrice">>(products: T[], now = new Date()): Promise<PricedProduct<T>[]> {
   const [grouped, section, placements] = await Promise.all([
     activeOffersByProduct(products.map((product) => product.id), now),
     prisma.displayItem.findFirst({ where: { pageKey: "home", slotKey: "section:timesale", isVisible: true } }),

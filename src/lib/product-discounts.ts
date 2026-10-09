@@ -53,7 +53,7 @@ export async function discountBoards(products: ListedProduct[], now = new Date()
     const listPrice = product.originalPrice ?? product.price;
     const memberPrice = product.discountRate > 0 ? discountedPrice(listPrice, product.discountRate) : product.price;
     const lines: DiscountLine[] = [{
-      name: "회원 할인",
+      name: "할인",
       detail: product.discountRate > 0 ? `${product.discountRate}% · 판매가 ${formatPrice(listPrice)}에서 우선 적용` : "할인 없음 · 판매가가 기준가",
       priceLabel: formatPrice(memberPrice),
     }];
@@ -66,7 +66,7 @@ export async function discountBoards(products: ListedProduct[], now = new Date()
       purchasePrice = Math.min(purchasePrice, price);
       lines.push({
         name: `기획전 · ${exhibition.title}`,
-        detail: `${exhibitionOfferLabel(offer)} · 회원 할인가에 추가 적용`,
+        detail: `${exhibitionOfferLabel(offer)} · 할인가에 추가 적용`,
         priceLabel: formatPrice(price),
       });
     }
@@ -99,7 +99,7 @@ export async function discountBoards(products: ListedProduct[], now = new Date()
         }, memberPrice, 1, now);
       lines.push({
         name: `쿠폰 · ${coupon.name}`,
-        detail: `${label} · ${coupon.code}${coupon.scope === "ONE_PLUS_ONE" || coupon.scope === "MULTI_CART" ? " · 장바구니에서 조건 충족 시 적용" : " · 회원 할인가 기준"}`,
+        detail: `${label} · ${coupon.code}${coupon.scope === "ONE_PLUS_ONE" || coupon.scope === "MULTI_CART" ? " · 장바구니에서 조건 충족 시 적용" : " · 할인가 기준"}`,
         priceLabel: discount == null ? "-" : formatPrice(Math.max(0, memberPrice - discount)),
       });
     }
@@ -108,7 +108,7 @@ export async function discountBoards(products: ListedProduct[], now = new Date()
       lines,
       purchasePrice,
       shownPrice: shown?.price ?? purchasePrice,
-      shownLabel: shown?.exhibitionLabel ?? (product.discountRate > 0 ? `회원 할인 ${product.discountRate}%` : "할인 없음"),
+      shownLabel: shown?.exhibitionLabel ?? (product.discountRate > 0 ? `할인 ${product.discountRate}%` : "할인 없음"),
     } satisfies DiscountBoard] as const;
   }));
 }

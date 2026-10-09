@@ -24,7 +24,7 @@ export default async function ProductsAdminPage() {
       <AdminMasterDetail
         listTitle="상품 목록"
         detailTitle="상품 상세"
-        columns={["이미지", { label: "상품번호", sortKey: "id" }, "상품명", "카테고리", { label: "판매가", sortKey: "price" }, { label: "회원 할인율", sortKey: "discount" }, { label: "회원할인가", sortKey: "memberPrice" }, { label: "등록일", sortKey: "date" }]}
+        columns={["이미지", { label: "상품번호", sortKey: "id" }, "상품명", "카테고리", { label: "판매가", sortKey: "price" }, { label: "할인율", sortKey: "discount" }, { label: "할인가", sortKey: "memberPrice" }, { label: "등록일", sortKey: "date" }]}
         search={{ placeholder: "상품명 또는 상품번호", fields: [{ value: "name", label: "상품명" }, { value: "id", label: "상품번호" }] }}
         filters={[{ key: "category", label: "카테고리", options: categories.map((category) => ({ value: category.id, label: category.name })) }]}
         rows={products.map((product) => ({

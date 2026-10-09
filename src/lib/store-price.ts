@@ -64,7 +64,7 @@ export async function presentProducts<T extends Pick<Product, "id" | "price" | "
 ) {
   const memberId = userId ?? (await requireUser())?.user.id;
   const catalogOriginal = new Map(products.map((product) => [product.id, product.originalPrice]));
-  const [priced, coupons] = await Promise.all([priceProducts(products, now, memberId), memberId ? liveCoupons(now) : Promise.resolve([])]);
+  const [priced, coupons] = await Promise.all([priceProducts(products, now), memberId ? liveCoupons(now) : Promise.resolve([])]);
   return priced.map((product) => {
     const listPrice = catalogOriginal.get(product.id) ?? product.originalPrice ?? product.price;
     let couponOff = 0;

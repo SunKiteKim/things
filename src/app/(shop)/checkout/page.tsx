@@ -15,7 +15,7 @@ export default async function CheckoutPage() {
   const found = await prisma.product.findMany({
     where: { id: { in: cart.map((line) => line.productId) } },
   });
-  const products = await priceProducts(found, new Date(), session.user.id);
+  const products = await priceProducts(found);
   const rows = cart
     .map((line) => {
       const product = products.find((item) => item.id === line.productId);
