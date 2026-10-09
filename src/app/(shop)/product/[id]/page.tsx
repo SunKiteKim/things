@@ -63,7 +63,7 @@ export default async function ProductPage({
           <span className="font-bold" data-testid="판매가" data-price={salePrice}>{formatPrice(salePrice)}</span>
         </p>
         <div className="mt-4 space-y-4 border-b border-line pb-5 text-sm">
-          <div>
+          {session ? <div>
             <div className="flex items-center justify-between gap-4">
               <span>쿠폰 할인가</span>
               <span className="font-bold" data-testid="쿠폰할인가" data-price={couponPrice}>{formatPrice(couponPrice)}</span>
@@ -80,7 +80,7 @@ export default async function ProductPage({
                 <span className="shrink-0 leading-5 text-muted">-{formatPrice(appliedCoupon.discount)}</span>
               </div>
             ) : null}
-          </div>
+          </div> : null}
           {delivery > 0 ? (
             <div className="flex items-center justify-between gap-4">
               <span>배송비</span>
