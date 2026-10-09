@@ -1,7 +1,7 @@
 export const SHIPPING_FEE = 3000;
 export const FREE_SHIPPING_THRESHOLD = 30000;
 export const SHIPPING_NOTICE = `최종 결제금액 ${FREE_SHIPPING_THRESHOLD.toLocaleString("ko-KR")}원 미만 배송비 ${SHIPPING_FEE.toLocaleString("ko-KR")}원`;
-export const MINIMUM_MERCHANDISE_AMOUNT = 1;
+export const MINIMUM_MERCHANDISE_AMOUNT = 0;
 
 export function shippingFee(merchandiseAmount: number) {
   return merchandiseAmount <= 0 || merchandiseAmount >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
