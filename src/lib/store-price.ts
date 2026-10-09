@@ -4,6 +4,7 @@ import { couponDiscount } from "@/lib/discounts";
 import { priceProducts } from "@/lib/exhibition-offers";
 import { discountPercentLabel } from "@/lib/exhibition-price";
 import { MINIMUM_MERCHANDISE_AMOUNT } from "@/lib/checkout-pricing";
+import { requireUser } from "@/lib/auth";
 
 type OfferCoupon = Coupon & {
   issues: { targetType: string; userId: string | null; categoryId: string | null }[];
@@ -61,21 +62,22 @@ export async function presentProducts<T extends Pick<Product, "id" | "price" | "
   now = new Date(),
   userId?: string,
 ) {
+  const memberId = userId ?? (await requireUser())?.user.id;
   const catalogOriginal = new Map(products.map((product) => [product.id, product.originalPrice]));
-  const [priced, coupons] = await Promise.all([priceProducts(products, now), liveCoupons(now)]);
+  const [priced, coupons] = await Promise.all([priceProducts(products, now, memberId), memberId ? liveCoupons(now) : Promise.resolve([])]);
   return priced.map((product) => {
     const listPrice = catalogOriginal.get(product.id) ?? product.originalPrice ?? product.price;
     let couponOff = 0;
     let appliedCoupon: { name: string; scope: string } | null = null;
     for (const coupon of coupons) {
-      if (!couponFitsProduct(coupon, product, userId)) continue;
+      if (!couponFitsProduct(coupon, product, memberId)) continue;
       const discount = couponDiscount(coupon, product.price, 1, now);
       if (discount != null && discount > couponOff) {
         couponOff = discount;
         appliedCoupon = { name: coupon.name, scope: coupon.scope };
       }
     }
-    const price = Math.max(MINIMUM_MERCHANDISE_AMOUNT, product.price - couponOff);
+    const price = memberId ? Math.max(MINIMUM_MERCHANDISE_AMOUNT, product.price - couponOff) : product.price;
     const appliedDiscount = product.price - price;
     return {
       ...product,

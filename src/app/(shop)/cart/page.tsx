@@ -37,11 +37,12 @@ function couponBlockReason(coupon: { scope: string; startAt: Date; includedProdu
 }
 
 export default async function CartPage() {
+  const session = await requireUser();
   const cart = await getCart();
   const found = await prisma.product.findMany({
     where: { id: { in: cart.map((line) => line.productId) } },
   });
-  const products = await priceProducts(found);
+  const products = await priceProducts(found, new Date(), session?.user.id);
   const rows = cart
     .map((line) => {
       const product = products.find((item) => item.id === line.productId);
@@ -51,7 +52,6 @@ export default async function CartPage() {
     .filter((row): row is NonNullable<typeof row> => !!row);
   const total = rows.reduce((sum, row) => sum + row.product.price * row.quantity, 0);
 
-  const session = await requireUser();
   const downloads = (await downloadableMemberCoupons(session?.user.id)).filter((coupon) => !coupon.owned).map((coupon) => ({
     id: coupon.id,
     name: coupon.name,
@@ -61,7 +61,7 @@ export default async function CartPage() {
   const couponLines = rows.map((row) => ({ productId: row.product.id, categoryId: row.product.categoryId, amount: row.product.price * row.quantity, quantity: row.quantity, onePlusOne: row.onePlusOne === true }));
   const now = new Date();
   const coupons = await prisma.coupon.findMany({ where: { isActive: true, isPaused: false, endAt: { gte: now } }, include: { issues: true } });
-  const visibleCoupons = coupons.filter((coupon) => coupon.startAt <= now && coupon.issues.some((issue) => issue.targetType === "CATEGORY" || (issue.targetType === "USER" && issue.userId === session?.user.id)));
+  const visibleCoupons = session ? coupons.filter((coupon) => coupon.startAt <= now && coupon.issues.some((issue) => issue.targetType === "CATEGORY" || (issue.targetType === "USER" && issue.userId === session.user.id))) : [];
   const code = await getSelectedCoupon();
   const targets = couponTargets(code);
   const options = visibleCoupons.map(coupon => {

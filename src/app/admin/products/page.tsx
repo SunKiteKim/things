@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { deleteProduct } from "@/actions/products";
-import { discountedPrice, formatDate, formatPrice } from "@/lib/utils";
+import { formatDate, formatPrice } from "@/lib/utils";
 import { ProductImage } from "@/components/product-image";
 import { ProductDiscountBoard } from "@/components/product-discount-board";
 import { discountBoards } from "@/lib/product-discounts";
@@ -24,7 +24,7 @@ export default async function ProductsAdminPage() {
       <AdminMasterDetail
         listTitle="상품 목록"
         detailTitle="상품 상세"
-        columns={["이미지", { label: "상품번호", sortKey: "id" }, "상품명", "카테고리", { label: "판매가", sortKey: "price" }, { label: "회원 할인", sortKey: "discount" }, { label: "등록일", sortKey: "date" }]}
+        columns={["이미지", { label: "상품번호", sortKey: "id" }, "상품명", "카테고리", { label: "판매가", sortKey: "price" }, { label: "회원 할인율", sortKey: "discount" }, { label: "회원할인가", sortKey: "memberPrice" }, { label: "등록일", sortKey: "date" }]}
         search={{ placeholder: "상품명 또는 상품번호", fields: [{ value: "name", label: "상품명" }, { value: "id", label: "상품번호" }] }}
         filters={[{ key: "category", label: "카테고리", options: categories.map((category) => ({ value: category.id, label: category.name })) }]}
         rows={products.map((product) => ({
@@ -34,8 +34,9 @@ export default async function ProductsAdminPage() {
           facets: { category: product.categoryId },
           sortValues: {
             id: product.id,
-            price: discountedPrice(product.originalPrice ?? product.price, product.discountRate),
+            price: product.originalPrice ?? product.price,
             discount: product.discountRate,
+            memberPrice: product.price,
             date: product.registeredAt.getTime(),
           },
           cells: [
@@ -43,8 +44,9 @@ export default async function ProductsAdminPage() {
             product.id,
             product.name,
             product.category.name,
-            formatPrice(discountedPrice(product.originalPrice ?? product.price, product.discountRate)),
+            formatPrice(product.originalPrice ?? product.price),
             `${product.discountRate}%`,
+            formatPrice(product.price),
             formatDate(product.registeredAt),
           ],
           detail: <div key={product.id}><ProductForm product={product} categories={categories} />{boards.get(product.id) ? <ProductDiscountBoard board={boards.get(product.id)!} /> : null}<form action={deleteProduct} className="mt-4 max-w-3xl border-t border-line pt-4"><input type="hidden" name="id" value={product.id} /><button className="btn btn-ghost">상품 삭제</button></form></div>,
