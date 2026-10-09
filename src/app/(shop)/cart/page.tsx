@@ -118,7 +118,7 @@ export default async function CartPage() {
     <div>
       <h1 className="display text-5xl">장바구니</h1>
       {rows.length === 0 ? (
-        <div className="flex min-h-[52vh] flex-col items-center justify-center gap-5 text-center">
+        <div className="flex min-h-[52vh] flex-col items-center justify-center gap-5 text-center" data-testid="빈장바구니">
           <p>장바구니에 담긴 상품이 없습니다</p>
           <Link href="/" className="btn">쇼핑하기</Link>
         </div>

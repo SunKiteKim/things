@@ -37,6 +37,7 @@ model Category {
   imageUrl     String        @default("")
   sortOrder    Int           @default(0)
   isVisible    Boolean       @default(true)
+  createdAt    DateTime      @default(now())
   products     Product[]
   couponIssues CouponIssue[]
 }
@@ -75,8 +76,10 @@ model Banner {
   subtitle  String  @default("")
   imageUrl  String
   href      String  @default("/")
-  sortOrder Int     @default(0)
-  isActive  Boolean @default(true)
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  endAt     DateTime?
 }
 
 model DisplayItem {

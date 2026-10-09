@@ -24,13 +24,21 @@ export function ProductForm({
   product?: Product;
   categories: Category[];
 }) {
+  const productId = product?.id ?? "new";
+  const [loadedId, setLoadedId] = useState(productId);
   const [salePrice, setSalePrice] = useState(product?.originalPrice ?? product?.price ?? 0);
   const [rate, setRate] = useState(product?.discountRate ?? 0);
   const [imageBusy, setImageBusy] = useState(false);
+  if (loadedId !== productId) {
+    setLoadedId(productId);
+    setSalePrice(product?.originalPrice ?? product?.price ?? 0);
+    setRate(product?.discountRate ?? 0);
+    setImageBusy(false);
+  }
   const sale = useMemo(() => discountedPrice(salePrice, rate), [salePrice, rate]);
 
   return (
-    <form onSubmit={event => { if (imageBusy) event.preventDefault(); }} action={product ? updateProduct : createProduct} className="mt-8 grid max-w-3xl gap-5">
+    <form key={productId} onSubmit={event => { if (imageBusy) event.preventDefault(); }} action={product ? updateProduct : createProduct} className="mt-8 grid max-w-3xl gap-5">
       {product ? <input type="hidden" name="id" value={product.id} /> : null}
       <Field label="상품번호">
         <DisabledText>{product?.id ?? "저장 시 자동 발급 (prd0001)"}</DisabledText>

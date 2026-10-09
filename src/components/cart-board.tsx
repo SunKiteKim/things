@@ -151,7 +151,7 @@ export function CartBoard({
         ) : null}
         <p className="mt-6 flex justify-between text-base">
           <span>상품 금액 합계</span>
-          <span className="font-bold">{formatPrice(summary.subtotal)}</span>
+          <span className="font-bold" data-testid="상품금액합계" data-amount={summary.subtotal}>{formatPrice(summary.subtotal)}</span>
         </p>
         <p className="mt-3 flex items-center justify-between text-base">
           <span>할인금액 합계</span>
@@ -182,7 +182,7 @@ export function CartBoard({
         <p className="mt-1 text-xs leading-relaxed text-muted">{SHIPPING_NOTICE}</p>
         <p className="mt-5 flex justify-between text-2xl font-bold">
           <span>예상 결제금액</span>
-          <span>{formatPrice(summary.payable)}</span>
+          <span data-testid="장바구니예상결제금액" data-amount={summary.payable}>{formatPrice(summary.payable)}</span>
         </p>
         <form action={checkoutFromCart}>
           {summary.error ? <p role="alert" className="mt-3 text-sm text-accent">{summary.error}</p> : null}

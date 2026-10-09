@@ -7,6 +7,12 @@ import { AdminMasterDetail } from "@/components/admin-master-detail";
 import { MemberForm } from "@/components/member-form";
 import { memberMids } from "@/lib/member-code";
 
+const ROLE_LABEL: Record<string, string> = {
+  MEMBER: "회원",
+  ADMIN: "관리자",
+  WITHDRAWN: "탈퇴",
+};
+
 export default async function MembersAdminPage() {
   const members = await prisma.user.findMany({ orderBy: { createdAt: "desc" } });
   const count = members.filter((user) => user.role === "MEMBER").length;
@@ -26,10 +32,16 @@ export default async function MembersAdminPage() {
       <AdminMasterDetail
         listTitle="회원 목록"
         detailTitle="회원 상세"
-        columns={["이메일", "이름", "MID", "UID", "휴대폰", "가입일", "역할"]}
+        columns={[{ label: "이메일", sortKey: "email" }, { label: "이름", sortKey: "name" }, "UID", "휴대폰", { label: "가입일", sortKey: "createdAt" }, { label: "역할", sortKey: "role" }]}
+        search={{ placeholder: "이메일, 이름, 휴대폰", fields: [{ value: "email", label: "이메일" }, { value: "name", label: "이름" }, { value: "phone", label: "휴대폰" }] }}
+        filters={[{ key: "role", label: "역할", options: [{ value: "MEMBER", label: "회원" }, { value: "ADMIN", label: "관리자" }, { value: "WITHDRAWN", label: "탈퇴" }] }]}
         rows={members.map((user) => ({
           id: user.id,
-          cells: [maskEmail(user.email), maskPersonalInfo(user.name), midById.get(user.id), maskPersonalInfo(user.id), maskPhone(user.phone), formatDate(user.createdAt), user.role],
+          searchText: `${user.email} ${user.name} ${user.phone ?? ""} ${(user.phone ?? "").replace(/\D/g, "")}`,
+          searchFields: { email: user.email, name: user.name, phone: `${user.phone ?? ""} ${(user.phone ?? "").replace(/\D/g, "")}` },
+          facets: { role: user.role },
+          sortValues: { email: user.email, name: user.name, createdAt: user.createdAt.getTime(), role: ROLE_LABEL[user.role] ?? user.role },
+          cells: [maskEmail(user.email), maskPersonalInfo(user.name), maskPersonalInfo(user.id), maskPhone(user.phone), formatDate(user.createdAt), ROLE_LABEL[user.role] ?? user.role],
           detail: <div><MemberForm user={{ id: user.id, mid: midById.get(user.id) ?? "-", name: maskPersonalInfo(user.name), email: maskEmail(user.email), phone: maskPhone(user.phone), zipCode: maskPersonalInfo(user.zipCode), address: maskPersonalInfo(user.address), addressDetail: maskPersonalInfo(user.addressDetail), role: user.role, createdAt: user.createdAt, updatedAt: user.updatedAt }} />{user.role !== "ADMIN" ? <form action={deleteMember} className="mt-4 max-w-3xl border-t border-line pt-4"><input type="hidden" name="id" value={user.id} /><button className="btn btn-ghost">회원 삭제</button></form> : null}</div>,
         }))}
       />

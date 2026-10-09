@@ -11,6 +11,20 @@ function localInput(date: Date) {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 }
 
+function exhibitionPeriod(start: Date, end: Date) {
+  const now = Date.now();
+  if (start.getTime() > now) return "upcoming";
+  if (end.getTime() < now) return "ended";
+  return "ongoing";
+}
+
+const PERIOD_LABEL = { upcoming: "예정", ongoing: "진행중", ended: "종료" } as const;
+
+function discountFacet(discountType: string, discountValue: number) {
+  if ((discountType === "PERCENT" || discountType === "AMOUNT") && discountValue > 0) return discountType;
+  return "none";
+}
+
 function discountLabel(discountType: string, discountValue: number) {
   if (discountType !== "PERCENT" && discountType !== "AMOUNT") return "없음";
   if (discountValue <= 0) return "없음";
@@ -67,12 +81,23 @@ export default async function ExhibitionsAdminPage() {
       <AdminMasterDetail
         listTitle="기획전 목록"
         detailTitle="기획전 상세"
-        columns={["기획전명", "기간", "할인", "상품 수", "상태"]}
+        columns={["기획전명", { label: "시작일", sortKey: "start" }, { label: "종료일", sortKey: "end" }, "할인", "상품 수", "상태"]}
+        search={{ placeholder: "기획전명 또는 슬러그", fields: [{ value: "title", label: "기획전명" }, { value: "slug", label: "슬러그" }] }}
+        filters={[
+          { key: "visibility", label: "공개", options: [{ value: "public", label: "공개" }, { value: "private", label: "비공개" }] },
+          { key: "period", label: "진행", options: [{ value: "ongoing", label: "진행중" }, { value: "upcoming", label: "예정" }, { value: "ended", label: "종료" }] },
+          { key: "discount", label: "할인", options: [{ value: "none", label: "할인 없음" }, { value: "PERCENT", label: "정률" }, { value: "AMOUNT", label: "정액" }] },
+        ]}
         rows={exhibitions.map((exhibition) => {
           const selected = exhibition.products.map((row) => row.productId);
+          const period = exhibitionPeriod(exhibition.startAt, exhibition.endAt);
           return {
             id: exhibition.id,
-            cells: [exhibition.title, `${formatDate(exhibition.startAt)} ~ ${formatDate(exhibition.endAt)}`, discountLabel(exhibition.discountType, exhibition.discountValue), `${exhibition.products.length}개`, exhibition.isActive ? "공개" : "비공개"],
+            searchText: `${exhibition.title} ${exhibition.slug}`,
+            searchFields: { title: exhibition.title, slug: exhibition.slug },
+            facets: { visibility: exhibition.isActive ? "public" : "private", period, discount: discountFacet(exhibition.discountType, exhibition.discountValue) },
+            sortValues: { start: exhibition.startAt.getTime(), end: exhibition.endAt.getTime() },
+            cells: [exhibition.title, formatDate(exhibition.startAt), formatDate(exhibition.endAt), discountLabel(exhibition.discountType, exhibition.discountValue), `${exhibition.products.length}개`, `${exhibition.isActive ? "공개" : "비공개"} · ${PERIOD_LABEL[period]}`],
             detail: <form key={`${exhibition.id}-${exhibition.discountType}-${exhibition.discountValue}`} action={updateExhibition} className="grid max-w-4xl gap-4">
               <input type="hidden" name="id" value={exhibition.id} />
               <label className="text-sm font-medium">기획전명<RequiredMark /><input className="field mt-2" name="title" defaultValue={exhibition.title} required /></label>

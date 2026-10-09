@@ -56,9 +56,9 @@ export async function ShopHeader() {
                 <span className="px-1 text-muted sm:px-2">|</span>
               </>
             )}
-            <Link href="/cart" className="relative whitespace-nowrap">
+            <Link href="/cart" className="relative whitespace-nowrap" data-testid="헤더장바구니">
               장바구니
-              {count > 0 && <span className="ml-1 text-accent">{count}</span>}
+              {count > 0 && <span className="ml-1 text-accent" data-testid="헤더장바구니수량" data-count={count}>{count}</span>}
             </Link>
           </div>
         </div>

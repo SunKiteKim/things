@@ -6,6 +6,7 @@ import { DISPLAY_PAGES, SHORTCUT_ICONS, SHORTCUT_ICON_LABEL, shortcutIcon, type 
 import { AdminCreateModal } from "@/components/admin-create-modal";
 import { RequiredMark } from "@/components/required-mark";
 import { ProductSearchPicker, type SearchableProduct } from "@/components/product-search-picker";
+import { SortableTable } from "@/components/admin-list-controls";
 
 const PAGE_COPY: Record<(typeof DISPLAY_PAGES)[number]["key"], string> = {
   home: "",
@@ -205,24 +206,12 @@ export default async function DisplayAdminPage({
                         </AdminCreateModal>
                       </div>
                     </div>
-                    <div className="mt-4 overflow-x-auto">
-                      <table className="w-full text-left">
-                        <thead>
-                          <tr>
-                            <th>항목</th>
-                            <th>구분</th>
-                            <th>아이콘</th>
-                            <th>링크</th>
-                            <th>정렬</th>
-                            <th></th>
-                          </tr>
-                        </thead>
-                        <tbody>
+                    <SortableTable columns={[{ label: "항목" }, { label: "구분" }, { label: "아이콘" }, { label: "링크" }, { label: "정렬", sortKey: "order" }, { label: "" }]}>
                           {quickItems.length === 0 ? (
                             <EmptyRow colSpan={6} />
                           ) : (
                             quickItems.map((item) => (
-                              <tr key={item.id} className="border-t border-line">
+                              <tr key={item.id} data-sort-order={item.sortOrder} data-row-id={item.id} className="border-t border-line">
                                 <td>
                                   <input type="hidden" name="id" value={item.id} />
                                   {item.refId ? (
@@ -256,9 +245,7 @@ export default async function DisplayAdminPage({
                               </tr>
                             ))
                           )}
-                        </tbody>
-                      </table>
-                    </div>
+                    </SortableTable>
                   </section>
                 );
               }
@@ -363,21 +350,12 @@ export default async function DisplayAdminPage({
               </div>
               <AssignButton title="카테고리 추가" area="products" options={categoryOptions} />
             </div>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr>
-                    <th>카테고리</th>
-                    <th>정렬</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
+            <SortableTable columns={[{ label: "카테고리" }, { label: "정렬", sortKey: "order" }, { label: "" }]}>
                   {productFilters.length === 0 ? (
                     <EmptyRow colSpan={3} />
                   ) : (
                     productFilters.map((item) => (
-                      <tr key={item.id} className="border-t border-line">
+                      <tr key={item.id} data-sort-order={item.sortOrder} data-row-id={item.id} className="border-t border-line">
                         <td>
                           <input type="hidden" name="id" value={item.id} />
                           {item.label}
@@ -394,9 +372,7 @@ export default async function DisplayAdminPage({
                       </tr>
                     ))
                   )}
-                </tbody>
-              </table>
-            </div>
+            </SortableTable>
           </section>
         ) : null}
 
@@ -422,22 +398,12 @@ export default async function DisplayAdminPage({
               </div>
               <AssignButton title="기획전 추가" area="events" options={exhibitionOptions} />
             </div>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr>
-                    <th>기획전</th>
-                    <th>상태</th>
-                    <th>정렬</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
+            <SortableTable columns={[{ label: "기획전" }, { label: "상태" }, { label: "정렬", sortKey: "order" }, { label: "" }]}>
                   {eventItems.length === 0 ? (
                     <EmptyRow colSpan={4} />
                   ) : (
                     eventItems.map((item) => (
-                      <tr key={item.id} className="border-t border-line">
+                      <tr key={item.id} data-sort-order={item.sortOrder} data-row-id={item.id} className="border-t border-line">
                         <td>
                           <input type="hidden" name="id" value={item.id} />
                           {item.label}
@@ -452,9 +418,7 @@ export default async function DisplayAdminPage({
                       </tr>
                     ))
                   )}
-                </tbody>
-              </table>
-            </div>
+            </SortableTable>
           </section>
         ) : null}
 
@@ -486,27 +450,23 @@ function ProductRows({
   showRank?: boolean;
 }) {
   const ranked = [...products].sort((left, right) => left.sortOrder - right.sortOrder || left.id.localeCompare(right.id));
+  const columns = [
+    ...(showRank ? [{ label: "순위", sortKey: "order" }] : []),
+    { label: "상품" },
+    { label: "카테고리" },
+    { label: "상태" },
+    ...(showSort && !showRank ? [{ label: "정렬", sortKey: "order" }] : []),
+    { label: "" },
+  ];
   return (
-    <div className="mt-4 overflow-x-auto">
-      <table className="w-full text-left">
-        <thead>
-          <tr>
-            {showRank ? <th>순위</th> : null}
-            <th>상품</th>
-            <th>카테고리</th>
-            <th>상태</th>
-            {showSort && !showRank ? <th>정렬</th> : null}
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
+    <SortableTable columns={columns}>
           {ranked.length === 0 ? (
-            <EmptyRow colSpan={(showRank ? 5 : 4) + (showSort && !showRank ? 1 : 0)} />
+            <EmptyRow colSpan={columns.length} />
           ) : (
             ranked.map((item) => {
               const product = productById.get(item.refId);
               return (
-                <tr key={item.id} className="border-t border-line">
+                <tr key={item.id} data-sort-order={item.sortOrder} data-row-id={item.id} className="border-t border-line">
                   {showRank ? (
                     <td>
                       <SortField id={item.id} value={item.sortOrder} />
@@ -530,8 +490,6 @@ function ProductRows({
               );
             })
           )}
-        </tbody>
-      </table>
-    </div>
+    </SortableTable>
   );
 }

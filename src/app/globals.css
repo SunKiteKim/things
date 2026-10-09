@@ -291,6 +291,47 @@ header .utility-links button {
   font-size: 0.78rem;
 }
 
+.admin-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.admin-shell .admin-search {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 1rem;
+}
+
+.admin-shell .admin-search label {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 10.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.admin-shell .admin-search label.grow {
+  flex: 1 1 16rem;
+}
+
 .admin-shell main form.border,
 .admin-shell main section.border {
   border-radius: 0.5rem;

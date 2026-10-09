@@ -3,6 +3,7 @@ import { createCategory, deleteCategory, updateCategory } from "@/actions/displa
 import { AdminCreateModal } from "@/components/admin-create-modal";
 import { RequiredMark } from "@/components/required-mark";
 import { AdminMasterDetail } from "@/components/admin-master-detail";
+import { formatDate } from "@/lib/utils";
 
 export default async function CategoriesAdminPage() {
   const categories = await prisma.category.findMany({ orderBy: { id: "desc" } });
@@ -23,10 +24,16 @@ export default async function CategoriesAdminPage() {
       <AdminMasterDetail
         listTitle="카테고리 목록"
         detailTitle="카테고리 상세"
-        columns={["카테고리명", "슬러그", "정렬", "상태"]}
+        columns={["카테고리명", "슬러그", { label: "정렬", sortKey: "sortOrder" }, { label: "등록일", sortKey: "createdAt" }, "상태"]}
+        search={{ placeholder: "카테고리명 또는 슬러그", fields: [{ value: "name", label: "카테고리명" }, { value: "slug", label: "슬러그" }] }}
+        filters={[{ key: "status", label: "상태", options: [{ value: "visible", label: "전시" }, { value: "hidden", label: "숨김" }] }]}
         rows={categories.map((category) => ({
           id: category.id,
-          cells: [category.name, category.slug, category.sortOrder, category.isVisible ? "전시" : "숨김"],
+          searchText: `${category.name} ${category.slug}`,
+          searchFields: { name: category.name, slug: category.slug },
+          facets: { status: category.isVisible ? "visible" : "hidden" },
+          sortValues: { sortOrder: category.sortOrder, createdAt: category.createdAt.getTime() },
+          cells: [category.name, category.slug, category.sortOrder, formatDate(category.createdAt), category.isVisible ? "전시" : "숨김"],
           detail: <form action={updateCategory} className="grid max-w-3xl gap-4"><input type="hidden" name="id" value={category.id} /><label className="text-sm font-medium">카테고리명<RequiredMark /><input className="field mt-2" name="name" defaultValue={category.name} required /></label><label className="text-sm font-medium">슬러그<input className="field mt-2" name="slug" defaultValue={category.slug} /></label><label className="text-sm font-medium">설명<input className="field mt-2" name="description" defaultValue={category.description} /></label><label className="text-sm font-medium">이미지 URL<input className="field mt-2" name="imageUrl" defaultValue={category.imageUrl} /></label><label className="text-sm font-medium">정렬 순서<input className="field mt-2" name="sortOrder" type="number" defaultValue={category.sortOrder} /></label><label className="text-sm"><input type="checkbox" name="isVisible" defaultChecked={category.isVisible} /> 전시</label><div className="flex gap-2"><button className="btn">수정</button><button className="btn btn-ghost" formAction={deleteCategory}>삭제</button></div></form>,
         }))}
       />

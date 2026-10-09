@@ -27,6 +27,13 @@ function bool(formData: FormData, key: string) {
   return formData.get(key) === "on" || formData.get(key) === "true";
 }
 
+function optionalDate(formData: FormData, key: string) {
+  const value = text(formData, key);
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export async function createCategory(formData: FormData) {
   if (!(await requireAdmin())) return;
   const count = await prisma.category.count();
@@ -97,6 +104,7 @@ export async function createBanner(formData: FormData) {
       href: text(formData, "href") || "/",
       sortOrder: num(formData, "sortOrder"),
       isActive: bool(formData, "isActive"),
+      endAt: optionalDate(formData, "endAt"),
     },
   });
   await setAdminFlash("배너가 등록되었습니다.");
@@ -118,6 +126,7 @@ export async function updateBanner(formData: FormData) {
       href: text(formData, "href") || "/",
       sortOrder: num(formData, "sortOrder"),
       isActive: bool(formData, "isActive"),
+      endAt: optionalDate(formData, "endAt"),
     },
   });
   await setAdminFlash("배너가 수정되었습니다.");

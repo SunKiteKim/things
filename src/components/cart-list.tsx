@@ -71,14 +71,14 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
           const key = cartRowKey(row);
           const coupons = (appliedCoupons[key] ?? []).filter((coupon) => isProductCoupon(coupon.scope));
           return (
-            <div key={key} className="relative grid grid-cols-[24px_96px_1fr] gap-4 border-b border-line py-6">
+            <div key={key} className="relative grid grid-cols-[24px_96px_1fr] gap-4 border-b border-line py-6" data-testid="장바구니상품" data-product-id={row.product.id} data-quantity={row.quantity} data-unit-price={row.product.price} data-line-amount={row.product.price * row.quantity}>
               <input className="mt-1" type="checkbox" aria-label={`${row.product.name} 선택`} checked={selected.includes(key)} onChange={() => onSelectedChange(selected.includes(key) ? selected.filter((item) => item !== key) : [...selected, key])} />
               <div className="relative aspect-square overflow-hidden bg-surface"><ProductImage src={row.product.imageUrl} alt={row.product.name} fill /></div>
               <div className="pr-14">
-                <button type="button" className="absolute right-0 top-5 text-xs text-muted underline underline-offset-4 hover:text-ink" disabled={pending} onClick={() => remove([key])}>삭제</button>
-                <Link href={`/product/${row.product.id}`} className="product-name">{row.product.name}</Link>
-                <p className="mt-1 text-xs text-muted">{row.product.id}</p>
-                <p className="mt-1 text-base font-bold" style={{ color: "#3f3b37" }}>{formatPrice(row.product.price)}</p>
+                <button type="button" data-testid="상품삭제" className="absolute right-0 top-5 text-xs text-muted underline underline-offset-4 hover:text-ink" disabled={pending} onClick={() => remove([key])}>삭제</button>
+                <Link href={`/product/${row.product.id}`} className="product-name" data-testid="장바구니상품명">{row.product.name}</Link>
+                <p className="mt-1 text-xs text-muted" data-testid="장바구니상품번호">{row.product.id}</p>
+                <p className="mt-1 text-base font-bold" style={{ color: "#3f3b37" }} data-testid="장바구니단가" data-price={row.product.price}>{formatPrice(row.product.price)}</p>
                 {coupons.length === 0 ? <p className="mt-1 text-xs text-muted"><button type="button" className="underline underline-offset-2" onClick={() => { setCouponTab("product"); setCouponOpen(true); }}>상품쿠폰 적용하기&gt;</button></p> : null}
                 {coupons.length > 0 ? (
                   <div className="mt-2 text-sm text-muted">

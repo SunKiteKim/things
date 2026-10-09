@@ -24,9 +24,20 @@ export default async function ProductsAdminPage() {
       <AdminMasterDetail
         listTitle="상품 목록"
         detailTitle="상품 상세"
-        columns={["이미지", "상품번호", "상품명", "카테고리", "판매가", "회원 할인", "등록일"]}
+        columns={["이미지", { label: "상품번호", sortKey: "id" }, "상품명", "카테고리", { label: "판매가", sortKey: "price" }, { label: "회원 할인", sortKey: "discount" }, { label: "등록일", sortKey: "date" }]}
+        search={{ placeholder: "상품명 또는 상품번호", fields: [{ value: "name", label: "상품명" }, { value: "id", label: "상품번호" }] }}
+        filters={[{ key: "category", label: "카테고리", options: categories.map((category) => ({ value: category.id, label: category.name })) }]}
         rows={products.map((product) => ({
           id: product.id,
+          searchText: `${product.name} ${product.id}`,
+          searchFields: { name: product.name, id: product.id },
+          facets: { category: product.categoryId },
+          sortValues: {
+            id: product.id,
+            price: discountedPrice(product.originalPrice ?? product.price, product.discountRate),
+            discount: product.discountRate,
+            date: product.registeredAt.getTime(),
+          },
           cells: [
             <ProductImage key={product.id} src={product.imageUrl} alt="" className="h-12 w-12 object-cover" />,
             product.id,
@@ -36,7 +47,7 @@ export default async function ProductsAdminPage() {
             `${product.discountRate}%`,
             formatDate(product.registeredAt),
           ],
-          detail: <div><ProductForm product={product} categories={categories} />{boards.get(product.id) ? <ProductDiscountBoard board={boards.get(product.id)!} /> : null}<form action={deleteProduct} className="mt-4 max-w-3xl border-t border-line pt-4"><input type="hidden" name="id" value={product.id} /><button className="btn btn-ghost">상품 삭제</button></form></div>,
+          detail: <div key={product.id}><ProductForm product={product} categories={categories} />{boards.get(product.id) ? <ProductDiscountBoard board={boards.get(product.id)!} /> : null}<form action={deleteProduct} className="mt-4 max-w-3xl border-t border-line pt-4"><input type="hidden" name="id" value={product.id} /><button className="btn btn-ghost">상품 삭제</button></form></div>,
         }))}
       />
     </div>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { createCoupon, deleteCoupon, issueCoupon, toggleCouponPause, updateCoupon } from "@/actions/promotions";
+import { AdminSearchBar, SortButton, filterAndSortRows, isQueryActive, useAdminListState } from "@/components/admin-list-controls";
 import { DisabledText } from "@/components/disabled-text";
 import { RequiredMark } from "@/components/required-mark";
 import { ProductSearchPicker, type SearchableProduct } from "@/components/product-search-picker";
@@ -253,20 +254,58 @@ function dateLabel(value: string) {
   return new Intl.DateTimeFormat("ko-KR", { dateStyle: "short" }).format(new Date(value));
 }
 
+const COUPON_STATUS_LABEL = {
+  available: "사용 가능",
+  scheduled: "사용 예정",
+  paused: "일시중지",
+  stopped: "사용 중지",
+  completed: "완료",
+} as const;
+
+function couponStatus(coupon: CouponView, now = Date.now()) {
+  if (coupon.isPaused) return "paused" as const;
+  if (!coupon.isActive) return "stopped" as const;
+  if (new Date(coupon.endAt).getTime() < now || (coupon.maxUses !== null && coupon.usedCount >= coupon.maxUses)) return "completed" as const;
+  if (new Date(coupon.startAt).getTime() > now) return "scheduled" as const;
+  return "available" as const;
+}
+
 const PAGE_SIZE = 5;
 
 export function CouponAdmin({ coupons, products, issueTargets }: { coupons: CouponView[]; products: ProductOption[]; issueTargets: { users: IssueTarget[]; categories: IssueTarget[] } }) {
   const [open, setOpen] = useState(false);
-  const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState("");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
-  const pageCount = Math.ceil(coupons.length / PAGE_SIZE);
-  const pageCoupons = coupons.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const selected = coupons.find((coupon) => coupon.id === selectedId);
+  const { page, setPage, sort, toggleSort, draftQuery, setDraftQuery, draftField, setDraftField, draftFilters, setFilter, applied, applySearch } = useAdminListState();
+  const rows = useMemo(() => coupons.map((coupon, index) => ({
+    ...coupon,
+    no: index + 1,
+    searchText: `${coupon.name} ${coupon.code}`,
+    searchFields: { name: coupon.name, code: coupon.code },
+    facets: { discountType: coupon.discountType === "PERCENT" ? "PERCENT" : "AMOUNT", status: couponStatus(coupon) },
+    sortValues: {
+      no: index + 1,
+      rate: coupon.discountType === "PERCENT" ? coupon.discountValue : null,
+      amount: coupon.discountType === "AMOUNT" ? coupon.discountValue : null,
+      start: new Date(coupon.startAt).getTime(),
+      end: new Date(coupon.endAt).getTime(),
+    },
+  })), [coupons]);
+  const listSort = sort?.key === "discount" ? { key: applied.filters.discountType === "AMOUNT" ? "amount" : "rate", dir: sort.dir } : sort;
+  const view = filterAndSortRows(rows, applied, listSort);
+  const pageCount = Math.max(1, Math.ceil(view.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pageCoupons = view.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const selected = view.find((coupon) => coupon.id === selectedId);
 
   function movePage(nextPage: number) {
     setPage(nextPage);
+    setSelectedId("");
+  }
+
+  function submitSearch() {
+    applySearch();
     setSelectedId("");
   }
 
@@ -307,31 +346,60 @@ export function CouponAdmin({ coupons, products, issueTargets }: { coupons: Coup
       {coupons.length ? (
         <>
           <h2 className="mt-8 text-base font-semibold">쿠폰 목록</h2>
+          <AdminSearchBar
+            query={draftQuery}
+            field={draftField}
+            fields={[{ value: "name", label: "쿠폰명" }, { value: "code", label: "쿠폰 코드" }]}
+            filters={[
+              { key: "discountType", label: "할인", options: [{ value: "PERCENT", label: "할인율만 보기" }, { value: "AMOUNT", label: "할인액만 보기" }] },
+              { key: "status", label: "상태", options: [
+                { value: "available", label: "사용 가능" },
+                { value: "scheduled", label: "사용 예정" },
+                { value: "paused", label: "일시중지" },
+                { value: "stopped", label: "사용 중지" },
+                { value: "completed", label: "완료" },
+              ] },
+            ]}
+            filterValues={draftFilters}
+            placeholder="쿠폰명 또는 쿠폰 코드"
+            onQuery={setDraftQuery}
+            onField={setDraftField}
+            onFilter={setFilter}
+            onSearch={submitSearch}
+          />
+          {isQueryActive(applied) ? <p className="mt-3 text-sm text-muted">검색 결과 {view.length}건</p> : null}
           <div className="mt-4 overflow-x-auto border border-line" role="tablist" aria-label="등록 쿠폰">
             <div className="grid min-w-[860px] grid-cols-[0.35fr_1.2fr_1.5fr_0.8fr_0.7fr_1.2fr_0.7fr] gap-3 bg-slate-50 px-3 py-2 text-[0.68rem] font-semibold text-muted">
-              <span>No</span><span>쿠폰 코드</span><span>쿠폰명</span><span>쿠폰 유형</span><span>할인</span><span>사용 기간</span><span>상태</span>
+              <span><SortButton label="No" active={sort?.key === "no"} dir={sort?.dir} onClick={() => toggleSort("no")} /></span>
+              <span>쿠폰 코드</span>
+              <span>쿠폰명</span>
+              <span>쿠폰 유형</span>
+              <span><SortButton label="할인" active={sort?.key === "discount"} dir={sort?.dir} ariaLabel={applied.filters.discountType === "AMOUNT" ? "할인액 순 정렬" : "할인율 순 정렬"} onClick={() => toggleSort("discount")} /></span>
+              <span className="flex flex-wrap gap-2"><SortButton label="시작일" active={sort?.key === "start"} dir={sort?.dir} onClick={() => toggleSort("start")} /><SortButton label="종료일" active={sort?.key === "end"} dir={sort?.dir} onClick={() => toggleSort("end")} /></span>
+              <span>상태</span>
             </div>
-            {pageCoupons.map((coupon) => {
+            {pageCoupons.length ? pageCoupons.map((coupon) => {
               const active = selected?.id === coupon.id;
+              const status = couponStatus(coupon);
               return (
                 <button key={coupon.id} type="button" role="tab" aria-selected={active} aria-controls="coupon-detail-panel" className={`grid w-full min-w-[860px] grid-cols-[0.35fr_1.2fr_1.5fr_0.8fr_0.7fr_1.2fr_0.7fr] gap-3 border-t border-line px-3 py-2.5 text-left text-[0.72rem] transition ${active ? "bg-slate-100" : "bg-white hover:bg-slate-50"}`} onClick={() => { setError(""); setSelectedId(coupon.id); }}>
-                  <span>{(page - 1) * PAGE_SIZE + pageCoupons.indexOf(coupon) + 1}</span>
+                  <span>{coupon.no}</span>
                   <span className="font-mono text-[0.68rem]">{coupon.code}</span>
                   <span className="font-bold">{coupon.name}</span>
                   <span>{coupon.scope === "ONE_PLUS_ONE" ? "1+1 할인" : coupon.scope === "PRODUCT" ? "상품" : coupon.scope === "MULTI_CART" ? "가지가지 할인" : "장바구니"}</span>
                   <span>{discountLabel(coupon)}</span>
                   <span className="text-[0.68rem] text-muted">{dateLabel(coupon.startAt)} ~ {dateLabel(coupon.endAt)}</span>
-                  <span className={coupon.isPaused ? "text-muted" : coupon.isActive ? "text-accent" : "text-muted"}>{coupon.isPaused ? "일시중지" : coupon.isActive ? "사용 가능" : "사용 중지"}</span>
+                  <span className={status === "available" ? "text-accent" : "text-muted"}>{COUPON_STATUS_LABEL[status]}</span>
                 </button>
               );
-            })}
+            }) : <p className="border-t border-line px-3 py-12 text-center text-sm text-muted">검색 결과가 없습니다.</p>}
           </div>
 
-          <nav className="mt-5 flex justify-center gap-2" aria-label="쿠폰 목록 페이지">
+          {view.length ? <nav className="mt-5 flex justify-center gap-2" aria-label="쿠폰 목록 페이지">
               {Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => (
-                <button key={number} type="button" className={`h-9 min-w-9 border px-3 text-sm ${page === number ? "border-ink bg-ink text-white" : "border-line bg-white"}`} aria-current={page === number ? "page" : undefined} onClick={() => movePage(number)}>{number}</button>
+                <button key={number} type="button" className={`h-9 min-w-9 border px-3 text-sm ${currentPage === number ? "border-ink bg-ink text-white" : "border-line bg-white"}`} aria-current={currentPage === number ? "page" : undefined} onClick={() => movePage(number)}>{number}</button>
               ))}
-          </nav>
+          </nav> : null}
 
           {selected ? (
             <section id="coupon-detail-panel" role="tabpanel" className="mt-8 border border-line bg-white p-6 md:p-8">

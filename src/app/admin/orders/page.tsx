@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { AdminOrdersTable } from "@/components/admin-orders-table";
 import { formatDate, formatPrice, maskEmail, maskPersonalInfo, ORDER_STATUS_LABEL } from "@/lib/utils";
 
 export default async function OrdersAdminPage() {
@@ -11,34 +11,18 @@ export default async function OrdersAdminPage() {
   return (
     <div>
       <h1 className="display text-4xl">주문관리</h1>
-      <table className="mt-8 w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-line text-muted">
-            <th className="py-3">No</th>
-            <th>주문번호</th>
-            <th>이메일</th>
-            <th>이름</th>
-            <th>금액</th>
-            <th>상태</th>
-            <th>일시</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map((order, index) => (
-            <tr key={order.id} className="border-b border-line">
-              <td className="py-4">{index + 1}</td>
-              <td>
-                <Link href={`/admin/orders/${order.id}`}>{order.orderNumber}</Link>
-              </td>
-              <td>{order.user.role === "WITHDRAWN" ? "-" : maskEmail(order.user.email)}</td>
-              <td>{order.user.role === "WITHDRAWN" ? "탈퇴 회원" : maskPersonalInfo(order.user.name)}</td>
-              <td>{formatPrice(order.totalAmount)}</td>
-              <td>{ORDER_STATUS_LABEL[order.status]}</td>
-              <td>{formatDate(order.createdAt)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <AdminOrdersTable
+        rows={orders.map((order) => ({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          email: order.user.role === "WITHDRAWN" ? "-" : maskEmail(order.user.email),
+          name: order.user.role === "WITHDRAWN" ? "탈퇴 회원" : maskPersonalInfo(order.user.name),
+          amount: formatPrice(order.totalAmount),
+          status: ORDER_STATUS_LABEL[order.status] ?? order.status,
+          createdAt: order.createdAt.getTime(),
+          createdLabel: formatDate(order.createdAt),
+        }))}
+      />
     </div>
   );
 }

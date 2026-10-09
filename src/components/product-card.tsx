@@ -22,7 +22,7 @@ export function ProductCard({
   );
 
   return (
-    <div className="group relative block">
+    <div className="group relative block" data-testid="상품카드" data-product-id={product.id} data-stock={product.stock} data-purchasable={product.stock > 0 ? "true" : "false"}>
       <div className="relative">
         <Link href={`/product/${product.id}`} className="block">
           <div className="relative aspect-square overflow-hidden bg-surface">
@@ -40,7 +40,7 @@ export function ProductCard({
         </Link>
         <ProductQuickActions productId={product.id} soldOut={product.stock <= 0} />
       </div>
-      <Link href={`/product/${product.id}`} className="mt-3 block">
+      <Link href={`/product/${product.id}`} className="mt-3 block" data-testid="상품링크">
         {showProductId ? (
           <p className="text-[0.72rem] tracking-wide text-muted">{product.id}</p>
         ) : null}
@@ -53,7 +53,7 @@ export function ProductCard({
           ) : showDiscountRate ? (
             <span className="text-accent">{product.discountRate}%</span>
           ) : null}
-          <span data-testid="product-sale-price">{formatPrice(product.price)}</span>
+          <span data-testid="판매가" data-price={product.price}>{formatPrice(product.price)}</span>
           {showOriginalPrice && originalPrice ? (
             <span className="line-through opacity-60">{formatPrice(originalPrice)}</span>
           ) : null}

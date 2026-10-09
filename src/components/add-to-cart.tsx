@@ -20,14 +20,16 @@ export function AddToCart({ productId, stock, onePlusOne = false }: { productId:
   }
 
   return (
-    <div className="mt-10">
+    <div className="mt-10" data-testid="구매영역" data-purchasable={soldOut ? "false" : "true"}>
       <div className="flex items-center justify-between gap-16">
         <span className="text-sm">수량</span>
         <div className="qty-box">
-          <button type="button" disabled={soldOut || pending} onClick={() => changeQty(quantity - 1)}>
+          <button type="button" data-testid="수량감소" disabled={soldOut || pending} onClick={() => changeQty(quantity - 1)}>
             −
           </button>
           <input
+            data-testid="수량"
+            data-quantity={quantity}
             type="number"
             min={1}
             max={max || 1}
@@ -35,7 +37,7 @@ export function AddToCart({ productId, stock, onePlusOne = false }: { productId:
             disabled={soldOut}
             onChange={(event) => changeQty(Number(event.target.value) || 1)}
           />
-          <button type="button" disabled={soldOut || pending} onClick={() => changeQty(quantity + 1)}>
+          <button type="button" data-testid="수량증가" disabled={soldOut || pending} onClick={() => changeQty(quantity + 1)}>
             +
           </button>
         </div>
@@ -49,6 +51,7 @@ export function AddToCart({ productId, stock, onePlusOne = false }: { productId:
       <div className="mt-8 flex justify-center gap-3">
         <button
           type="button"
+          data-testid="장바구니담기"
           className="btn btn-ghost w-44"
           disabled={soldOut || pending}
           onClick={() =>
@@ -68,6 +71,7 @@ export function AddToCart({ productId, stock, onePlusOne = false }: { productId:
         </button>
         <button
           type="button"
+          data-testid="바로구매"
           className="btn w-44"
           disabled={soldOut || pending}
           onClick={() =>
@@ -87,16 +91,17 @@ export function AddToCart({ productId, stock, onePlusOne = false }: { productId:
           <div
             className="w-full max-w-sm bg-white p-7 shadow-2xl"
             role="dialog"
+            data-testid="장바구니담기완료"
             aria-modal="true"
             aria-labelledby="cart-added-title"
           >
             <p id="cart-added-title" className="text-lg font-bold">장바구니 담기에 성공했습니다.</p>
             <p className="mt-2 text-sm leading-6 text-muted">장바구니에서 상품과 적용된 혜택을 확인할 수 있습니다.</p>
             <div className="mt-7 grid grid-cols-2 gap-3">
-              <button type="button" className="btn btn-ghost" onClick={() => setAdded(false)}>
+              <button type="button" className="btn btn-ghost" data-testid="계속쇼핑" onClick={() => setAdded(false)}>
                 계속 쇼핑
               </button>
-              <Link href="/cart" className="btn" onClick={() => setAdded(false)}>
+              <Link href="/cart" className="btn" data-testid="장바구니이동">
                 장바구니로 이동
               </Link>
             </div>

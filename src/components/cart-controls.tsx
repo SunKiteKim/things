@@ -35,12 +35,12 @@ export function CartControls({
 
   return (
     <div className="mt-2 flex items-center gap-2 text-sm">
-      <button type="button" className="grid h-7 w-7 place-items-center border border-line disabled:opacity-40" disabled={pending} onClick={() => setQty(displayQuantity - 1)}>
+      <button type="button" data-testid="장바구니수량감소" className="grid h-7 w-7 place-items-center border border-line disabled:opacity-40" disabled={pending} onClick={() => setQty(displayQuantity - 1)}>
         -
       </button>
-      <span>{displayQuantity}{onePlusOne ? "세트" : ""}</span>
+      <span data-testid="장바구니수량" data-quantity={displayQuantity}>{displayQuantity}{onePlusOne ? "세트" : ""}</span>
       {error && <span role="alert">{error}</span>}
-      <button type="button" className="grid h-7 w-7 place-items-center border border-line disabled:opacity-40" disabled={pending} onClick={() => setQty(displayQuantity + 1)}>
+      <button type="button" data-testid="장바구니수량증가" className="grid h-7 w-7 place-items-center border border-line disabled:opacity-40" disabled={pending} onClick={() => setQty(displayQuantity + 1)}>
         +
       </button>
     </div>

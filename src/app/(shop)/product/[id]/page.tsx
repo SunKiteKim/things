@@ -50,30 +50,26 @@ export default async function ProductPage({
           </div>
         ))}
       </div>
-      <div className="md:sticky md:top-28 md:self-start">
-        <p className="text-[0.72rem] uppercase tracking-[0.28em] text-muted">
+      <div className="md:sticky md:top-28 md:self-start" data-testid="상품상세" data-product-id={product.id} data-purchasable={product.stock > 0 ? "true" : "false"}>
+        <p className="text-[0.72rem] uppercase tracking-[0.28em] text-muted" data-testid="상품카테고리">
           {product.category.name}
         </p>
-        <p className="mt-3 text-[0.72rem] tracking-wide text-muted">{product.id}</p>
-        <h1 className="product-name mt-1 text-5xl leading-snug">{product.name}</h1>
-        <div className="mt-6 space-y-4 border-b border-line pb-5 text-sm">
-          <div>
-            {listPrice > salePrice ? <p className="text-right text-xs line-through" style={{ fontWeight: 400, color: "#c5c0b8" }}>{formatPrice(listPrice)}</p> : null}
-            <div className="mt-1 flex items-start justify-between gap-4">
-              <span>할인가</span>
-              <p data-testid="product-sale-price">
-                {rateLabel ? <span className="mr-2" style={{ color: "#e10600", fontWeight: 400 }}>{rateLabel}</span> : null}
-                <span className="font-bold">{formatPrice(salePrice)}</span>
-              </p>
-            </div>
-          </div>
+        <p className="mt-3 text-[0.72rem] tracking-wide text-muted" data-testid="상품번호">{product.id}</p>
+        <h1 className="product-name mt-1 text-5xl leading-snug" data-testid="상품명">{product.name}</h1>
+        <p className="mt-6 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-sm" data-testid="가격줄">
+          {listPrice > salePrice ? <s className="basis-full text-right text-xs line-through" data-testid="정가" data-price={listPrice} style={{ fontWeight: 400, color: "#c5c0b8" }}>{formatPrice(listPrice)}</s> : null}
+          <b className="font-normal">할인가</b>
+          <span data-testid="할인율" className={rateLabel ? "ml-auto mr-2" : "ml-auto"} style={rateLabel ? { color: "#e10600", fontWeight: 400 } : undefined}>{rateLabel ?? ""}</span>
+          <span className="font-bold" data-testid="판매가" data-price={salePrice}>{formatPrice(salePrice)}</span>
+        </p>
+        <div className="mt-4 space-y-4 border-b border-line pb-5 text-sm">
           <div>
             <div className="flex items-center justify-between gap-4">
               <span>쿠폰 할인가</span>
-              <span className="font-bold" data-testid="product-coupon-price">{formatPrice(couponPrice)}</span>
+              <span className="font-bold" data-testid="쿠폰할인가" data-price={couponPrice}>{formatPrice(couponPrice)}</span>
             </div>
             {appliedCoupon ? (
-              <div className="mt-2 flex items-start justify-between gap-4 text-xs" data-testid="product-applied-coupon">
+              <div className="mt-2 flex items-start justify-between gap-4 text-xs" data-testid="적용쿠폰">
                 <p className="flex min-w-0 items-start gap-1.5 leading-5 text-muted">
                   <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" className="mt-0.5 shrink-0">
                     <path d="M3 2.5v6.2c0 1.2.8 2 2 2H11" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
@@ -88,12 +84,12 @@ export default async function ProductPage({
           {delivery > 0 ? (
             <div className="flex items-center justify-between gap-4">
               <span>배송비</span>
-              <span data-testid="product-shipping">{formatPrice(SHIPPING_FEE)}</span>
+              <span data-testid="배송비" data-price={SHIPPING_FEE}>{formatPrice(SHIPPING_FEE)}</span>
             </div>
           ) : null}
           <div className="flex items-center justify-between gap-4 border-t border-line pt-4">
             <span className="font-semibold">예상 결제금액</span>
-            <span className="text-lg font-bold" style={{ color: "#e10600" }} data-testid="product-payable">{formatPrice(payable)}</span>
+            <span className="text-lg font-bold" style={{ color: "#e10600" }} data-testid="예상결제금액" data-price={payable}>{formatPrice(payable)}</span>
           </div>
           <p className="text-xs leading-relaxed text-muted">{SHIPPING_NOTICE}</p>
         </div>
@@ -115,8 +111,8 @@ export default async function ProductPage({
             </div>
           ) : null}
         </div>
-        <p className="mt-8 max-w-md text-sm leading-7 text-muted">{product.description}</p>
-        <p className="mt-6 text-sm">재고 {product.stock}개</p>
+        <p className="mt-8 max-w-md text-sm leading-7 text-muted" data-testid="상품설명">{product.description}</p>
+        <p className="mt-6 text-sm" data-testid="재고" data-stock={product.stock} data-purchasable={product.stock > 0 ? "true" : "false"}>재고 {product.stock}개</p>
         <AddToCart productId={product.id} stock={product.stock} onePlusOne={product.onePlusOne} />
       </div>
     </div>
