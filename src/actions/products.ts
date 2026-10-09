@@ -151,7 +151,6 @@ export async function updateProduct(formData: FormData) {
 export async function deleteProduct(formData: FormData) {
   if (!(await requireAdmin())) return;
   const id = text(formData, "id");
-  await prisma.exhibitionProduct.deleteMany({ where: { productId: id } });
   await prisma.product.delete({ where: { id } });
   await setAdminFlash("상품이 삭제되었습니다.");
   revalidatePath("/admin/products");

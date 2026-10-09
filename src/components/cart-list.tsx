@@ -63,7 +63,6 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
       setMessage(result.error ?? result.message ?? "처리되었습니다.");
       if (!result.error) {
         onSelectedChange(selected.filter((key) => !keysToRemove.includes(key)));
-        router.refresh();
       }
     });
   }
@@ -107,7 +106,7 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
           );
         })}
       </div>
-      {message ? <div className="fixed bottom-6 right-6 z-[150] rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-xl" role="status">{message}</div> : null}
+      {pending || message ? <div className="fixed bottom-6 right-6 z-[150] rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-xl" role="status">{pending ? "삭제 중…" : message}</div> : null}
       <CouponPicker
         title="쿠폰 변경"
         options={couponOptions}
@@ -125,7 +124,6 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
         onApply={async (option) => {
           const result = await selectCartCoupon(option.code || "-");
           if ("error" in result && result.error) throw new Error(result.error);
-          router.refresh();
         }}
       />
     </div>

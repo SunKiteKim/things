@@ -1,4 +1,5 @@
 "use client";
+import { SubmitButton } from "@/components/submit-button";
 
 import { useMemo, useState, useTransition } from "react";
 import { createCoupon, deleteCoupon, issueCoupon, toggleCouponPause, updateCoupon } from "@/actions/promotions";
@@ -343,6 +344,7 @@ export function CouponAdmin({ coupons, products, issueTargets }: { coupons: Coup
         <button type="button" className="btn shrink-0" onClick={() => { setError(""); setOpen(true); }}>쿠폰등록</button>
       </div>
 
+      <p className="mt-6 text-sm text-muted" data-testid="총등록개수">총 {coupons.length.toLocaleString("ko-KR")}개 등록</p>
       {coupons.length ? (
         <>
           <h2 className="mt-8 text-base font-semibold">쿠폰 목록</h2>
@@ -414,9 +416,9 @@ export function CouponAdmin({ coupons, products, issueTargets }: { coupons: Coup
                 <div className="admin-row">
                   <span />
                   <div className="flex gap-3">
-                    <button className="btn" disabled={pending}>{pending ? "수정 중…" : "쿠폰 수정"}</button>
-                    <button className="btn btn-ghost" formAction={toggleCouponPause}>{selected.isPaused ? "쿠폰 재개" : "쿠폰 일시중지"}</button>
-                    <button className="btn btn-ghost" formAction={deleteCoupon}>쿠폰 삭제</button>
+                    <SubmitButton className="btn" disabled={pending}>{pending ? "수정 중…" : "쿠폰 수정"}</SubmitButton>
+                    <SubmitButton className="btn btn-ghost" formAction={toggleCouponPause}>{selected.isPaused ? "쿠폰 재개" : "쿠폰 일시중지"}</SubmitButton>
+                    <SubmitButton className="btn btn-ghost" formAction={deleteCoupon}>쿠폰 삭제</SubmitButton>
                   </div>
                 </div>
               </form>
@@ -439,7 +441,7 @@ export function CouponAdmin({ coupons, products, issueTargets }: { coupons: Coup
               {error ? <p className="mt-5 text-sm text-accent" role="alert">{error}</p> : null}
               <div className="mt-8 flex justify-end gap-3">
                 <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>취소</button>
-                <button className="btn" disabled={pending}>{pending ? "등록 중…" : "쿠폰 등록"}</button>
+                <SubmitButton className="btn" disabled={pending}>{pending ? "등록 중…" : "쿠폰 등록"}</SubmitButton>
               </div>
             </form>
           </div>

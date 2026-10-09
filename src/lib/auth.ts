@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { cache } from "react";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
@@ -128,9 +129,9 @@ export const adminAuthOptions: NextAuthOptions = {
   callbacks,
 };
 
-export function auth() {
+export const auth = cache(function auth() {
   return getServerSession(authOptions);
-}
+});
 
 export async function requireUser() {
   const session = await auth();
@@ -140,10 +141,10 @@ export async function requireUser() {
   return session;
 }
 
-export async function requireAdmin() {
+export const requireAdmin = cache(async function requireAdmin() {
   const session = await getServerSession(adminAuthOptions);
   if (!session?.user?.id || session.user.role !== "ADMIN" || session.user.portal !== "admin") {
     return null;
   }
   return session;
-}
+});

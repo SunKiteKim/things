@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import { prisma } from "@/lib/prisma";
 import { deleteProduct } from "@/actions/products";
 import { formatDate, formatPrice } from "@/lib/utils";
@@ -49,7 +50,7 @@ export default async function ProductsAdminPage() {
             formatPrice(product.price),
             formatDate(product.registeredAt),
           ],
-          detail: <div key={product.id}><ProductForm product={product} categories={categories} />{boards.get(product.id) ? <ProductDiscountBoard board={boards.get(product.id)!} /> : null}<form action={deleteProduct} className="mt-4 max-w-3xl border-t border-line pt-4"><input type="hidden" name="id" value={product.id} /><button className="btn btn-ghost">상품 삭제</button></form></div>,
+          detail: <div key={product.id}><ProductForm product={product} categories={categories} />{boards.get(product.id) ? <ProductDiscountBoard board={boards.get(product.id)!} /> : null}<form action={deleteProduct} className="mt-4 max-w-3xl border-t border-line pt-4"><input type="hidden" name="id" value={product.id} /><SubmitButton className="btn btn-ghost">상품 삭제</SubmitButton></form></div>,
         }))}
       />
     </div>

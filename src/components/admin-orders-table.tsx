@@ -33,7 +33,9 @@ export function AdminOrdersTable({ rows }: { rows: AdminOrderRow[] }) {
   }
 
   return (
-    <table className="mt-8 w-full text-left text-sm">
+    <>
+    <p className="mt-8 text-sm text-muted" data-testid="총등록개수">총 {rows.length.toLocaleString("ko-KR")}개 등록</p>
+    <table className="mt-4 w-full text-left text-sm">
       <thead>
         <tr className="border-b border-line text-muted">
           <th className="py-3">No</th>
@@ -65,5 +67,6 @@ export function AdminOrdersTable({ rows }: { rows: AdminOrderRow[] }) {
         )}
       </tbody>
     </table>
+    </>
   );
 }

@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import { prisma } from "@/lib/prisma";
 import { updateProductDisplay } from "@/actions/products";
 import { AdminPagedList } from "@/components/admin-paged-list";
@@ -31,7 +32,7 @@ export default async function ProductDisplayPage() {
               <input type="checkbox" name="isFeatured" defaultChecked={product.isFeatured} /> 추천
             </label>
             <input className="field" name="sortOrder" type="number" defaultValue={product.sortOrder} />
-            <button className="btn btn-ghost">저장</button>
+            <SubmitButton className="btn btn-ghost">저장</SubmitButton>
           </form>
         ))}
       </AdminPagedList>

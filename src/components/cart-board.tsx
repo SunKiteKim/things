@@ -1,5 +1,7 @@
 "use client";
 
+import { SubmitButton } from "@/components/submit-button";
+
 import { useEffect, useMemo, useState } from "react";
 import { checkoutFromCart } from "@/actions/commerce";
 import { CartList, cartRowKey, type CartRow } from "@/components/cart-list";
@@ -187,7 +189,7 @@ export function CartBoard({
         <form action={checkoutFromCart}>
           {summary.error ? <p role="alert" className="mt-3 text-sm text-accent">{summary.error}</p> : null}
           {selected.map((key) => <input key={key} type="hidden" name="line" value={key} />)}
-          <button className="btn mt-6 w-full" type="submit" disabled={selected.length === 0 || !!summary.error}>총 {summary.orderQuantity}개 주문하기</button>
+          <SubmitButton className="btn mt-6 w-full" type="submit" disabled={selected.length === 0 || !!summary.error}>총 {summary.orderQuantity}개 주문하기</SubmitButton>
         </form>
       </aside>
     </div>

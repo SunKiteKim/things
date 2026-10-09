@@ -1,5 +1,7 @@
 "use client";
 
+import { SubmitButton } from "@/components/submit-button";
+
 import { updateMember } from "@/actions/members";
 import { DisabledText } from "@/components/disabled-text";
 import { formatDateTime } from "@/lib/utils";
@@ -72,7 +74,7 @@ export function MemberForm({ user }: { user: MaskedMember }) {
       </Field>
       <div className="admin-row">
         <span />
-        <button className="btn w-fit">회원 수정</button>
+        <SubmitButton className="btn w-fit">회원 수정</SubmitButton>
       </div>
     </form>
   );

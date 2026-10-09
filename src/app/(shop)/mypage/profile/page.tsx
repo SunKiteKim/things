@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -43,7 +44,7 @@ export default async function MyProfilePage({
         <div className="form-row">
           <span />
           <div className="flex flex-wrap gap-3">
-            <button type="submit" className="btn w-fit">저장</button>
+            <SubmitButton type="submit" className="btn w-fit">저장</SubmitButton>
             <WithdrawalButton />
           </div>
         </div>

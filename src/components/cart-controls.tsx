@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useTransition, useState } from "react";
-import { useRouter } from "next/navigation";
 import { updateCartLine } from "@/actions/commerce";
 
 export function CartControls({
@@ -13,7 +12,6 @@ export function CartControls({
   quantity: number;
   onePlusOne?: boolean;
 }) {
-  const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
   const [displayQuantity, setDisplayQuantity] = useState(quantity);
@@ -28,7 +26,6 @@ export function CartControls({
       setError(result.error ?? "");
       if (!result.error) {
         setDisplayQuantity(next);
-        router.refresh();
       }
     });
   }
@@ -39,6 +36,7 @@ export function CartControls({
         -
       </button>
       <span data-testid="장바구니수량" data-quantity={displayQuantity}>{displayQuantity}{onePlusOne ? "세트" : ""}</span>
+      {pending ? <span className="text-xs text-muted" role="status">변경 중…</span> : null}
       {error && <span role="alert">{error}</span>}
       <button type="button" data-testid="장바구니수량증가" className="grid h-7 w-7 place-items-center border border-line disabled:opacity-40" disabled={pending} onClick={() => setQty(displayQuantity + 1)}>
         +

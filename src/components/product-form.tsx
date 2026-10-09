@@ -1,5 +1,7 @@
 "use client";
 
+import { SubmitButton } from "@/components/submit-button";
+
 import { useMemo, useState } from "react";
 import { DisabledText } from "@/components/disabled-text";
 import { ProductImagePicker } from "@/components/product-image-picker";
@@ -121,7 +123,7 @@ export function ProductForm({
       ) : null}
       <div className="admin-row">
         <span />
-        <button disabled={imageBusy} className="btn w-fit disabled:opacity-50">{product ? "상품 수정" : "상품 등록"}</button>
+        <SubmitButton disabled={imageBusy} className="btn w-fit disabled:opacity-50">{product ? "상품 수정" : "상품 등록"}</SubmitButton>
       </div>
     </form>
   );

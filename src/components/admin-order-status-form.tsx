@@ -1,13 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { updateOrderStatus } from "@/actions/commerce";
 import { RequiredMark } from "@/components/required-mark";
 import { ORDER_STATUS, ORDER_STATUS_LABEL } from "@/lib/utils";
 
 export function AdminOrderStatusForm({ id, currentStatus, trackingNumber }: { id: string; currentStatus: string; trackingNumber: string }) {
-  const router = useRouter();
   const [status, setStatus] = useState(currentStatus);
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
@@ -22,7 +20,6 @@ export function AdminOrderStatusForm({ id, currentStatus, trackingNumber }: { id
         setError(result?.error ?? "주문 상태를 변경하지 못했습니다.");
         return;
       }
-      router.refresh();
     });
   }
 

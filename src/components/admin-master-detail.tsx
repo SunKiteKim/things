@@ -53,7 +53,10 @@ export function AdminMasterDetail({
 
   return (
     <>
-      <h2 className="mt-8 text-base font-semibold">{listTitle}</h2>
+      <div className="mt-8 flex items-baseline justify-between gap-3">
+        <h2 className="text-base font-semibold">{listTitle}</h2>
+        <p className="text-sm text-muted" data-testid="총등록개수">총 {rows.length.toLocaleString("ko-KR")}개 등록</p>
+      </div>
       {showSearch ? (
         <>
           <AdminSearchBar

@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import { prisma } from "@/lib/prisma";
 import { createMember, deleteMember } from "@/actions/members";
 import { LIMITS, formatDate, maskEmail, maskPersonalInfo, maskPhone } from "@/lib/utils";
@@ -42,7 +43,7 @@ export default async function MembersAdminPage() {
           facets: { role: user.role },
           sortValues: { email: user.email, name: user.name, createdAt: user.createdAt.getTime(), role: ROLE_LABEL[user.role] ?? user.role },
           cells: [maskEmail(user.email), maskPersonalInfo(user.name), maskPersonalInfo(user.id), maskPhone(user.phone), formatDate(user.createdAt), ROLE_LABEL[user.role] ?? user.role],
-          detail: <div><MemberForm user={{ id: user.id, mid: midById.get(user.id) ?? "-", name: maskPersonalInfo(user.name), email: maskEmail(user.email), phone: maskPhone(user.phone), zipCode: maskPersonalInfo(user.zipCode), address: maskPersonalInfo(user.address), addressDetail: maskPersonalInfo(user.addressDetail), role: user.role, createdAt: user.createdAt, updatedAt: user.updatedAt }} />{user.role !== "ADMIN" ? <form action={deleteMember} className="mt-4 max-w-3xl border-t border-line pt-4"><input type="hidden" name="id" value={user.id} /><button className="btn btn-ghost">회원 삭제</button></form> : null}</div>,
+          detail: <div><MemberForm user={{ id: user.id, mid: midById.get(user.id) ?? "-", name: maskPersonalInfo(user.name), email: maskEmail(user.email), phone: maskPhone(user.phone), zipCode: maskPersonalInfo(user.zipCode), address: maskPersonalInfo(user.address), addressDetail: maskPersonalInfo(user.addressDetail), role: user.role, createdAt: user.createdAt, updatedAt: user.updatedAt }} />{user.role !== "ADMIN" ? <form action={deleteMember} className="mt-4 max-w-3xl border-t border-line pt-4"><input type="hidden" name="id" value={user.id} /><SubmitButton className="btn btn-ghost">회원 삭제</SubmitButton></form> : null}</div>,
         }))}
       />
     </div>

@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -118,10 +119,10 @@ export default async function AdminOrderDetailPage({
       </div>
       <AdminOrderStatusForm id={order.id} currentStatus={order.status} trackingNumber={order.trackingNumber ?? ""} />
       <div className="mt-3 flex flex-wrap gap-3">
-        <form action={cancelOrder}><input type="hidden" name="id" value={order.id} /><button className="btn btn-ghost">주문 취소</button></form>
+        <form action={cancelOrder}><input type="hidden" name="id" value={order.id} /><SubmitButton className="btn btn-ghost">주문 취소</SubmitButton></form>
         {order.status === ORDER_STATUS.DELIVERED ? <>
-          <form action={requestOrderAfterSale}><input type="hidden" name="id" value={order.id} /><input type="hidden" name="requestType" value="RETURN" /><button className="btn btn-ghost">반품 신청</button></form>
-          <form action={requestOrderAfterSale}><input type="hidden" name="id" value={order.id} /><input type="hidden" name="requestType" value="EXCHANGE" /><button className="btn btn-ghost">교환 신청</button></form>
+          <form action={requestOrderAfterSale}><input type="hidden" name="id" value={order.id} /><input type="hidden" name="requestType" value="RETURN" /><SubmitButton className="btn btn-ghost">반품 신청</SubmitButton></form>
+          <form action={requestOrderAfterSale}><input type="hidden" name="id" value={order.id} /><input type="hidden" name="requestType" value="EXCHANGE" /><SubmitButton className="btn btn-ghost">교환 신청</SubmitButton></form>
         </> : null}
       </div>
       {order.status === ORDER_STATUS.RETURN_REQUESTED || order.status === ORDER_STATUS.EXCHANGE_REQUESTED ? (
@@ -131,13 +132,13 @@ export default async function AdminOrderDetailPage({
             <form action={confirmOrderCollection} className="mt-4 flex flex-wrap items-center gap-3">
               <input type="hidden" name="id" value={order.id} />
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="collectionConfirmed" required /> 물품 회수 완료 확인<RequiredMark /></label>
-              <button className="btn btn-ghost">회수 확인 저장</button>
+              <SubmitButton className="btn btn-ghost">회수 확인 저장</SubmitButton>
             </form>
           ) : (
             <form action={completeOrderAfterSale} className="mt-4">
               <input type="hidden" name="id" value={order.id} />
               <p className="mb-3 text-sm text-muted">회수 확인: {formatDateTime(order.collectionConfirmedAt)}</p>
-              <button className="btn">{order.status === ORDER_STATUS.RETURN_REQUESTED ? "반품 완료" : "교환 상품 보내기"}</button>
+              <SubmitButton className="btn">{order.status === ORDER_STATUS.RETURN_REQUESTED ? "반품 완료" : "교환 상품 보내기"}</SubmitButton>
             </form>
           )}
         </section>

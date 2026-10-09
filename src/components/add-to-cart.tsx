@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { addToCart, buyNow } from "@/actions/commerce";
 
 export function AddToCart({ productId, stock, onePlusOne = false }: { productId: string; stock: number; onePlusOne?: boolean }) {
-  const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
@@ -63,7 +61,6 @@ export function AddToCart({ productId, stock, onePlusOne = false }: { productId:
               }
               setError("");
               setAdded(true);
-              router.refresh();
             })
           }
         >
@@ -81,7 +78,7 @@ export function AddToCart({ productId, stock, onePlusOne = false }: { productId:
             })
           }
         >
-          바로구매
+          {pending ? "처리 중…" : "바로구매"}
         </button>
       </div>
       {soldOut ? <p className="mt-4 text-sm text-accent">일시품절입니다.</p> : null}

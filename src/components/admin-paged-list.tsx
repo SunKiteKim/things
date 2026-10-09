@@ -9,7 +9,8 @@ export function AdminPagedList({ children, pageSize = 10 }: { children: React.Re
 
   return (
     <>
-      <div className="mt-8 space-y-4">
+      <p className="mt-8 text-sm text-muted" data-testid="총등록개수">총 {items.length.toLocaleString("ko-KR")}개 등록</p>
+      <div className="mt-4 space-y-4">
         {items.slice((page - 1) * pageSize, page * pageSize).map((item, index) => (
           <div key={(page - 1) * pageSize + index} className="grid grid-cols-[3rem_minmax(0,1fr)] items-stretch gap-3">
             <div className="grid place-items-center border border-line bg-slate-50 text-sm font-semibold">{(page - 1) * pageSize + index + 1}</div>

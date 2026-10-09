@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import { prisma } from "@/lib/prisma";
 import { createExhibition, deleteExhibition, updateExhibition } from "@/actions/promotions";
 import { AdminCreateModal } from "@/components/admin-create-modal";
@@ -114,10 +115,10 @@ export default async function ExhibitionsAdminPage() {
                 <input type="checkbox" name="isActive" defaultChecked={exhibition.isActive} /> 공개
               </label>
               <div className="flex gap-2">
-                <button className="btn">수정</button>
-                <button className="btn btn-ghost" formAction={deleteExhibition}>
+                <SubmitButton className="btn">수정</SubmitButton>
+                <SubmitButton className="btn btn-ghost" formAction={deleteExhibition}>
                   삭제
-                </button>
+                </SubmitButton>
               </div>
             </form>,
           };

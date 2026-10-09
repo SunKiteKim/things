@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { downloadCartCoupon, selectCartCoupon } from "@/actions/commerce";
 import { formatPrice } from "@/lib/utils";
 import { ProductImage } from "@/components/product-image";
@@ -53,7 +52,6 @@ function DownloadCouponCard({ coupon, pending, onDownload }: { coupon: Downloada
 }
 
 function DownloadableCoupons({ coupons }: { coupons: DownloadableCoupon[] }) {
-  const router = useRouter();
   const [claimed, setClaimed] = useState<string[]>([]);
   const [downloading, setDownloading] = useState("");
   const [downloadError, setDownloadError] = useState("");
@@ -83,7 +81,6 @@ function DownloadableCoupons({ coupons }: { coupons: DownloadableCoupon[] }) {
                   return;
                 }
                 setClaimed((current) => [...current, id]);
-                router.refresh();
               } finally {
                 setDownloading("");
               }
@@ -353,6 +350,5 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
 }
 
 export function CartCoupon({ options, selected, subtotal }: { options: CouponOption[]; selected: string; subtotal: number }) {
-  const router = useRouter();
-  return <CouponPicker options={options} selected={selected} subtotal={subtotal} onApply={async (option) => { const result = await selectCartCoupon(option.code || "-"); if ("error" in result && result.error) throw new Error(result.error); router.refresh(); }} />;
+  return <CouponPicker options={options} selected={selected} subtotal={subtotal} onApply={async (option) => { const result = await selectCartCoupon(option.code || "-"); if ("error" in result && result.error) throw new Error(result.error); }} />;
 }

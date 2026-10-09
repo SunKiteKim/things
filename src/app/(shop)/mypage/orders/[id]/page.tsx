@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
@@ -38,8 +39,8 @@ export default async function MyOrderDetailPage({
       <table className="mt-8 w-full border border-line bg-white"><tbody><InfoRow label="받는 분">{order.receiverName}</InfoRow><InfoRow label="연락처">{order.receiverPhone}</InfoRow><InfoRow label="주소">({order.zipCode}) {order.address} {order.addressDetail}</InfoRow><InfoRow label="배송 메모">{order.memo || "-"}</InfoRow></tbody></table>
       <div className="mt-8 flex flex-wrap gap-3">
         <Link href="/mypage/orders" className="btn btn-ghost">뒤로가기</Link>
-        {cancellable ? <form action={cancelOrder}><input type="hidden" name="id" value={order.id} /><button className="btn btn-ghost">주문 취소</button></form> : null}
-        {order.status === ORDER_STATUS.DELIVERED ? <><form action={requestOrderAfterSale}><input type="hidden" name="id" value={order.id} /><input type="hidden" name="requestType" value="RETURN" /><button className="btn">반품 신청</button></form><form action={requestOrderAfterSale}><input type="hidden" name="id" value={order.id} /><input type="hidden" name="requestType" value="EXCHANGE" /><button className="btn btn-ghost">교환 신청</button></form></> : null}
+        {cancellable ? <form action={cancelOrder}><input type="hidden" name="id" value={order.id} /><SubmitButton className="btn btn-ghost">주문 취소</SubmitButton></form> : null}
+        {order.status === ORDER_STATUS.DELIVERED ? <><form action={requestOrderAfterSale}><input type="hidden" name="id" value={order.id} /><input type="hidden" name="requestType" value="RETURN" /><SubmitButton className="btn">반품 신청</SubmitButton></form><form action={requestOrderAfterSale}><input type="hidden" name="id" value={order.id} /><input type="hidden" name="requestType" value="EXCHANGE" /><SubmitButton className="btn btn-ghost">교환 신청</SubmitButton></form></> : null}
       </div>
     </div>
   );

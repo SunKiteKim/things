@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -105,7 +106,7 @@ export default async function ProductPage({
                   <input type="hidden" name="couponId" value={coupon.id} />
                   <input type="hidden" name="productId" value={product.id} />
                   <span>{coupon.name} · {coupon.label}</span>
-                  {coupon.owned ? <span className="text-muted">받은 쿠폰</span> : <button className="btn">쿠폰 다운</button>}
+                  {coupon.owned ? <span className="text-muted">받은 쿠폰</span> : <SubmitButton className="btn">쿠폰 다운</SubmitButton>}
                 </form>
               ))}
             </div>

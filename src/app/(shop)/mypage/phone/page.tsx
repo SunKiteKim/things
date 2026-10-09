@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import { redirect } from "next/navigation";
 import { completeGooglePhone } from "@/actions/members";
 import { requireUser } from "@/lib/auth";
@@ -25,7 +26,7 @@ export default async function GooglePhonePage({ searchParams }: { searchParams: 
       <form action={completeGooglePhone} className="mt-8 space-y-4">
         <input className="field" name="phone" type="tel" placeholder="010-0000-0000" autoComplete="tel" inputMode="tel" required />
         {params.error ? <p className="text-sm text-accent" role="alert">올바른 휴대전화 번호를 입력해 주세요.</p> : null}
-        <button className="btn w-full">등록하고 계속하기</button>
+        <SubmitButton className="btn w-full">등록하고 계속하기</SubmitButton>
       </form>
     </section>
   );
