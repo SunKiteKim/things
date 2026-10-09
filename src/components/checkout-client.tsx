@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ProductImage } from "@/components/product-image";
 import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import { completeDemoPayment, createPendingOrder, selectCartCoupon } from "@/actions/commerce";
 import { formatPrice } from "@/lib/utils";
@@ -27,7 +29,7 @@ type Props = {
   subtotal: number;
   orderName: string;
   tossClientKey: string;
-  items: { id: string; name: string; quantity: number; onePlusOne: boolean; amount: number }[];
+  items: { id: string; productId: string; imageUrl: string; name: string; quantity: number; onePlusOne: boolean; amount: number }[];
 };
 
 export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initialCoupon, couponOptions, items }: Props) {
@@ -229,10 +231,11 @@ export function CheckoutClient({ user, subtotal, orderName, tossClientKey, initi
       <ul className="mt-4 space-y-3 text-sm">
         {items.map((item) => (
           <li key={item.id} className="flex justify-between gap-4">
-            <span>
-              <span className="product-name">{item.name}</span> × {item.quantity}{item.onePlusOne ? ` (1+1 증정 ${item.quantity}개)` : ""}
+            <Link href={`/product/${item.productId}`} className="relative h-12 w-12 shrink-0 overflow-hidden bg-surface"><ProductImage src={item.imageUrl} alt={item.name} fill /></Link>
+            <span className="min-w-0 flex-1">
+              <Link href={`/product/${item.productId}`} className="product-name">{item.name}</Link> × {item.quantity}{item.onePlusOne ? ` (1+1 증정 ${item.quantity}개)` : ""}
             </span>
-            <span>{formatPrice(item.amount)}</span>
+            <span className="shrink-0">{formatPrice(item.amount)}</span>
           </li>
         ))}
       </ul>

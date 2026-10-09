@@ -45,6 +45,17 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
     return () => window.clearTimeout(timer);
   }, [message]);
 
+  function openCoupons(tab: "product" | "cart") {
+    if (!signedIn) {
+      if (window.confirm("로그인 후 쿠폰 적용할 수 있습니다.")) {
+        router.push("/login?callbackUrl=/cart");
+      }
+      return;
+    }
+    setCouponTab(tab);
+    setCouponOpen(true);
+  }
+
   function remove(keysToRemove: string[]) {
     const lines = rows.filter((row) => keysToRemove.includes(cartRowKey(row))).map((row) => ({ productId: row.productId, onePlusOne: row.onePlusOne }));
     startTransition(async () => {
@@ -62,7 +73,7 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
       <div className="flex items-center justify-between border-b border-ink pb-3">
         <div className="flex items-center gap-3"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={allSelected} onChange={() => onSelectedChange(allSelected ? [] : keys)} /> 전체 선택</label><span className="text-sm text-muted">총 {rows.length}개</span></div>
         <div className="flex items-center gap-3">
-          <button type="button" className="text-sm underline underline-offset-4" onClick={() => { setCouponTab("cart"); setCouponOpen(true); }}>쿠폰 변경하기</button>
+          <button type="button" className="text-sm underline underline-offset-4" onClick={() => openCoupons("cart")}>쿠폰 변경하기</button>
           <button type="button" className="text-sm underline underline-offset-4 disabled:text-muted" disabled={pending || selected.length === 0} onClick={() => remove(selected)}>선택삭제</button>
         </div>
       </div>
@@ -73,20 +84,20 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
           return (
             <div key={key} className="relative grid grid-cols-[24px_96px_1fr] gap-4 border-b border-line py-6" data-testid="장바구니상품" data-product-id={row.product.id} data-quantity={row.quantity} data-unit-price={row.product.price} data-line-amount={row.product.price * row.quantity}>
               <input className="mt-1" type="checkbox" aria-label={`${row.product.name} 선택`} checked={selected.includes(key)} onChange={() => onSelectedChange(selected.includes(key) ? selected.filter((item) => item !== key) : [...selected, key])} />
-              <div className="relative aspect-square overflow-hidden bg-surface"><ProductImage src={row.product.imageUrl} alt={row.product.name} fill /></div>
+              <Link href={`/product/${row.product.id}`} className="relative aspect-square overflow-hidden bg-surface"><ProductImage src={row.product.imageUrl} alt={row.product.name} fill /></Link>
               <div className="pr-14">
                 <button type="button" data-testid="상품삭제" className="absolute right-0 top-5 text-xs text-muted underline underline-offset-4 hover:text-ink" disabled={pending} onClick={() => remove([key])}>삭제</button>
                 <Link href={`/product/${row.product.id}`} className="product-name" data-testid="장바구니상품명">{row.product.name}</Link>
                 <p className="mt-1 text-xs text-muted" data-testid="장바구니상품번호">{row.product.id}</p>
                 <p className="mt-1 text-base font-bold" style={{ color: "#3f3b37" }} data-testid="장바구니단가" data-price={row.product.price}>{formatPrice(row.product.price)}</p>
-                {coupons.length === 0 ? <p className="mt-1 text-xs text-muted"><button type="button" className="underline underline-offset-2" onClick={() => { setCouponTab("product"); setCouponOpen(true); }}>상품쿠폰 적용하기&gt;</button></p> : null}
+                {coupons.length === 0 ? <p className="mt-1 text-xs text-muted"><button type="button" className="underline underline-offset-2" onClick={() => openCoupons("product")}>상품쿠폰 적용하기&gt;</button></p> : null}
                 {coupons.length > 0 ? (
                   <div className="mt-2 text-sm text-muted">
                     <p>적용된 쿠폰</p>
                     {coupons.map((coupon) => (
                       <p key={coupon.code} className="mt-1">&gt; {coupon.label} {formatPrice(coupon.amount)}</p>
                     ))}
-                    <p className="mt-1 text-xs text-muted"><button type="button" className="underline underline-offset-2" onClick={() => { setCouponTab("product"); setCouponOpen(true); }}>상품쿠폰 변경하기</button></p>
+                    <p className="mt-1 text-xs text-muted"><button type="button" className="underline underline-offset-2" onClick={() => openCoupons("product")}>상품쿠폰 변경하기</button></p>
                   </div>
                 ) : null}
                 {row.onePlusOne ? <p className="mt-1 text-sm">1+1 · 구매 {row.quantity}개 + 증정 {row.quantity}개</p> : null}

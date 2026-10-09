@@ -71,6 +71,8 @@ export default async function CheckoutPage() {
           tossClientKey={process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? ""}
           items={rows.map((row) => ({
             id: row.productId + String(!!row.onePlusOne),
+            productId: row.productId,
+            imageUrl: row.product.imageUrl,
             name: row.product.name,
             quantity: row.quantity,
             onePlusOne: row.onePlusOne === true,

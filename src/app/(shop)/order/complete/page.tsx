@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ProductImage } from "@/components/product-image";
 import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -27,8 +28,9 @@ export default async function OrderCompletePage({
       <p className="mt-2 text-sm">{ORDER_STATUS_LABEL[order.status]}</p>
       <ul className="mt-8 space-y-2 text-sm text-muted">
         {order.items.map((item) => (
-          <li key={item.id}>
-            <span className="product-name">{item.name}</span> × {item.quantity}{item.freeQuantity > 0 ? ` + 1+1 증정 ${item.freeQuantity}개 (총 ${item.quantity + item.freeQuantity}개)` : ""}
+          <li key={item.id} className="flex items-center gap-3 text-left">
+            <Link href={`/product/${item.productId}`} className="relative h-12 w-12 shrink-0 overflow-hidden bg-surface"><ProductImage src={item.imageUrl} alt={item.name} fill /></Link>
+            <span><Link href={`/product/${item.productId}`} className="product-name">{item.name}</Link> × {item.quantity}{item.freeQuantity > 0 ? ` + 1+1 증정 ${item.freeQuantity}개 (총 ${item.quantity + item.freeQuantity}개)` : ""}</span>
           </li>
         ))}
       </ul>
