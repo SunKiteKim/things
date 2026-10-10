@@ -172,7 +172,7 @@ export function CartBoard({
             {summary.discountLines.map((line) => (
               <li key={line.code} className="flex justify-between gap-4">
                 <span>&gt; {line.label}</span>
-                <span className="shrink-0">{formatPrice(line.amount)}</span>
+                <span className="shrink-0">{formatPrice(-Math.abs(line.amount))}</span>
               </li>
             ))}
           </ul>

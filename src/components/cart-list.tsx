@@ -94,7 +94,7 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
                   <div className="mt-2 text-sm text-muted">
                     <p>적용된 쿠폰</p>
                     {coupons.map((coupon) => (
-                      <p key={coupon.code} className="mt-1">&gt; {coupon.label} {formatPrice(coupon.amount)}</p>
+                      <p key={coupon.code} className="mt-1">&gt; {coupon.label} {formatPrice(-Math.abs(coupon.amount))}</p>
                     ))}
                     <p className="mt-1 text-xs text-muted"><button type="button" className="underline underline-offset-2" onClick={() => openCoupons("product")}>상품쿠폰 변경하기</button></p>
                   </div>
