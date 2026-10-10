@@ -105,18 +105,11 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
             <div key={key} className="relative grid grid-cols-[24px_96px_1fr] gap-4 border-b border-line py-6" data-testid="장바구니상품" data-product-id={row.product.id} data-quantity={row.quantity} data-unit-price={row.product.price} data-line-amount={row.product.price * row.quantity}>
               <input className="mt-1" type="checkbox" aria-label={`${row.product.name} 선택`} checked={selected.includes(key)} onChange={() => onSelectedChange(selected.includes(key) ? selected.filter((item) => item !== key) : [...selected, key])} />
               <Link href={`/product/${row.product.id}`} className="relative aspect-square overflow-hidden bg-surface"><ProductImage src={row.product.imageUrl} alt={row.product.name} fill /></Link>
-              <div className="pr-14">
-                <button type="button" data-testid="상품삭제" className="absolute right-0 top-5 text-xs text-muted underline underline-offset-4 hover:text-ink" disabled={pending} onClick={() => remove([key])}>삭제</button>
+              <button type="button" data-testid="상품삭제" className="absolute right-0 top-5 text-xs text-muted underline underline-offset-4 hover:text-ink" disabled={pending} onClick={() => remove([key])}>삭제</button>
+              <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-6 pr-14">
+                <div className="min-w-0">
                 <Link href={`/product/${row.product.id}`} className="product-name" data-testid="장바구니상품명">{row.product.name}</Link>
                 <p className="mt-1 text-xs text-muted" data-testid="장바구니상품번호">{row.product.id}</p>
-                <p className={`mt-1 text-base ${couponDiscount > 0 ? "font-normal line-through" : "font-bold"}`} style={{ color: couponDiscount > 0 ? "#c5c0b8" : "#3f3b37" }} data-testid="장바구니단가" data-price={linePrice}>{formatPrice(linePrice)}</p>
-                {quantity > 1 ? <p className="mt-0.5 text-xs font-normal" style={{ color: "#3f3b37" }}>(개당 {formatPrice(row.product.price)})</p> : null}
-                {couponDiscount > 0 ? (
-                  <>
-                    <p className="mt-1 text-base font-bold" data-testid="장바구니쿠폰할인가" data-price={couponLinePrice}>쿠폰할인가 {formatPrice(couponLinePrice)}</p>
-                    {quantity > 1 ? <p className="mt-0.5 text-xs font-normal" style={{ color: "#3f3b37" }}>(개당 {formatPrice(couponEach)})</p> : null}
-                  </>
-                ) : null}
                 {coupons.length === 0 ? <p className="mt-1 text-xs text-muted"><button type="button" className="underline underline-offset-2" onClick={() => openCoupons("product")}>상품쿠폰 적용하기&gt;</button></p> : null}
                 {coupons.length > 0 ? (
                   <div className="mt-2 text-sm text-muted">
@@ -132,6 +125,12 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
                 ) : null}
                 {row.onePlusOne ? <p className="mt-1 text-sm">1+1 · 구매 {row.quantity}개 + 증정 {row.quantity}개</p> : null}
                 <CartControls productId={row.productId} quantity={row.quantity} onePlusOne={row.onePlusOne} />
+                </div>
+                <div className="shrink-0 pt-1 text-right">
+                  <p className={`text-base ${couponDiscount > 0 ? "font-normal line-through" : "font-bold"}`} style={{ color: couponDiscount > 0 ? "#c5c0b8" : "#3f3b37", lineHeight: 1.15 }} data-testid="장바구니단가" data-price={linePrice}>{formatPrice(linePrice)}</p>
+                  {couponDiscount > 0 ? <p className="text-base font-bold" style={{ lineHeight: 1.15 }} data-testid="장바구니쿠폰할인가" data-price={couponLinePrice}>쿠폰할인가 {formatPrice(couponLinePrice)}</p> : null}
+                  {quantity > 1 ? <p style={{ marginTop: "-1px", fontSize: "10px", fontWeight: 400, lineHeight: 1.15, color: "#3f3b37" }}>(개당 {formatPrice(couponDiscount > 0 ? couponEach : row.product.price)})</p> : null}
+                </div>
               </div>
             </div>
           );

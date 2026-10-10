@@ -281,17 +281,11 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
                               <div className="shrink-0 text-right">
                                 {appliedDiscount > 0 ? (
                                   <>
-                                    <p className="text-sm line-through" style={{ fontWeight: 400, color: "#c5c0b8" }}>{formatPrice(linePrice)}</p>
-                                    {quantity > 1 ? <p style={{ marginTop: "2px", fontSize: "10px", fontWeight: 400, color: "#3f3b37" }}>(개당 {formatPrice(row.price)})</p> : null}
-                                    <p className="text-sm" style={{ fontWeight: 700, color: "#3f3b37" }}>{formatPrice(appliedPrice)}</p>
-                                    {quantity > 1 ? <p style={{ marginTop: "2px", fontSize: "10px", fontWeight: 400, color: "#3f3b37" }}>(개당 {formatPrice(eachPrice)})</p> : null}
+                                    <p className="text-sm line-through" style={{ fontWeight: 400, lineHeight: 1.15, color: "#c5c0b8" }}>{formatPrice(linePrice)}</p>
+                                    <p className="text-sm" style={{ fontWeight: 700, lineHeight: 1.15, color: "#3f3b37" }}>{formatPrice(appliedPrice)}</p>
                                   </>
-                                ) : (
-                                  <>
-                                    <p className="text-sm font-bold">{formatPrice(linePrice)}</p>
-                                    {quantity > 1 ? <p style={{ marginTop: "2px", fontSize: "10px", fontWeight: 400, color: "#3f3b37" }}>(개당 {formatPrice(row.price)})</p> : null}
-                                  </>
-                                )}
+                                ) : <p className="text-sm font-bold" style={{ lineHeight: 1.15 }}>{formatPrice(linePrice)}</p>}
+                                {quantity > 1 ? <p style={{ marginTop: "-1px", fontSize: "8px", fontWeight: 400, lineHeight: 1.15, color: "#3f3b37" }}>(개당 {formatPrice(appliedDiscount > 0 ? eachPrice : row.price)})</p> : null}
                               </div>
                             </div>
                             {chosen && appliedDiscount > 0 ? (
