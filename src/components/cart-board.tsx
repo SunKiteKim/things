@@ -141,7 +141,7 @@ export function CartBoard({
       <aside className="h-fit border border-line bg-surface p-6">
         <p className="text-sm text-muted">주문 상품</p>
         {summary.items.length > 0 ? (
-          <ul className="mt-4 space-y-3 text-sm">
+          <ul className="mt-4 space-y-3 border-b border-[#e5e5e5] pb-6 text-sm" style={{ borderBottomWidth: "1pt" }}>
             {summary.items.map((item) => (
               <li key={item.key} className="flex justify-between gap-4">
                 <span>
@@ -152,7 +152,7 @@ export function CartBoard({
             ))}
           </ul>
         ) : null}
-        <p className="mt-6 flex justify-between text-base">
+        <p className="mt-8 flex justify-between text-base">
           <span>상품 금액 합계</span>
           <span className="font-bold" data-testid="상품금액합계" data-amount={summary.subtotal}>{formatPrice(summary.subtotal)}</span>
         </p>
