@@ -85,11 +85,11 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-ink pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink pb-3">
         <div className="flex items-center gap-3"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={allSelected} onChange={() => onSelectedChange(allSelected ? [] : keys)} /> 전체 선택</label><span className="text-sm text-muted">총 {rows.length}개</span></div>
         <div className="flex items-center gap-3">
-          <button type="button" className="text-sm underline underline-offset-4" onClick={() => openCoupons("cart")}>장바구니 쿠폰 변경하기</button>
-          <button type="button" className="text-sm underline underline-offset-4 disabled:text-muted" disabled={pending || selected.length === 0} onClick={() => remove(selected)}>선택삭제</button>
+          <button type="button" className="btn" style={{ minHeight: "2.25rem", padding: "0 0.75rem", background: "#000", color: "#fff", borderColor: "#000" }} onClick={() => openCoupons("cart")}>장바구니 쿠폰 변경하기</button>
+          <button type="button" className="btn btn-ghost" style={{ minHeight: "2.25rem", padding: "0 0.75rem", background: "#fff", color: "#000", borderColor: "#000" }} disabled={pending || selected.length === 0} onClick={() => remove(selected)}>선택삭제</button>
         </div>
       </div>
       <div className="space-y-0">
@@ -113,9 +113,9 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
                   <div className="mt-2 text-sm text-muted">
                     <p>적용된 쿠폰</p>
                     {coupons.map((coupon) => (
-                      <div key={coupon.code} className="mt-1 flex items-start gap-2">
+                      <div key={coupon.code} className="mt-1 flex items-start gap-2 text-xs leading-5">
                         <p>&gt; {coupon.label} {formatPrice(-Math.abs(coupon.amount))}</p>
-                        <button type="button" className="shrink-0 px-1 text-base leading-5 disabled:opacity-40" aria-label={`${coupon.label} 적용 해제`} disabled={pending} onClick={() => removeCoupon(coupon.code)}>×</button>
+                        <button type="button" className="shrink-0 px-1 text-sm leading-5 disabled:opacity-40" aria-label={`${coupon.label} 적용 해제`} disabled={pending} onClick={() => removeCoupon(coupon.code)}>×</button>
                       </div>
                     ))}
                     <p className="mt-1 text-xs text-muted"><button type="button" className="underline underline-offset-2" onClick={() => openCoupons("product")}>상품쿠폰 변경하기</button></p>
