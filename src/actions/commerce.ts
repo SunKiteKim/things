@@ -53,12 +53,13 @@ export async function addToCart(productId: string, quantity = 1, onePlusOne = fa
 export async function updateCartLine(productId: string, quantity: number, onePlusOne = false) {
   if (!Number.isSafeInteger(quantity) || quantity < 0) return { error: "수량을 확인해 주세요." };
   const cart = await getCart();
+  const originalIndex = cart.findIndex(line => line.productId === productId && !!line.onePlusOne === onePlusOne);
   const next = cart.filter(line => !(line.productId === productId && !!line.onePlusOne === onePlusOne));
   if (quantity > 0) {
     const product = await prisma.product.findUnique({ where: { id: productId } });
     const used = next.filter(line => line.productId === productId).reduce((sum, line) => sum + line.quantity * (line.onePlusOne ? 2 : 1), 0);
     if (!product?.isPublished || (onePlusOne && !product.onePlusOne) || used + quantity * (onePlusOne ? 2 : 1) > product.stock) return { error: "옵션 또는 재고를 확인해 주세요." };
-    next.push({ productId, quantity, onePlusOne });
+    next.splice(originalIndex < 0 ? next.length : originalIndex, 0, { productId, quantity, onePlusOne });
   }
   await setCart(next);
   revalidatePath("/cart");
