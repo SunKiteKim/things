@@ -262,9 +262,11 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
                       const selectedCode = assignedCode(code, rowTarget(row));
                       const chosen = fits.find((option) => option.code === selectedCode);
                       const quantity = row.quantity && row.quantity > 0 ? row.quantity : 1;
+                      const linePrice = row.price * quantity;
                       const rowChecked = checked.includes(row.key);
-                      const appliedDiscount = chosen ? rowChecked ? allocated.find(option => option.code === chosen.code)?.amount ?? 0 : Math.min(row.price * quantity, dealFor(chosen, row)?.discount ?? 0) : 0;
-                      const appliedPrice = Math.max(0, row.price * quantity - appliedDiscount);
+                      const appliedDiscount = chosen ? rowChecked ? allocated.find(option => option.code === chosen.code)?.amount ?? 0 : Math.min(linePrice, dealFor(chosen, row)?.discount ?? 0) : 0;
+                      const appliedPrice = Math.max(0, linePrice - appliedDiscount);
+                      const eachPrice = Math.max(0, Math.floor(appliedPrice / quantity));
                       return (
                         <div key={row.key} className="flex items-start gap-3 px-4 py-4">
                           <input className="mt-1" type="checkbox" aria-label={`${row.name} 선택`} checked={checked.includes(row.key)} onChange={() => setChecked((current) => current.includes(row.key) ? current.filter((key) => key !== row.key) : [...current, row.key])} />
@@ -279,10 +281,17 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
                               <div className="shrink-0 text-right">
                                 {appliedDiscount > 0 ? (
                                   <>
-                                    <p className="text-sm line-through" style={{ fontWeight: 400, color: "#c5c0b8" }}>{formatPrice(row.price)}</p>
-                                    <p className="text-sm" style={{ fontWeight: 700, color: "#3f3b37" }}>{formatPrice(Math.max(0, Math.floor(appliedPrice / quantity)))}</p>
+                                    <p className="text-sm line-through" style={{ fontWeight: 400, color: "#c5c0b8" }}>{formatPrice(linePrice)}</p>
+                                    {quantity > 1 ? <p style={{ marginTop: "2px", fontSize: "10px", fontWeight: 400, color: "#3f3b37" }}>(개당 {formatPrice(row.price)})</p> : null}
+                                    <p className="text-sm" style={{ fontWeight: 700, color: "#3f3b37" }}>{formatPrice(appliedPrice)}</p>
+                                    {quantity > 1 ? <p style={{ marginTop: "2px", fontSize: "10px", fontWeight: 400, color: "#3f3b37" }}>(개당 {formatPrice(eachPrice)})</p> : null}
                                   </>
-                                ) : <p className="text-sm font-bold">{formatPrice(row.price)}</p>}
+                                ) : (
+                                  <>
+                                    <p className="text-sm font-bold">{formatPrice(linePrice)}</p>
+                                    {quantity > 1 ? <p style={{ marginTop: "2px", fontSize: "10px", fontWeight: 400, color: "#3f3b37" }}>(개당 {formatPrice(row.price)})</p> : null}
+                                  </>
+                                )}
                               </div>
                             </div>
                             {chosen && appliedDiscount > 0 ? (

@@ -97,7 +97,10 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
           const key = cartRowKey(row);
           const coupons = (appliedCoupons[key] ?? []).filter((coupon) => isProductCoupon(coupon.scope));
           const couponDiscount = coupons.reduce((sum, coupon) => sum + coupon.amount, 0);
-          const couponUnitPrice = Math.max(0, Math.floor((row.product.price * row.quantity - couponDiscount) / row.quantity));
+          const quantity = row.quantity > 0 ? row.quantity : 1;
+          const linePrice = row.product.price * quantity;
+          const couponLinePrice = Math.max(0, linePrice - couponDiscount);
+          const couponEach = Math.floor(couponLinePrice / quantity);
           return (
             <div key={key} className="relative grid grid-cols-[24px_96px_1fr] gap-4 border-b border-line py-6" data-testid="장바구니상품" data-product-id={row.product.id} data-quantity={row.quantity} data-unit-price={row.product.price} data-line-amount={row.product.price * row.quantity}>
               <input className="mt-1" type="checkbox" aria-label={`${row.product.name} 선택`} checked={selected.includes(key)} onChange={() => onSelectedChange(selected.includes(key) ? selected.filter((item) => item !== key) : [...selected, key])} />
@@ -106,8 +109,14 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
                 <button type="button" data-testid="상품삭제" className="absolute right-0 top-5 text-xs text-muted underline underline-offset-4 hover:text-ink" disabled={pending} onClick={() => remove([key])}>삭제</button>
                 <Link href={`/product/${row.product.id}`} className="product-name" data-testid="장바구니상품명">{row.product.name}</Link>
                 <p className="mt-1 text-xs text-muted" data-testid="장바구니상품번호">{row.product.id}</p>
-                <p className={`mt-1 text-base ${couponDiscount > 0 ? "font-normal line-through" : "font-bold"}`} style={{ color: couponDiscount > 0 ? "#c5c0b8" : "#3f3b37" }} data-testid="장바구니단가" data-price={row.product.price}>{formatPrice(row.product.price)}</p>
-                {couponDiscount > 0 ? <p className="mt-1 text-base font-bold" data-testid="장바구니쿠폰할인가" data-price={couponUnitPrice}>쿠폰할인가 {formatPrice(couponUnitPrice)}{row.quantity > 1 ? <span className="ml-1 text-xs font-normal text-muted">(개당)</span> : null}</p> : null}
+                <p className={`mt-1 text-base ${couponDiscount > 0 ? "font-normal line-through" : "font-bold"}`} style={{ color: couponDiscount > 0 ? "#c5c0b8" : "#3f3b37" }} data-testid="장바구니단가" data-price={linePrice}>{formatPrice(linePrice)}</p>
+                {quantity > 1 ? <p className="mt-0.5 text-xs font-normal" style={{ color: "#3f3b37" }}>(개당 {formatPrice(row.product.price)})</p> : null}
+                {couponDiscount > 0 ? (
+                  <>
+                    <p className="mt-1 text-base font-bold" data-testid="장바구니쿠폰할인가" data-price={couponLinePrice}>쿠폰할인가 {formatPrice(couponLinePrice)}</p>
+                    {quantity > 1 ? <p className="mt-0.5 text-xs font-normal" style={{ color: "#3f3b37" }}>(개당 {formatPrice(couponEach)})</p> : null}
+                  </>
+                ) : null}
                 {coupons.length === 0 ? <p className="mt-1 text-xs text-muted"><button type="button" className="underline underline-offset-2" onClick={() => openCoupons("product")}>상품쿠폰 적용하기&gt;</button></p> : null}
                 {coupons.length > 0 ? (
                   <div className="mt-2 text-sm text-muted">
