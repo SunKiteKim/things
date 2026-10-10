@@ -29,7 +29,7 @@ export function cartRowKey(row: Pick<CartRow, "productId" | "onePlusOne">) {
   return `${row.productId}:${row.onePlusOne ? "1" : "0"}`;
 }
 
-export function CartList({ rows, couponOptions, couponNotices = [], downloads = [], signedIn = false, selectedCoupon, subtotal, selected, onSelectedChange, appliedCoupons }: { rows: CartRow[]; couponOptions: CouponOption[]; couponNotices?: CouponNotice[]; downloads?: DownloadableCoupon[]; signedIn?: boolean; selectedCoupon: string; subtotal: number; selected: string[]; onSelectedChange: (next: string[]) => void; appliedCoupons: Record<string, AppliedCoupon[]> }) {
+export function CartList({ rows, couponOptions, couponNotices = [], downloads = [], signedIn = false, selectedCoupon, subtotal, selected, onSelectedChange, appliedCoupons, onQuantityChange }: { rows: CartRow[]; couponOptions: CouponOption[]; couponNotices?: CouponNotice[]; downloads?: DownloadableCoupon[]; signedIn?: boolean; selectedCoupon: string; subtotal: number; selected: string[]; onSelectedChange: (next: string[]) => void; appliedCoupons: Record<string, AppliedCoupon[]>; onQuantityChange?: (key: string, quantity: number) => void }) {
   const router = useRouter();
   const [couponOpen, setCouponOpen] = useState(false);
   const [couponTab, setCouponTab] = useState("product");
@@ -124,10 +124,10 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
                   </div>
                 ) : null}
                 {row.onePlusOne ? <p className="mt-1 text-sm">1+1 · 구매 {row.quantity}개 + 증정 {row.quantity}개</p> : null}
-                <CartControls productId={row.productId} quantity={row.quantity} onePlusOne={row.onePlusOne} />
+                <CartControls productId={row.productId} quantity={row.quantity} onePlusOne={row.onePlusOne} onQuantityChange={(quantity) => onQuantityChange?.(key, quantity)} />
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className={`text-base ${couponDiscount > 0 ? "font-normal line-through" : "font-bold"}`} style={{ color: couponDiscount > 0 ? "#c5c0b8" : "#3f3b37", lineHeight: 1.15 }} data-testid="장바구니단가" data-price={linePrice}>{formatPrice(linePrice)}</p>
+                  <p className={couponDiscount > 0 ? "text-xs font-normal line-through" : "text-base font-bold"} style={{ color: couponDiscount > 0 ? "#c5c0b8" : "#3f3b37", lineHeight: 1.15 }} data-testid="장바구니단가" data-price={linePrice}>{formatPrice(linePrice)}</p>
                   {couponDiscount > 0 ? <p className="text-base font-bold" style={{ lineHeight: 1.15 }} data-testid="장바구니쿠폰할인가" data-price={couponLinePrice}>쿠폰할인가 {formatPrice(couponLinePrice)}</p> : null}
                   {quantity > 1 ? <p style={{ marginTop: "-1px", fontSize: "10px", fontWeight: 400, lineHeight: 1.15, color: "#3f3b37" }}>(개당 {formatPrice(couponDiscount > 0 ? couponEach : row.product.price)})</p> : null}
                 </div>

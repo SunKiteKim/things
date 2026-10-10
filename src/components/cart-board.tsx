@@ -126,18 +126,34 @@ export function CartBoard({
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const liveRows = useMemo(() => rows.map((row) => {
+    const quantity = quantities[cartRowKey(row)];
+    return quantity == null ? row : { ...row, quantity };
+  }), [rows, quantities]);
   const applied = useMemo(() => coupons.filter((coupon) => couponCodes(selectedCoupon).includes(coupon.code.toUpperCase())), [coupons, selectedCoupon]);
-  const summary = useMemo(() => summarize(rows, selected, applied, userId, selectedCoupon), [rows, selected, applied, userId, selectedCoupon]);
-  const productSummary = useMemo(() => summarize(rows, rows.map(cartRowKey), applied, userId, selectedCoupon), [rows, applied, userId, selectedCoupon]);
+  const summary = useMemo(() => summarize(liveRows, selected, applied, userId, selectedCoupon), [liveRows, selected, applied, userId, selectedCoupon]);
+  const productSummary = useMemo(() => summarize(liveRows, liveRows.map(cartRowKey), applied, userId, selectedCoupon), [liveRows, applied, userId, selectedCoupon]);
 
   useEffect(() => {
     const keys = new Set(rows.map(cartRowKey));
     setSelected((current) => current.filter((key) => keys.has(key)));
+    setQuantities((current) => {
+      let changed = false;
+      const next = { ...current };
+      for (const key of Object.keys(next)) {
+        if (!keys.has(key) || rows.some((row) => cartRowKey(row) === key && row.quantity === next[key])) {
+          delete next[key];
+          changed = true;
+        }
+      }
+      return changed ? next : current;
+    });
   }, [rows]);
 
   return (
     <div className="mt-10 grid gap-12 lg:grid-cols-[1.4fr_0.6fr]">
-      <CartList rows={rows} couponOptions={couponOptions} couponNotices={couponNotices} downloads={downloads} signedIn={signedIn} selectedCoupon={selectedCoupon} subtotal={subtotal} selected={selected} onSelectedChange={setSelected} appliedCoupons={productSummary.appliedCoupons} />
+      <CartList rows={liveRows} couponOptions={couponOptions} couponNotices={couponNotices} downloads={downloads} signedIn={signedIn} selectedCoupon={selectedCoupon} subtotal={subtotal} selected={selected} onSelectedChange={setSelected} appliedCoupons={productSummary.appliedCoupons} onQuantityChange={(key, quantity) => setQuantities((current) => ({ ...current, [key]: quantity }))} />
       <aside className="h-fit border border-line bg-surface p-6">
         <p className="text-sm text-muted">주문 상품</p>
         {summary.items.length > 0 ? (

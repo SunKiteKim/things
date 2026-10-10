@@ -281,7 +281,7 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
                               <div className="shrink-0 text-right">
                                 {appliedDiscount > 0 ? (
                                   <>
-                                    <p className="text-sm line-through" style={{ fontWeight: 400, lineHeight: 1.15, color: "#c5c0b8" }}>{formatPrice(linePrice)}</p>
+                                    <p className="line-through" style={{ fontSize: "10px", fontWeight: 400, lineHeight: 1.15, color: "#c5c0b8" }}>{formatPrice(linePrice)}</p>
                                     <p className="text-sm" style={{ fontWeight: 700, lineHeight: 1.15, color: "#3f3b37" }}>{formatPrice(appliedPrice)}</p>
                                   </>
                                 ) : <p className="text-sm font-bold" style={{ lineHeight: 1.15 }}>{formatPrice(linePrice)}</p>}
