@@ -254,7 +254,6 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
                       const fits = allOptions.filter((option) => isProductCoupon(option.scope) && dealFor(option, row));
                       const selectedCode = assignedCode(code, rowTarget(row));
                       const chosen = fits.find((option) => option.code === selectedCode);
-                      const deal = chosen ? dealFor(chosen, row) : undefined;
                       const quantity = row.quantity && row.quantity > 0 ? row.quantity : 1;
                       const rowChecked = checked.includes(row.key);
                       const appliedDiscount = rowChecked && chosen ? allocated.find(option => option.code === chosen.code)?.amount ?? 0 : 0;
@@ -271,7 +270,7 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
                                 <p className="mt-0.5 text-xs text-muted">수량 {quantity}</p>
                               </div>
                               <div className="shrink-0 text-right">
-                                {deal && rowChecked ? (
+                                {appliedDiscount > 0 ? (
                                   <>
                                     <p className="text-sm line-through" style={{ fontWeight: 400, color: "#c5c0b8" }}>{formatPrice(row.price)}</p>
                                     <p className="text-sm" style={{ fontWeight: 700, color: "#3f3b37" }}>{formatPrice(Math.max(0, Math.floor(appliedPrice / quantity)))}</p>
@@ -279,6 +278,15 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
                                 ) : <p className="text-sm font-bold">{formatPrice(row.price)}</p>}
                               </div>
                             </div>
+                            {chosen && rowChecked && appliedDiscount > 0 ? (
+                              <div className="mt-2 text-xs text-muted">
+                                <p className="font-medium">적용된 쿠폰보기</p>
+                                <div className="mt-1 flex items-start gap-2">
+                                  <p className="min-w-0 flex-1">&gt; {chosen.summary ?? chosen.label} {formatPrice(-Math.abs(appliedDiscount))}</p>
+                                  <button type="button" className="shrink-0 px-1 text-base leading-4 disabled:opacity-40" aria-label={`${chosen.summary ?? chosen.label} 적용 해제`} disabled={pending} onClick={() => { setError(""); setCode((current) => clearRowCoupon(current, rowTarget(row))); }}>×</button>
+                                </div>
+                              </div>
+                            ) : null}
                             {signedIn ? (
                               <select className="field mt-2" style={{ padding: "0.45rem 0.7rem", fontSize: "13px" }} value={selectedCode} onChange={(event) => {
                                 const next = event.target.value;
