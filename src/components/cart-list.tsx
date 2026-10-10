@@ -88,7 +88,7 @@ export function CartList({ rows, couponOptions, couponNotices = [], downloads = 
       <div className="flex items-center justify-between border-b border-ink pb-3">
         <div className="flex items-center gap-3"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={allSelected} onChange={() => onSelectedChange(allSelected ? [] : keys)} /> 전체 선택</label><span className="text-sm text-muted">총 {rows.length}개</span></div>
         <div className="flex items-center gap-3">
-          <button type="button" className="text-sm underline underline-offset-4" onClick={() => openCoupons("cart")}>쿠폰 변경하기</button>
+          <button type="button" className="text-sm underline underline-offset-4" onClick={() => openCoupons("cart")}>장바구니 쿠폰 변경하기</button>
           <button type="button" className="text-sm underline underline-offset-4 disabled:text-muted" disabled={pending || selected.length === 0} onClick={() => remove(selected)}>선택삭제</button>
         </div>
       </div>

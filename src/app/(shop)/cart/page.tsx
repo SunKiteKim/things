@@ -7,7 +7,7 @@ import { formatPrice } from "@/lib/utils";
 import { CartBoard } from "@/components/cart-board";
 import { requireUser } from "@/lib/auth";
 import { downloadableMemberCoupons } from "@/lib/member-coupons";
-import { selectedOffers, resolvedCouponSelection, couponSelection, couponTargets } from "@/lib/checkout-pricing";
+import { selectedOffers, resolvedCouponSelection, couponSelection, couponTargets, automaticCouponSelection } from "@/lib/checkout-pricing";
 
 function listedIds(value: string) {
   try {
@@ -88,8 +88,15 @@ export default async function CartPage() {
         : `[${scope}] ${coupon.name}${coupon.scope === "MULTI_CART" ? " · 서로 다른 상품 2종 이상" : coupon.minQuantity > 0 ? ` · ${coupon.minQuantity}개 이상` : ""} · ${coupon.discountValue}${coupon.discountType === "PERCENT" ? "%" : "원"} 할인${coupon.maxDiscountAmount > 0 ? ` · 최대 ${formatPrice(coupon.maxDiscountAmount)}` : ""}`,
     };
   }).filter((option): option is typeof option & { discount: number } => option.discount !== null).map((option) => ({ ...option, eligible: true }));
-  const selected = selectedOffers(options, code, total);
-  const selectedCode = couponSelection(resolvedCouponSelection(selected, code))
+  const effectiveCode = code || automaticCouponSelection(options, couponLines, total);
+  const effectiveTargets = couponTargets(effectiveCode);
+  const targetedOptions = options.map(option => {
+    const target = effectiveTargets[option.code];
+    const deal = target ? option.productDiscounts.find(deal => `${deal.productId}:${deal.onePlusOne ? "1" : "0"}`.toLowerCase() === target) : undefined;
+    return deal ? { ...option, discount: deal.discount } : option;
+  });
+  const selected = selectedOffers(targetedOptions, effectiveCode, total);
+  const selectedCode = couponSelection(resolvedCouponSelection(selected, effectiveCode))
     .filter((part) => selected.some((option) => option.code === part.split("@")[0]))
     .map((part) => {
       if (part.includes("@")) return part;

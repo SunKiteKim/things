@@ -128,6 +128,7 @@ export function CartBoard({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const applied = useMemo(() => coupons.filter((coupon) => couponCodes(selectedCoupon).includes(coupon.code.toUpperCase())), [coupons, selectedCoupon]);
   const summary = useMemo(() => summarize(rows, selected, applied, userId, selectedCoupon), [rows, selected, applied, userId, selectedCoupon]);
+  const productSummary = useMemo(() => summarize(rows, rows.map(cartRowKey), applied, userId, selectedCoupon), [rows, applied, userId, selectedCoupon]);
 
   useEffect(() => {
     const keys = new Set(rows.map(cartRowKey));
@@ -136,7 +137,7 @@ export function CartBoard({
 
   return (
     <div className="mt-10 grid gap-12 lg:grid-cols-[1.4fr_0.6fr]">
-      <CartList rows={rows} couponOptions={couponOptions} couponNotices={couponNotices} downloads={downloads} signedIn={signedIn} selectedCoupon={selectedCoupon} subtotal={subtotal} selected={selected} onSelectedChange={setSelected} appliedCoupons={summary.appliedCoupons} />
+      <CartList rows={rows} couponOptions={couponOptions} couponNotices={couponNotices} downloads={downloads} signedIn={signedIn} selectedCoupon={selectedCoupon} subtotal={subtotal} selected={selected} onSelectedChange={setSelected} appliedCoupons={productSummary.appliedCoupons} />
       <aside className="h-fit border border-line bg-surface p-6">
         <p className="text-sm text-muted">주문 상품</p>
         {summary.items.length > 0 ? (
@@ -187,6 +188,7 @@ export function CartBoard({
           <span data-testid="장바구니예상결제금액" data-amount={summary.payable}>{formatPrice(summary.payable)}</span>
         </p>
         <form action={checkoutFromCart}>
+          <input type="hidden" name="couponCode" value={selectedCoupon || "-"} />
           {summary.error ? <p role="alert" className="mt-3 text-sm text-accent">{summary.error}</p> : null}
           {selected.map((key) => <input key={key} type="hidden" name="line" value={key} />)}
           <SubmitButton className="btn mt-6 w-full" type="submit" disabled={selected.length === 0 || !!summary.error}>총 {summary.orderQuantity}개 주문하기</SubmitButton>

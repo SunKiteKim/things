@@ -58,7 +58,36 @@ export function allocateAmount(amount: number, weights: number[]) {
   return shares;
 }
 
-type ProductOffer = Offer & { scope?: string; productDiscounts?: { productId: string; onePlusOne?: boolean; discount: number }[] };
+type ProductOffer = Offer & { scope?: string; discountType?: string; discountValue?: number; productDiscounts?: { productId: string; onePlusOne?: boolean; discount: number; rate?: number }[] };
+export function automaticCouponSelection(options: ProductOffer[], rows: { productId: string; onePlusOne?: boolean; amount: number }[], subtotal: number) {
+  const isProduct = (offer: ProductOffer) => offer.scope === "PRODUCT" || offer.scope === "ONE_PLUS_ONE";
+  const used = new Set<string>();
+  const assigned: (Offer & { selection: string })[] = [];
+  const orderedRows = [...rows].sort((a, b) => b.amount - a.amount || a.productId.localeCompare(b.productId) || Number(!!a.onePlusOne) - Number(!!b.onePlusOne));
+  for (const row of orderedRows) {
+    const candidates = options.filter(option => isProduct(option) && option.isStackable && !used.has(option.code)).flatMap(option => {
+      const deal = option.productDiscounts?.find(deal => deal.productId === row.productId && !!deal.onePlusOne === !!row.onePlusOne);
+      return deal && deal.discount > 0 ? [{ option, deal, rate: option.discountType === "PERCENT" ? option.discountValue ?? deal.rate ?? 0 : deal.rate ?? deal.discount / Math.max(1, row.amount) * 100 }] : [];
+    }).sort((a, b) => b.rate - a.rate || b.deal.discount - a.deal.discount || a.option.code.localeCompare(b.option.code));
+    const best = candidates[0];
+    if (!best) continue;
+    used.add(best.option.code);
+    assigned.push({ ...best.option, discount: best.deal.discount, selection: `${best.option.code}@${row.productId.toLowerCase()}:${row.onePlusOne ? "1" : "0"}` });
+  }
+  const stacked = [...assigned, ...options.filter(option => !isProduct(option) && option.isStackable).map(option => ({ ...option, selection: option.code }))];
+  let selection = stacked.map(option => option.selection).join(",");
+  const payable = (offers: Offer[]) => { const amount = subtotal - combinedDiscount(offers, subtotal); return amount + shippingFee(amount); };
+  let bestPayable = payable(stacked);
+  for (const option of options.filter(option => !option.isStackable)) {
+    const candidates = isProduct(option) ? (option.productDiscounts ?? []).map(deal => ({ ...option, discount: deal.discount, selection: `${option.code}@${deal.productId.toLowerCase()}:${deal.onePlusOne ? "1" : "0"}` })) : [{ ...option, selection: option.code }];
+    for (const candidate of candidates) {
+      if (payable([candidate]) >= bestPayable) continue;
+      selection = candidate.selection;
+      bestPayable = payable([candidate]);
+    }
+  }
+  return selection || "-";
+}
 export function bestSingleProductCoupon(options: ProductOffer[], current: string, subtotal: number) {
   const isProduct = (offer: ProductOffer) => offer.scope === "PRODUCT" || offer.scope === "ONE_PLUS_ONE";
   const cart = options.filter(offer => !isProduct(offer) && couponCodes(current).includes(offer.code));

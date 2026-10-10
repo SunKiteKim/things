@@ -31,6 +31,7 @@ export async function checkoutFromCart(formData: FormData) {
     redirect("/cart");
   }
   await setCheckoutSelection(chosen);
+  if (formData.has("couponCode")) await setSelectedCoupon(couponSelection(String(formData.get("couponCode"))).join(",") || "-");
   redirect("/checkout");
 }
 
