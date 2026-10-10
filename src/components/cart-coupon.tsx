@@ -309,7 +309,8 @@ export function CouponPicker({ options, selected, subtotal, onApply, showApplied
                                 <option value="">{fits.length ? "쿠폰 선택" : "상품에 바로 적용할 수 있는 쿠폰이 없습니다."}</option>
                                 {fits.map((option) => {
                                   const itemDeal = dealFor(option, row);
-                                  return <option key={option.code} value={option.code}>{option.summary ?? option.label} · -{formatPrice(itemDeal?.discount ?? 0)}</option>;
+                                  const stackLabel = option.isStackable ? "중복사용 가능" : "중복사용 불가";
+                                  return <option key={option.code} value={option.code}>{option.summary ?? option.label} [{stackLabel}] -{formatPrice(itemDeal?.discount ?? 0)}</option>;
                                 })}
                                 {notices.filter((notice) => notice.key === row.key).map((notice) => (
                                   <option key={`${notice.summary}-${notice.reason}`} value={`blocked:${notice.summary}`} disabled>{notice.summary} · {notice.reason}</option>
